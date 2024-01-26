@@ -1,0 +1,420 @@
+{
+	"name": "VisualData",
+	"author": "thomas-topway-it",
+	"version": "1.0",
+	"url": "https://www.mediawiki.org/wiki/Extension:VisualData",
+	"descriptionmsg": "visualdata-extension-desc",
+	"license-name": "GPL-2.0-or-later",
+	"type": "parserhook",
+	"requires": {
+		"MediaWiki": ">= 1.35.0"
+	},
+	"MessagesDirs": {
+		"VisualData": [
+			"i18n"
+		]
+	},
+	"callback": "VisualDataHooks::initExtension",
+	"HookHandlers": {
+		"visualdata_searchdata": {
+			"class": "VisualDataDataForSearchIndex",
+			"services": [
+				"ContentHandlerFactory"
+			]
+		}
+	},
+	"ContentHandlers": {
+		"html": "VisualDataHtmlContentHandler",
+		"visualdata-jsondata": "VisualDataJsonDataContentHandler",
+		"pageproperties-jsondata": "VisualDataJsonDataContentHandler",
+		"pageproperties-semantic": "VisualDataJsonDataContentHandler"
+	},
+	"Actions": {
+		"editschemas": "VisualDataEditAction"
+	},
+	"AutoloadClasses": {
+		"VisualData": "includes/VisualData.php",
+		"VisualDataHooks": "includes/VisualDataHooks.php",
+		"VisualDataEditAction": "includes/VisualDataEditAction.php",
+		"SpecialVisualDataSubmit": "includes/specials/SpecialVisualDataSubmit.php",
+		"SpecialEditSchemas": "includes/specials/SpecialEditSchemas.php",
+		"SpecialManageSchemas": "includes/specials/SpecialManageSchemas.php",
+		"SpecialVisualDataBrowse": "includes/specials/SpecialVisualDataBrowse.php",
+		"VisualDataHtmlContentHandler": "includes/content/VisualDataHtmlContentHandler.php",
+		"VisualDataHtmlContent": "includes/content/VisualDataHtmlContent.php",
+		"VisualDataJsonDataContentHandler": "includes/content/VisualDataJsonDataContentHandler.php",
+		"VisualDataJsonDataContent": "includes/content/VisualDataJsonDataContent.php",
+		"VisualDataApiLoadData": "includes/api/VisualDataApiLoadData.php",
+		"VisualDataApiCheckLatestVersion": "includes/api/VisualDataApiCheckLatestVersion.php",
+		"VisualDataApiSaveSchema": "includes/api/VisualDataApiSaveSchema.php",
+		"VisualDataApiGetSchemas": "includes/api/VisualDataApiGetSchemas.php",
+		"VisualDataApiSubmitForm": "includes/api/VisualDataApiSubmitForm.php",
+		"VisualDataApiAskQuery": "includes/api/VisualDataApiAskQuery.php",
+		"VisualDataApiDatatables": "includes/api/VisualDataApiDatatables.php"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\VisualData\\": "includes/classes/",
+		"MediaWiki\\Extension\\VisualData\\ResultPrinters\\": "includes/classes/formats/",
+		"MediaWiki\\Extension\\VisualData\\Utils\\": "includes/utils/",
+		"MediaWiki\\Extension\\VisualData\\Pagers\\": "includes/specials/pagers/",
+		"MediaWiki\\Extension\\VisualData\\Specials\\": "includes/specials/BrowseData/"
+	},
+	"ExtensionMessagesFiles": {
+		"VisualDataAlias": "VisualData.alias.php",
+		"VisualDataMagic": "VisualDataMagic.i18n.magic.php"
+	},
+	"Hooks": {
+		"LoadExtensionSchemaUpdates": "VisualDataHooks::onLoadExtensionSchemaUpdates",
+		"PageDeleteComplete": "VisualDataHooks::onPageDeleteComplete",
+		"ArticleUndelete": "VisualDataHooks::onArticleUndelete",
+		"ParserFirstCallInit": "VisualDataHooks::onParserFirstCallInit",
+		"PageSaveComplete": "VisualDataHooks::onPageSaveComplete",
+		"BeforeInitialize": "VisualDataHooks::onBeforeInitialize",
+		"ParserAfterTidy": "VisualDataHooks::onParserAfterTidy",
+		"MediaWikiServices": "VisualDataHooks::onMediaWikiServices",
+		"MultiContentSave": "VisualDataHooks::onMultiContentSave",
+		"RevisionFromEditComplete": "VisualDataHooks::onRevisionFromEditComplete",
+		"OutputPageParserOutput": "VisualDataHooks::onOutputPageParserOutput",
+		"EditPage::showEditForm:initial": "VisualDataHooks::onEditPageshowEditForminitial",
+		"ContentGetParserOutput": "VisualDataHooks::onContentGetParserOutput",
+		"ContentAlterParserOutput": "VisualDataHooks::onContentAlterParserOutput",
+		"PageRenderingHash": "VisualDataHooks::onPageRenderingHash",
+		"BeforePageDisplay": "VisualDataHooks::onBeforePageDisplay",
+		"SkinBuildSidebar": "VisualDataHooks::onSkinBuildSidebar",
+		"SidebarBeforeOutput": "VisualDataHooks::onSidebarBeforeOutput",
+		"SkinTemplateNavigation::Universal": "VisualDataHooks::onSkinTemplateNavigation",
+		"LinkerMakeExternalLink": "VisualDataHooks::onLinkerMakeExternalLink"
+	},
+	"SpecialPages": {
+		"VisualDataSubmit": "SpecialVisualDataSubmit",
+		"EditSchemas": "SpecialEditSchemas",
+		"ManageSchemas": "SpecialManageSchemas",
+		"VisualDataBrowse": "SpecialVisualDataBrowse",
+		"VisualDataBrowseSchemas": "MediaWiki\\Extension\\VisualData\\Specials\\BrowseSchemas",
+		"VisualDataBrowseData": "MediaWiki\\Extension\\VisualData\\Specials\\BrowseData",
+		"VisualDataBrowseQueries": "MediaWiki\\Extension\\VisualData\\Specials\\BrowseQueries",
+		"VisualDataBrowseForms": "MediaWiki\\Extension\\VisualData\\Specials\\BrowseForms"
+	},
+	"APIModules": {
+		"visualdata-load-data": "VisualDataApiLoadData",
+		"visualdata-check-latest-version": "VisualDataApiCheckLatestVersion",
+		"visualdata-save-schema": "VisualDataApiSaveSchema",
+		"visualdata-get-schemas": "VisualDataApiGetSchemas",
+		"visualdata-submit-form": "VisualDataApiSubmitForm",
+		"visualdata-askquery": "VisualDataApiAskQuery",
+		"visualdata-datatables": "VisualDataApiDatatables"
+	},
+	"namespaces": [
+		{
+			"id": 2226,
+			"constant": "NS_VISUALDATAFORM",
+			"name": "VisualDataForm",
+			"defaultcontentmodel": "json",
+			"content": true,
+			"subpages": false
+		},
+		{
+			"id": 2227,
+			"constant": "NS_VISUALDATAFORM_TALK",
+			"name": "VisualDataFormTalk"
+		},
+		{
+			"id": 2228,
+			"constant": "NS_VISUALDATASCHEMA",
+			"name": "VisualDataSchema",
+			"defaultcontentmodel": "json",
+			"content": true,
+			"subpages": false
+		},
+		{
+			"id": 2229,
+			"constant": "NS_VISUALDATASCHEMA_TALK",
+			"name": "VisualDataSchemaTalk"
+		}
+	],
+	"GroupPermissions": {
+		"sysop": {
+			"visualdata-caneditschemas": true,
+			"visualdata-canmanageschemas": true
+		},
+		"bureaucrat": {
+			"visualdata-caneditschemas": true,
+			"visualdata-canmanageschemas": true
+		},
+		"visualdata-admin": {
+			"visualdata-caneditschemas": true,
+			"visualdata-canmanageschemas": true
+		},
+		"visualdata-editor": {
+			"visualdata-caneditschemas": false,
+			"visualdata-canmanageschemas": true
+		}
+	},
+	"AddGroups": {
+		"visualdata-admin": [
+			"visualdata-admin",
+			"visualdata-editor"
+		]
+	},
+	"RemoveGroups": {
+		"visualdata-admin": [
+			"visualdata-admin",
+			"visualdata-editor"
+		]
+	},
+	"AvailableRights": [
+		"visualdata-caneditschemas",
+		"visualdata-canmanageschemas"
+	],
+	"ResourceFileModulePaths": {
+		"localBasePath": "resources",
+		"remoteExtPath": "VisualData/resources"
+	},
+	"ResourceModules": {
+		"ext.VisualData.promise-polyfill": {
+			"scripts": "promise-polyfill/promise-polyfill.js",
+			"skipFunction": "promise-polyfill/skip-Promise.js"
+		},
+		"ext.VisualData.Common": {
+			"position": "top",
+			"scripts": [
+				"VisualDataFunctions.js",
+				"intl-tel-input/js/intlTelInput.js",
+				"ajv-validator/ajv7.bundle-ecma5-min.js",
+				"Widgets/VisualDataintlTelInput.js",
+				"Widgets/VisualDataButtonMultiselectWidget.js",
+				"Widgets/VisualDataLookupElement.js",
+				"Widgets/VisualDataMenuTagSearchMultiselect.js",
+				"Widgets/VisualDataRatingWidget.js",
+				"Widgets/VisualDataDropdownWidget.js",
+				"VisualDataUpload.js",
+				"Widgets/VisualDataVisualEditor.js"
+			],
+			"styles": [
+				"intl-tel-input/css/intlTelInput.min.css",
+				"style-rating.css",
+				"style.css"
+			],
+			"dependencies": [
+				"ext.VisualData.promise-polyfill",
+				"mediawiki.util",
+				"mediawiki.base",
+				"mediawiki.cookie",
+				"oojs-ui-core",
+				"oojs-ui-widgets",
+				"mediawiki.storage",
+				"oojs-ui.styles.icons-media",
+				"oojs-ui.styles.icons-movement",
+				"oojs-ui.styles.icons-interactions",
+				"oojs-ui.styles.icons-editing-core",
+				"oojs-ui-toolbars",
+				"oojs-ui-windows",
+				"mediawiki.widgets",
+				"mediawiki.widgets.datetime",
+				"mediawiki.widgets.DateInputWidget",
+				"mediawiki.widgets.TitlesMultiselectWidget",
+				"mediawiki.widgets.CategoryMultiselectWidget",
+				"mediawiki.widgets.UserInputWidget",
+				"mediawiki.widgets.UsersMultiselectWidget",
+				"mediawiki.Upload"
+			]
+		},
+		"ext.VisualData.ManageSchemas": {
+			"position": "top",
+			"scripts": [],
+			"dependencies": [
+				"ext.VisualData.EditSchemas"
+			],
+			"messages": [
+				"manageschemas",
+				"visualdata-form-section-schemas-label"
+			]
+		},
+		"ext.VisualData.PrintResults": {
+			"position": "top",
+			"scripts": [
+				"datatables/datatables.min.js",
+				"VisualDataDatatables.js"
+			],
+			"styles": [
+				"datatables/datatables.min.css",
+				"style.css"
+			],
+			"dependencies": [
+			]
+		},
+		"ext.VisualData.PageButtons": {
+			"position": "top",
+			"scripts": [
+				"VisualDataFunctions.js",
+				"VisualDataPageButtons.js"
+			],
+			"styles": [
+			],
+			"dependencies": [
+				"ext.VisualData.promise-polyfill",
+				"mediawiki.util",
+				"mediawiki.base",
+				"mediawiki.cookie",
+				"oojs-ui-core",
+				"oojs-ui-widgets",
+				"mediawiki.storage",
+				"oojs-ui.styles.icons-media",
+				"oojs-ui.styles.icons-movement",
+				"oojs-ui.styles.icons-interactions",
+				"oojs-ui.styles.icons-editing-core"
+			],
+			"messages": [
+			]
+		},
+		"ext.VisualData.EditSchemas": {
+			"position": "top",
+			"scripts": [
+				"datatables/datatables.min.js",
+				"VisualDataFunctions.js",
+				"VisualDataWindowManager.js",
+				"VisualDataInputConfig.js",
+				"VisualDataContentBlock.js",
+				"VisualDataFormField.js",
+				"VisualDataSchemas.js",
+				"VisualDataProcessModel.js",
+				"VersionCheck.js",
+				"VisualDataForms.js"
+			],
+			"styles": [
+				"datatables/datatables.min.css"
+			],
+			"dependencies": [
+				"mediawiki.rcfilters.filters.base.styles",
+				"ext.VisualData.Common"
+			],
+			"messages": [
+				"visualdata-jsmodule-visualdata-outdated-version",
+				"visualdata-jsmodule-visualdata-addremoveschemas",
+				"visualdata-jsmodule-schemas-create-schema",
+				"visualdata-jsmodule-schemas-columns",
+				"visualdata-jsmodule-visualdata-page-properties",
+				"visualdata-jsmodule-visualdata-manage-schemas",
+				"visualdata-jsmodule-schemas-defineschema",
+				"visualdata-jsmodule-schemas-panel-properties",
+				"visualdata-jsmodule-dialog-save",
+				"visualdata-jsmodule-dialog-delete",
+				"visualdata-jsmodule-schemas-name",
+				"visualdata-jsmodule-schemas-title",
+				"visualdata-jsmodule-schemas-title-help",
+				"visualdata-jsmodule-schemas-description",
+				"visualdata-jsmodule-schemas-description-help",
+				"visualdata-jsmodule-schemas-add-field",
+				"visualdata-jsmodule-schemas-add-block-content",
+				"visualdata-jsmodule-visualdata-columns-schemas-dialog",
+				"visualdata-jsmodule-schemas-add-subitem",
+				"visualdata-jsmodule-schemas-subitem",
+				"visualdata-jsmodule-schemas-multiple",
+				"visualdata-jsmodule-formfield-n/a",
+				"visualdata-jsmodule-formfield-not-required",
+				"visualdata-jsmodule-forms-definefield",
+				"visualdata-jsmodule-formfield-name",
+				"visualdata-jsmodule-formfield-name-help",
+				"visualdata-jsmodule-formfield-label",
+				"visualdata-jsmodule-forms-field-help-message",
+				"visualdata-jsmodule-forms-field-visibility-label",
+				"visualdata-jsmodule-forms-visibility-visible",
+				"visualdata-jsmodule-forms-field-visibility-help",
+				"visualdata-jsmodule-formfield-schematypes",
+				"visualdata-jsmodule-formfield-schematextsubtypes",
+				"visualdata-jsmodule-formfield-multiple-values",
+				"visualdata-jsmodule-formfield-availableinputs",
+				"visualdata-jsmodule-formfield-required",
+				"visualdata-jsmodule-formfield-default",
+				"visualdata-jsmodule-formfield-default-value-help",
+				"visualdata-jsmodule-inputconfig-dialog-label",
+				"visualdata-jsmodule-inputconfig-addremoveoptions",
+				"visualdata-jsmodule-forms-contentblock-newlabel",
+				"visualdata-jsmodule-forms-contentblock-content",
+				"visualdata-jsmodule-forms-contentblock-content-help",
+				"visualdata-jsmodule-schemas-multiple-items",
+				"visualdata-jsmodule-schemas-layout-section",
+				"visualdata-jsmodule-schemas-layout-horizontal",
+				"visualdata-jsmodule-schemas-content-block",
+				"visualdata-jsmodule-schemas-multiple-items-help",
+				"visualdata-jsmodule-schemas-layout",
+				"visualdata-jsmodule-schemas-layout-help",
+				"visualdata-jsmodule-schemas-min-items",
+				"visualdata-jsmodule-schemas-min-items-help",
+				"visualdata-jsmodule-schemas-max-items",
+				"visualdata-jsmodule-schemas-max-items-help",
+				"visualdata-jsmodule-schemas-unique-items",
+				"visualdata-jsmodule-schemas-unique-items-help",
+				"visualdata-jsmodule-forms-field-options-from",
+				"visualdata-jsmodule-forms-optionsfrom-optionsvalues",
+				"visualdata-jsmodule-forms-optionsfrom-optionswikilist",
+				"visualdata-jsmodule-forms-field-options-values",
+				"visualdata-jsmodule-forms-field-options-label-formula",
+				"visualdata-jsmodule-forms-field-options-label-formula-help",
+				"visualdata-jsmodule-forms-field-wikilist",
+				"visualdata-jsmodule-forms-selectfield",
+				"visualdata-jsmodule-forms-searchdialog-save",
+				"visualdata-jsmodule-formfield-newlabel",
+
+				"visualdata-jsmodule-formedit-freetext",
+				"visualdata-jsmodule-forms-categories",
+				"visualdata-jsmodule-visualdata-submit",
+				"visualdata-jsmodule-schemas-alert-noname",
+				"visualdata-jsmodule-schemas-alert-no-properties",
+				"visualdata-jsmodule-visualdata-searchdialog-save",
+				"visualdata-jsmodule-visualdata-dialogsearch-selectschemas",
+
+				"visualdata-jsmodule-schemas-delete-confirm",
+				"visualdata-jsmodule-visualdata-delete-confirm",
+				"visualdata-jsmodule-visualdata-upload",
+				"visualdata-jsmodule-forms-content-models",
+				"visualdata-jsmodule-forms-pagename",
+				"visualdata-jsmodule-forms-field-valueformula",
+				"visualdata-jsmodule-forms-field-valueformula-help",
+				"visualdata-jsmodule-forms-visibility-create-only",
+				"visualdata-jsmodule-forms-visibility-hidden",
+				"visualdata-jsmodule-schemas-alert-existing-item",
+				"visualdata-jsmodule-schemas-alert-existing-schema",
+				"visualdata-jsmodule-visualdata-validate",
+				"visualdata-jsmodule-visualdata-goback",
+
+				"visualdata-jsmodule-dialog-validate",
+				"visualdata-jsmodule-dialog-goback",
+				"visualdata-jsmodule-dialog-submit",
+				"visualdata-jsmodule-dialog-close",
+				"visualdata-jsmodule-forms-field-askquery-schema-label",
+				"visualdata-jsmodule-forms-field-askquery-schema-help",
+				"visualdata-jsmodule-forms-field-askquery-label",
+				"visualdata-jsmodule-forms-field-askquery-help",
+				"visualdata-jsmodule-forms-field-printouts",
+				"visualdata-jsmodule-forms-field-printouts-help",
+				"visualdata-jsmodule-forms-field-optionformula",
+				"visualdata-jsmodule-forms-field-optionformula-help",
+				"visualdata-jsmodule-forms-field-nullvalue",
+				"visualdata-jsmodule-visualdata-delete",
+				"visualdata-jsmodule-visualdata-delete-data-confirm",
+				"visualdata-jsmodule-formfield-message-more-inputs",
+				"visualdata-menutagmultiselect-placeholder",
+				"visualdata-jsmodule-formfield-message-schemapage",
+				"visualdata-jsmodule-schemas-container-schema",
+				"visualdata-jsmodule-schemas-message-container-info",
+				"visualdata-jsmodule-dialog-cancel",
+				"visualdata-jsmodule-dialog-main",
+				"visualdata-special-submit-notitle",
+				"visualdata-jsmodule-pageforms-form-error"
+			]
+		}
+	},
+	"config": {
+		"VisualDataDisableJsonLD": false,
+		"VisualDataAddTrackingCategory": false,
+		"VisualDataDisableSidebarLink": false,
+		"VisualDataDisableNavigationLink": false,
+		"VisualDataOpenExternalLinksInNewTab": false,
+		"VisualDataDisplayAlwaysUnprefixedTitles": false,
+		"VisualDataCreateJobsWarningLimit": 0,
+		"VisualDataDisableVersionCheck": false,
+		"VisualDataEditSchemasNamespaces": [ 0 ]
+	},
+	"manifest_version": 1
+}

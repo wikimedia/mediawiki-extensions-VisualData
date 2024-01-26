@@ -1,0 +1,207 @@
+/**
+ * This file is part of the MediaWiki extension VisualData.
+ *
+ * VisualData is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * VisualData is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with VisualData.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @file
+ * @ingroup extensions
+ * @author thomas-topway-it <support@topway.it>
+ * @copyright Copyright ©2021-2024, https://wikisphere.org
+ */
+
+/* stylelint-disable block-no-empty */
+
+.visualdata-datatable tr td {
+	cursor: pointer;
+}
+
+.visualdata-datatable-left {
+	float: left;
+}
+
+.visualdata-datatable-right {
+	float: right;
+}
+
+.VisualDataForm .oo-ui-panelLayout-expanded {
+	position: relative;
+}
+
+.VisualDataForm .oo-ui-menuLayout-expanded {
+	position: relative;
+}
+
+.VisualDataForm .oo-ui-menuLayout-expanded > .oo-ui-menuLayout-menu {
+	position: relative;
+}
+
+.VisualDataForm .oo-ui-menuLayout-expanded > .oo-ui-menuLayout-content {
+	position: relative;
+}
+
+.VisualDataForm {
+	max-width: 600px;
+}
+
+.VisualDataForm.VisualDataFormContext-EditSchemas {
+	max-width: none;
+	background: #f8f9fa;
+}
+
+.visualdata-datatable {
+}
+
+.VisualDataEditSchemasOuterStackPanel.oo-ui-panelLayout-padded.oo-ui-panelLayout-framed {
+	margin: 0;
+}
+
+.PanelPropertiesStackPanelSingle {
+	padding: 12px;
+}
+
+.PanelPropertiesStackPanelTabs {
+
+}
+
+.PanelPropertiesStackPanelBooklets {
+	padding: 12px;
+}
+
+.PanelPropertiesStackPanelFieldset {
+	padding: 12px;
+}
+
+.PanelPropertiesStack {
+	border: 1px solid #ccc;
+	margin-bottom: 16px;
+}
+
+.VisualDataFormWrapper .oo-ui-toolbar-position-top > .oo-ui-toolbar-bar {
+	border-bottom: medium;
+}
+
+.PanelPropertiesStack-empty {
+	min-height: 0;
+	margin-bottom: 0;
+}
+
+.oo-ui-bookletLayout-stackLayout > .oo-ui-panelLayout.visualdata-forms-fields-panel {
+	padding: 0;
+}
+
+.oo-ui-bookletLayout-stackLayout > .oo-ui-panelLayout.visualdata-schemas-panel-properties {
+	padding: 0;
+}
+
+.visualdata-schemas-properties-contentframe {
+	padding: 16px 18px 18px;
+}
+
+.VisualDataItemWidget {
+	padding: 10px 0;
+	display: block;
+}
+
+.mw-widget-dateInputWidget-calendar {
+	z-index: 10;
+}
+
+.iti {
+	width: 100%;
+}
+
+.visualdata-form-table-multiple-fields {
+	width: 100%;
+}
+
+.visualdata-form-table-multiple-fields > div:first-child {
+	padding-right: 12px;
+}
+
+.visualdata-horizontal-section-remove-row {
+	width: 1%;
+	vertical-align: middle;
+}
+
+.VisualDataGroupWidgetPanel .oo-ui-horizontalLayout .oo-ui-numberInputWidget-field,
+.VisualDataGroupWidgetPanel-border .oo-ui-horizontalLayout .oo-ui-numberInputWidget-field {
+	table-layout: auto;
+}
+
+.VisualDataGroupWidgetMessageWidget {
+	margin-bottom: 12px;
+	/* to avoid overlapping edit button */
+	margin-right: 20px;
+}
+
+.PanelPropertiesStackPanelSingle,
+.PanelPropertiesStack {
+	position: static;
+}
+
+/* example custom class */
+.VisualDataForm.myclass .PanelPropertiesStack {
+	background: #d9ffe3;
+}
+
+.VisualDataFormSubmitButton {
+	margin-bottom: 12px;
+}
+
+.VisualDataFormFieldMessage {
+	margin: 12px 0;
+}
+
+.VisualDataForm .PanelPropertiesStackPanelTabs .oo-ui-indexLayout.oo-ui-menuLayout.oo-ui-menuLayout-expanded > .oo-ui-menuLayout-menu {
+	white-space: normal;
+	height: auto;
+}
+
+.VisualDataForm .PanelPropertiesStackPanelTabs .oo-ui-indexLayout.oo-ui-menuLayout.oo-ui-menuLayout-expanded > .oo-ui-menuLayout-content {
+	top: 0;
+}
+
+/* required for Chameleon skin */
+.visualdata-ooui-window {
+	z-index: 9999;
+}
+
+.visualdata-wikitable {
+
+}
+
+.visualdata-wikitable-inner th,
+.visualdata-wikitable-inner tr td {
+	text-align: left;
+}
+
+.visualdata-form-container-edit-button {
+	float: right;
+	top: -16px;
+	left: 16px;
+	position: relative;
+}
+
+.VisualDataGroupWidgetPanel .mw-upload-bookletLayout-filePreview,
+.VisualDataGroupWidgetPanel-border .mw-upload-bookletLayout-filePreview {
+	width: inherit;
+	height: inherit;
+	background-color: inherit;
+	background-size: inherit;
+	background-position: inherit;
+	padding: inherit;
+	margin: inherit;
+	margin-bottom: inherit;
+	position: inherit;
+}

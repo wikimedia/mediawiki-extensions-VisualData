@@ -1,0 +1,14 @@
+{
+	"@metadata": {
+		"authors": []
+	},
+
+	"visualdata_dynamictable_addfield": "Feld hinzufügen",
+	"visualdata-form-seo_entire_wiki-label": "auf das gesamte Wiki anwenden (die gesetzten Werte können von anderen Seiten überschrieben werden)",
+	"visualdata-form-meta_description-label": "Beschreibung",
+	"visualdata-form-seo_subpages-label": "Unterseiten (auf Seiten anwenden, die in dieser inkludiert sind)",
+
+	"visualdata-form-section-seo-label": "Hier können beliebige Metadaten für die Seite und ihre Unterseiten angegeben werden. Wenn die Erweiterung [https://www.mediawiki.org/wiki/Extension:WikiSEO WikiSEO] installiert ist, können die Parameter gesetzt werden, ohne diese händisch auf der Seite angeben zu müssen.<br /><br />",
+	"visualdata-form-displaytitle-label": "Anzeigetitel",
+	"visualdata-form-model-label": "Inhaltsmodell"
+}
