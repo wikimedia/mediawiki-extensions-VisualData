@@ -432,16 +432,16 @@ class VisualDataHooks {
 				'text'   => wfMessage( 'visualdata-sidepanel-manageschemas' )->text(),
 				'href'   => $specialpage_title->getLocalURL()
 			];
+		}
 
-			// , 'forms', 'queries', 'schemas'
-			$allowedItems = [ 'data' ];
-			foreach ( $allowedItems as $item ) {
-				$specialpage_title = SpecialPage::getTitleFor( 'VisualDataBrowse', ucfirst( $item ) );
-				$bar[ wfMessage( 'visualdata-sidepanel-section' )->text() ][] = [
-					'text'   => wfMessage( "visualdatabrowse-$item-label" )->text(),
-					'href'   => $specialpage_title->getLocalURL()
-				];
-			}
+		// , 'forms', 'queries', 'schemas'
+		$allowedItems = [ 'data' ];
+		foreach ( $allowedItems as $item ) {
+			$specialpage_title = SpecialPage::getTitleFor( 'VisualDataBrowse', ucfirst( $item ) );
+			$bar[ wfMessage( 'visualdata-sidepanel-section' )->text() ][] = [
+				'text'   => wfMessage( "visualdatabrowse-$item-label" )->text(),
+				'href'   => $specialpage_title->getLocalURL()
+			];
 		}
 	}
 

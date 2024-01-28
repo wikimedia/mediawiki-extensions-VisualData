@@ -76,10 +76,10 @@ class SpecialEditSchemas extends SpecialPage {
 
 		$this->addHelpLink( 'Extension:VisualData' );
 
-		if ( !$user->isAllowed( 'visualdata-caneditschemas' ) ) {
-			$this->displayRestrictionError();
-			return;
-		}
+		// if ( !$user->isAllowed( 'visualdata-caneditschemas' ) ) {
+		// 	$this->displayRestrictionError();
+		// 	return;
+		// }
 
 		if ( $par ) {
 			// NS_MAIN is ignored if $par is prefixed

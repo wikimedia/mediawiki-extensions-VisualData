@@ -85,11 +85,11 @@ class SpecialVisualDataBrowse extends SpecialPage {
 
 		$user = $this->getUser();
 
-		if ( !$user->isAllowed( 'visualdata-canmanageschemas' )
-			&& !$user->isAllowed( 'visualdata-caneditschema' ) ) {
-			$this->displayRestrictionError();
-			return;
-		}
+		// if ( !$user->isAllowed( 'visualdata-canmanageschemas' )
+		// 	&& !$user->isAllowed( 'visualdata-caneditschema' ) ) {
+		// 	$this->displayRestrictionError();
+		// 	return;
+		// }
 
 		$out = $this->getOutput();
 
