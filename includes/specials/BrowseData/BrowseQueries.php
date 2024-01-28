@@ -53,6 +53,6 @@ class BrowseQueries extends SpecialPage {
 	 * @return string
 	 */
 	protected function getGroupName() {
-		return 'vsualdata';
+		return 'visualdata';
 	}
 }
