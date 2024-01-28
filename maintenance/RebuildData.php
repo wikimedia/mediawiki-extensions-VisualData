@@ -173,6 +173,8 @@ class RebuildData extends Maintenance {
 			}
 			$revisionRecord = $wikiPage->getRevisionRecord();
 
+			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );
+
 			$slot = $this->getSlot( $revisionRecord );
 
 			if ( !$slot ) {
@@ -185,6 +187,36 @@ class RebuildData extends Maintenance {
 			$errors = [];
 			\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
 		}
+	}
+
+	/**
+	 * @param WikiPage
+	 * @param RevisionRecord &$revisionRecord
+	 */
+	private function handlePagePropertiesSlot( $wikiPage, &$revisionRecord ) {
+		$slots = $revisionRecord->getSlots()->getSlots();
+
+		if ( !array_key_exists( 'pageproperties', $slots ) ) {
+			return;
+		}
+
+		echo 'replacing slot pageproperties' . PHP_EOL;
+
+		$slotContent = $slots['pageproperties']->getContent();
+		$contents = $slotContent->getNativeData();
+
+		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
+		$pageUpdater->removeSlot( 'pageproperties' );
+
+		$title = $wikiPage->getTitle();
+		$modelId = CONTENT_MODEL_VISUALDATA_JSONDATA;
+		$slotContent = ContentHandler::makeContent( $contents, $title, $modelId );
+		$pageUpdater->setContent( 'jsondata', $slotContent );
+
+		$summary = "VisualData update";
+		$flags = EDIT_INTERNAL;
+		$comment = CommentStoreComment::newUnsavedComment( $summary );
+		$RevisionRecord = $pageUpdater->saveRevision( $comment, $flags );
 	}
 
 	/**
@@ -234,11 +266,6 @@ class RebuildData extends Maintenance {
 	 */
 	private function getSlot( $revisionRecord ) {
 		$slots = $revisionRecord->getSlots()->getSlots();
-
-		// back compatibility		
-		if ( array_key_exists( 'pageproperties', $slots ) ) {
-			return $slots['pageproperties'];
-		}
 
 		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
 			return $slots[SLOT_ROLE_VISUALDATA_JSONDATA];

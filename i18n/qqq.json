@@ -59,17 +59,21 @@
 	"visualdata-parserfunction-button-label-description": "A label message",
 	"visualdata-parserfunction-button-label-example": "A label message",
 
+	"visualdata-parserfunction-button-value-label": "A label message",
+	"visualdata-parserfunction-button-value-description": "A label message",
+	"visualdata-parserfunction-button-value-example": "A label message",
+
 	"visualdata-parserfunction-button-callback-label": "A label message",
 	"visualdata-parserfunction-button-callback-description": "A label message",
 	"visualdata-parserfunction-button-callback-example": "A label message",
 
-	"visualdata-parserfunction-button-preload-label": "A label message",
-	"visualdata-parserfunction-button-preload-description": "A label message",
-	"visualdata-parserfunction-button-preload-example": "A label message",
+	"visualdata-parserfunction-button-schema-label": "A label message",
+	"visualdata-parserfunction-button-schema-description": "A label message",
+	"visualdata-parserfunction-button-schema-example": "A label message",
 
-	"visualdata-parserfunction-button-value-label": "A label message",
-	"visualdata-parserfunction-button-value-description": "A label message",
-	"visualdata-parserfunction-button-value-example": "A label message",
+	"visualdata-parserfunction-button-edit-page-label": "A label message",
+	"visualdata-parserfunction-button-edit-page-description": "A label message",
+	"visualdata-parserfunction-button-edit-page-example": "A label message",
 
 	"visualdata-parserfunction-button-icon-label": "A label message",
 	"visualdata-parserfunction-button-icon-description": "A label message",
@@ -289,8 +293,11 @@
 	"visualdata-jsmodule-schemas-unique-items": "A label message",
 	"visualdata-jsmodule-schemas-unique-items-help": "A label message",
 	"visualdata-jsmodule-forms-field-options-from": "A label message",
-	"visualdata-jsmodule-forms-optionsfrom-optionsvalues": "A label message",
-	"visualdata-jsmodule-forms-optionsfrom-optionswikilist": "A label message",
+
+	"visualdata-jsmodule-forms-optionsfrom-values": "A label message",
+	"visualdata-jsmodule-forms-optionsfrom-wikilist": "A label message",
+	"visualdata-jsmodule-forms-optionsfrom-askquery": "A label message",
+
 	"visualdata-jsmodule-forms-field-options-values": "A label message",
 	"visualdata-jsmodule-forms-field-options-label-formula": "A label message",
 	"visualdata-jsmodule-forms-field-options-label-formula-help": "A label message",

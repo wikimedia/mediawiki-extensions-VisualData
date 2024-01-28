@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2023, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -74,7 +74,9 @@ class ResultPrinter {
 			'separator' => [ '', 'string' ],
 			'values-separator' => [ ', ', 'string' ],
 			'template' => [ '', 'string' ],
-			'pagetitle-name' => [ 'pagetitle', 'string' ],
+			'template' => [ '', 'string' ],
+			'pagetitle' => [ 'pagetitle', 'string' ],
+			'pagetitle-name' => [ 'pagetitle-name', 'string' ],
 			'articleid-name' => [ 'articleid', 'string' ],
 		];
 
@@ -156,7 +158,8 @@ class ResultPrinter {
 	 * @return string
 	 */
 	protected function processTemplate( $titleStr, $params ) {
-		$titleTemplate = \Title::makeTitle( NS_TEMPLATE, $titleStr );
+		$titleTemplate = \Title::makeTitle( NS_TEMPLATE,
+			\Title::capitalize( $titleStr, NS_TEMPLATE ) );
 
 		if ( !$titleTemplate || !$titleTemplate->isKnown() ) {
 			return "[[$titleTemplate]]";
@@ -196,10 +199,10 @@ class ResultPrinter {
 		$ret = array_filter( $arr, static function ( $value ) {
 			return !is_array( $value );
 		} );
-		return array_merge( [
+		return array_merge( $ret, [
 			$this->params['pagetitle-name'] => $title->getFullText(),
-			$this->params['articleid-name'] => $title->getArticleID()
-		], $ret );
+			$this->params['articleid-name'] => $title->getArticleID()			
+		] );
 	}
 
 	/**
@@ -354,11 +357,17 @@ class ResultPrinter {
 
 		// retrieve label
 		// if ( array_key_exists( 'title', $schema )
-		// 	&& !empty( $schema['title'] ) ) {
+		//	&& !empty( $schema['title'] ) ) {
 		// 	$key = $schema['title'];
 		// }
 
-		return (string)$value;
+		$value = (string)$value;
+
+		if ( empty( $value ) && $key === $this->params['pagetitle-name'] ) {
+			$value = $properties[$this->params['pagetitle-name']];
+		}
+
+		return $value;
 	}
 
 }

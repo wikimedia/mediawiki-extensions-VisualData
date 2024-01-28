@@ -205,3 +205,13 @@
 	margin-bottom: inherit;
 	position: inherit;
 }
+
+.VisualDataPageButtonsActionField.oo-ui-actionFieldLayout .oo-ui-actionFieldLayout-input > .oo-ui-widget {
+	margin-right: 0;
+}
+
+.VisualDataPageButtonsActionField .oo-ui-actionFieldLayout-input,
+.VisualDataPageButtonsActionField .oo-ui-actionFieldLayout-button {
+	display: inline;
+}
+

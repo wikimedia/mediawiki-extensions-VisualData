@@ -18,7 +18,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
 use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
@@ -52,14 +52,8 @@ class VisualData {
 	/** @var array */
 	public static $pageForms = [];
 
-	/** @var int */
-	public static $formIndex = 0;
-
 	/** @var array */
 	public static $pageButtons = [];
-
-	/** @var int */
-	public static $buttonIndex = 0;
 
 	/** @var Logger */
 	private static $Logger;
@@ -96,13 +90,21 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-button-callback-example'
 		],
-		'preload' => [
-			'label' => 'visualdata-parserfunction-button-preload-label',
-			'description' => 'visualdata-parserfunction-button-preload-description',
+		'schema' => [
+			'label' => 'visualdata-parserfunction-button-schema-label',
+			'description' => 'visualdata-parserfunction-button-schema-description',
 			'type' => 'string',
 			'required' => false,
 			'default' => '',
-			'example' => 'visualdata-parserfunction-button-preload-example'
+			'example' => 'visualdata-parserfunction-button-schema-example'
+		],
+		'edit-page' => [
+			'label' => 'visualdata-parserfunction-form-edit-page-label',
+			'description' => 'visualdata-parserfunction-form-edit-page-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-form-edit-page-example'
 		],
 		'icon' => [
 			'label' => 'visualdata-parserfunction-button-icon-label',
@@ -500,7 +502,7 @@ class VisualData {
 	 */
 	public static function parserFunctionButton( Parser $parser, ...$argv ) {
 		$parserOutput = $parser->getOutput();
-		$parserOutput->setExtensionData( 'visualdatabutton', true );
+		$parserOutput->setExtensionData( 'visualdataform', true );
 		$title = $parser->getTitle();
 
 /*
@@ -509,7 +511,8 @@ class VisualData {
 |preload = Data:ContactManager/MailboxInfo/Preload
 }}
 */
-		$defaultParameters = self::$ButtonDefaultParameters;
+		$defaultParameters = array_merge( self::$FormDefaultParameters,
+			self::$ButtonDefaultParameters );
 
 		array_walk( $defaultParameters, static function ( &$value, $key ) {
 			$value = [ $value['default'], $value['type'] ];
@@ -526,15 +529,21 @@ class VisualData {
 		$params = self::applyDefaultParams( $defaultParameters, $options );
 
 		$params['label'] = $label;
+		$params['action'] = 'edit';
+		$params['view'] = 'button';
+		$params['edit-categories'] = false;
+		$params['edit-freetext'] = false;
+		$params['return-page'] = $title->getFullText();
 
-		$buttonID = ++self::$buttonIndex;
+		self::$pageForms[] = [
+			'schemas' => ( !empty( $params['schema'] ) ? [ $params['schema'] ] : [] ),
+			'options' => $params
+		];
 
-		self::$pageButtons[$buttonID] = $params;
-
-		$parserOutput->setExtensionData( 'visualdatabuttons', self::$pageButtons );
+		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
 
 		return [
-			'<div class="VisualDataButton" id="visualdatabutton-wrapper-' . $buttonID . '">'
+			'<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
 				. wfMessage( 'visualdata-parserfunction-button-placeholder' )->text() . '</div>',
 			'noparse' => true,
 			'isHTML' => true
@@ -597,9 +606,7 @@ class VisualData {
 			return $databaseManager->schemaExists( $val );
 		} );
 
-		$formID = self::formID( $title, $schemas, ++self::$formIndex );
-
-		self::$pageForms[$formID] = [
+		self::$pageForms[] = [
 			'schemas' => $schemas,
 			'options' => $params
 		];
@@ -607,7 +614,7 @@ class VisualData {
 		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
 
 		return [
-			'<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . $formID . '">'
+			'<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
 				. wfMessage( 'visualdata-parserfunction-form-placeholder' )->text() . '</div>',
 			'noparse' => true,
 			'isHTML' => true
@@ -793,7 +800,7 @@ class VisualData {
 
 		$output = RequestContext::getMain()->getOutput();
 
-		[ $ret, $isHtml ] = self::getResults(
+		$resultPrinter = self::getResults(
 			$parser,
 			$output,
 			$query,
@@ -802,7 +809,10 @@ class VisualData {
 			$params
 		);
 
-		return [ $ret, 'isHTML' => $isHtml ];
+		$results = ( $resultPrinter ? $resultPrinter->getResults() : '' );
+		$isHtml = ( $resultPrinter ? $resultPrinter->isHtml() : false );
+
+		return [ $results, 'isHTML' => $isHtml ];
 	}
 
 	/**
@@ -812,7 +822,7 @@ class VisualData {
 	 * @param array $templates
 	 * @param array $printouts
 	 * @param array $params
-	 * @return bool|array
+	 * @return bool|ResultPrinter;
 	 */
 	public static function getResults(
 		$parser,
@@ -835,9 +845,8 @@ class VisualData {
 		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
 		$queryProcessor = new QueryProcessor( $schema, $query, $printouts, $params );
-		$resultsPrinter = new $class( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts );
 
-		return [ $resultsPrinter->getResults(), $resultsPrinter->isHtml() ];
+		return new $class( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts );
 	}
 
 	/**
@@ -1329,10 +1338,8 @@ class VisualData {
 		}
 
 		foreach ( $pageForms as $formID => $value ) {
-			$schemas = $pageForms[$formID]['schemas'];
-
 			if ( $config['context'] !== 'EditSchemas' ) {
-				$databaseManager->storeLink( $title, 'form', $schemas );
+				$databaseManager->storeLink( $title, 'form', $value['schemas'] );
 			}
 
 			$jsonData = [];
@@ -1434,18 +1441,22 @@ class VisualData {
 			}
 
 			// *** this accounts also of forms inside forms
-			$obj['pageForms'] = array_merge( $obj['pageForms'], self::$pageForms );
+			// *** attention! switch to array_merge in case of
+			// non-numerical keys
+			$obj['pageForms'] = $obj['pageForms'] + self::$pageForms;
 			$obj['pageForms'] = self::processPageForms( $title, $obj['pageForms'], $obj['config'] );
 		}
-
 		if ( isset( $_SESSION ) && !empty( $_SESSION['visualdataform-submissiondata'] ) ) {
 			foreach ( $_SESSION['visualdataform-submissiondata'] as $formData ) {
 				self::setSchemas( $out, $formData['schemas'] );
 			}
 		}
 
-		if ( self::$User->isAllowed( 'visualdata-caneditschemas' )
-			|| self::$User->isAllowed( 'visualdata-canmanageschemas' ) ) {
+		// load all schemas also if context is !== than 'EditSchemas'
+		// to display them in ask query schemas and other inputs
+		if ( ( self::$User->isAllowed( 'visualdata-caneditschemas' )
+				|| self::$User->isAllowed( 'visualdata-canmanageschemas' )
+			) ) {
 			$loadedData[] = 'schemas';
 			// this will retrieve all schema pages without contents
 			// without content @TODO set a limit
@@ -1486,9 +1497,10 @@ class VisualData {
 				'allowedMimeTypes' => $allowedMimeTypes,
 				'caneditschemas' => self::$User->isAllowed( 'visualdata-caneditschemas' ),
 				'canmanageschemas' => self::$User->isAllowed( 'visualdata-canmanageschemas' ),
+				// 'canmanageforms' => self::$User->isAllowed( 'visualdata-canmanageforms' ),
 				'contentModels' => array_flip( self::getContentModels() ),
 				'contentModel' => $title->getContentModel(),
-				// 'SMW' => self::$SMW,
+				'SMW' => false,	// self::$SMW,
 				'VEForAll' => $VEForAll
 			],
 		];
@@ -1541,17 +1553,6 @@ class VisualData {
 		// or use $title->exists()
 		return ( $title && $title->canExist() && $title->getArticleID() > 0
 			&& $title->isKnown() );
-	}
-
-	/**
-	 * @param Title $title
-	 * @param array $schemas
-	 * @param int $index
-	 * @return string
-	 */
-	public static function formID( $title, $schemas, $index ) {
-		// *** must be deterministic, to handle session data
-		return hash( 'md5', $title->getFullText() . implode( $schemas ) . $index );
 	}
 
 	/**

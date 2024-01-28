@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2023, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -27,6 +27,7 @@ namespace MediaWiki\Extension\VisualData;
 use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
 use MediaWiki\MediaWikiServices;
 use Parser;
+use RequestContext;
 
 class SchemaProcessor {
 
@@ -701,6 +702,7 @@ class SchemaProcessor {
 					// will further parse the options
 					if ( empty( $properties['wiki']['options-wikilist'] )
 						&& empty( $properties['wiki']['options-values'] )
+						&& empty( $properties['wiki']['options-askquery'] )
 						&& is_array( $value )
 						&& count( $value ) ) {
 
@@ -1046,6 +1048,24 @@ class SchemaProcessor {
 		$values = [];
 		$wiki = $ret['wiki'];
 
+		if ( !empty( $wiki['options-askquery'] )
+			&& !preg_match( '/\<.+?\>/', $wiki['options-askquery'] ) ) {
+			$values = $this->askQueryResults( $wiki );
+
+			if ( array_key_exists( 'options-allow-null', $wiki ) && $wiki['options-allow-null'] ) {
+				$values = array_merge( [ '' => '' ], $values );
+			}
+
+			if ( !count( $values ) ) {
+				unset( $ret['enum'] );
+				return;
+			}
+
+			$ret['enum'] = array_keys( $values );
+			$ret['wiki']['options-values-parsed'] = $values;
+			return;
+		}
+
 		if ( !empty( $wiki['options-values'] ) ) {
 			$values = $wiki['options-values'];
 
@@ -1073,7 +1093,9 @@ class SchemaProcessor {
 			return;
 		}
 
-		/* e.g.
+/* e.g.
+@credits: WikiTeq
+
 {{#switch: {{{1}}}
  | A = MapA
  | B = MapB
@@ -1094,6 +1116,78 @@ class SchemaProcessor {
 
 		$ret['enum'] = array_keys( $options );
 		$ret['wiki']['options-values-parsed'] = $options;
+	}
+
+	/**
+	 * @param string $wiki
+	 * @return array
+	 */
+	public function askQueryResults( $wiki ) {
+		$query = $wiki['options-askquery'];
+		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
+		$output = $this->output;
+
+		// *** credits WikiTeQ
+		$title = RequestContext::getMain()->getTitle();
+		$poptions = $output->parserOptions();
+
+		// parsed query
+		$query = $parser->preprocess( $query, $title, $poptions );
+		// -------------->
+
+		$params = [
+			'schema' => $wiki['askquery-schema'],
+			'format' => 'query'
+		];
+		$printouts = $wiki['askquery-printouts'];
+		$templates = [];
+
+		$resultPrinter = \VisualData::getResults(
+			$parser,
+			$output,
+			$query,
+			$templates,
+			$printouts,
+			$params
+		);
+		
+		if ( $results ) {
+			return [];
+		}
+
+		$results = $resultPrinter->getResults();
+
+		if ( !empty( $wiki['options-query-formula'] ) ) {
+			$defaultValue = $wiki['options-query-formula'];
+		} else {
+			$defaultValue = implode( ' - ', array_map( static function ( $value ) {
+				return "<$value>";
+			}, $printouts ) );
+		}
+
+		$ret = [];
+		foreach ( $results as $properties ) {
+			$value = $this->replaceFormula( $properties, $defaultValue );
+			// option value formula
+			if ( !empty( $wiki['options-query-formula'] ) ) {
+				$value = $this->parseWikitext( $value );
+			}
+
+			if ( empty( $value ) ) {
+				continue;
+			}
+
+			$label = $value;
+
+			// only available for MenuTagSearchMultiselect
+			if ( !empty( $wiki['options-label-formula'] ) ) {
+				$label = $this->parseWikitext(
+					$this->replaceFormula( $proprties, $wiki['options-label-formula'] ) );
+			}
+			$ret[$value] = $label;
+		}
+
+		return $ret;
 	}
 
 	/**

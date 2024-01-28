@@ -2329,7 +2329,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}
 
 			if ( 'callback' in Form.options && Form.options.callback !== '' ) {
-				VisualDataFunctions.executeFunctionByName( Form.options.callback, window, res );
+				VisualDataFunctions.executeFunctionByName( Form.options.callback, window, [ res ] );
 				return;
 			}
 
@@ -2630,6 +2630,80 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		Initialized = true;
+
+		if ( Form.options.view === 'button' ) {
+
+			var button = new OO.ui.ButtonWidget( {
+				icon: Form.options.icon,
+				flags: [ 'primary', 'progressive' ],
+				label: Form.options.label
+			} );
+			var widget;
+	
+			if ( Form.options.schema !== '' ) {
+				var editButton = new OO.ui.ButtonWidget( {
+					icon: 'edit',
+					flags: [ 'primary', 'progressive' ],
+				} );
+
+				editButton.on( 'click', function () {
+					initializePropertiesStack();
+					StoredJsonData = VisualDataFunctions.deepCopy(
+						Form.jsonData
+					);
+
+					var thisClasses = [];
+					if ( 'css-class' in Form.options && Form.options[ 'css-class' ] !== '' ) {
+						thisClasses.push( Form.options[ 'css-class' ] );
+					}
+
+					// eslint-disable-next-line mediawiki/class-doc
+					var processDialog = new ProcessDialog( {
+						size:
+							!( 'popup-size' in Form.options ) || Form.options[ 'popup-size' ] === '' ?
+								'medium' :
+								Form.options[ 'popup-size' ],
+						id: 'visualdataform-wrapper-dialog-' + FormID,
+						classes: thisClasses
+					} );
+
+					WindowManager.newWindow( processDialog, {
+						title: Form.options.title,
+						PropertiesStack: PropertiesStack
+					} );
+				} );
+
+				widget = new OO.ui.ActionFieldLayout( button, editButton, {
+					label: '',
+					align: 'top',
+					classes: [ 'VisualDataPageButtonsActionField' ],
+				} );
+
+			} else {
+				widget = button;
+			}
+
+			button.on( 'click', function () {
+				var args = [ Form.options.value ];
+
+				if ( Form.options.schema !== '' ) {
+					initializePropertiesStack();
+					ProcessModel.getModel( 'schema', Form.options.schema ).then( async function ( res ) {
+						if ( typeof res === 'boolean' && res === false ) {
+							return;
+						}
+						args.push( res.data );
+						VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
+					} );
+				} else {
+					VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
+				}
+			} );
+
+			$( '#visualdataform-wrapper-' + FormID ).html( widget.$element );
+
+			return true;
+		}
 
 		if ( Form.options.view === 'popup' ) {
 			var popupButton = new OO.ui.ButtonWidget( {

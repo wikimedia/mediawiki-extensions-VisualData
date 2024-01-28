@@ -22,15 +22,9 @@
  * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
-use MediaWiki\MediaWikiServices;
+use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
 
 class VisualDataApiAskQuery extends ApiBase {
-
-	/** @var output */
-	private $output;
-
-	/** @var parser */
-	private $parser;
 
 	/**
 	 * @inheritDoc
@@ -57,101 +51,21 @@ class VisualDataApiAskQuery extends ApiBase {
 		$params = $this->extractRequestParams();
 		$output = $this->getContext()->getOutput();
 
-		$this->output = $output;
 		$data = json_decode( $params['data'], true );
 
-		// $parser = MediaWikiServices::getInstance()->getParserFactory()->getInstance();
-		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
-
-		// *** credits WikiTeQ
-		$title = RequestContext::getMain()->getTitle();
-		$poptions = $output->parserOptions();
-
-		// parsed query
-		$query = $parser->preprocess( $data['query'], $title, $poptions );
-		// -------------->
-
-		// @TODO
-		// set params like
-		$optionsMap = [
-			'order' => 'ORDER BY',
-			'limit' => 'LIMIT',
-			'offset' => 'OFFSET',
-			// 'sort' => '',
+		$wiki = [
+			'options-askquery' => $data['query'],
+			'askquery-schema' => $data['schema'],
+			'askquery-printouts' => $data['properties'],
+			'options-query-formula' => $data['options-query-formula'],
+			'options-label-formula' => $data['options-label-formula']
 		];
-		$params_ = [
-			'schema' => $data['schema'],
-			'format' => 'query'
-		];
-		$printouts = $data['properties'];
 
-		$output = RequestContext::getMain()->getOutput();
-		$templates = [];
-
-		[ $results, $isHtml ] = \VisualData::getResults(
-			$parser,
-			$output,
-			$query,
-			$templates,
-			$printouts,
-			$params_
-		);
-
-		if ( !empty( $data['options-query-formula'] ) ) {
-			$defaultValue = $data['options-query-formula'];
-		} else {
-			$defaultValue = implode( ' - ', array_map( static function ( $value ) {
-				return "<$value>";
-			}, $printouts ) );
-		}
-
-		$optionsValues = [];
-		foreach ( $results as $properties ) {
-			$value = $this->replaceFormula( $properties, $defaultValue );
-			// option value formula
-			if ( !empty( $data['options-query-formula'] ) ) {
-				$value = $this->parseWikitext( $value );
-			}
-
-			if ( empty( $value ) ) {
-				continue;
-			}
-
-			$label = $value;
-
-			// only available for MenuTagSearchMultiselect
-			if ( !empty( $data['options-label-formula'] ) ) {
-				$label = $this->parseWikitext(
-					$this->replaceFormula( $proprties, $data['options-label-formula'] ) );
-			}
-			$optionsValues[$value] = $label;
-		}
+		$schemaProcessor = new SchemaProcessor();
+		$schemaProcessor->setOutput( $output );
+		$optionsValues = $schemaProcessor->askQueryResults( $wiki );
 
 		$result->addValue( [ $this->getModuleName() ], 'result', json_encode( $optionsValues ) );
-	}
-
-	/**
-	 * @param string $str
-	 * @return string
-	 */
-	private	function parseWikitext( $str ) {
-		return Parser::stripOuterParagraph( $this->output->parseAsContent( $str ) );
-	}
-
-	/**
-	 * @param array $properties
-	 * @param array $formula
-	 * @return string
-	 */
-	private function replaceFormula( $properties, $formula ) {
-		preg_match_all( '/<\s*([^<>]+)\s*>/', $formula, $matches, PREG_PATTERN_ORDER );
-
-		foreach ( $properties as $property => $value ) {
-			if ( in_array( $property, $matches[1] ) ) {
-				$formula = preg_replace( '/\<\s*' . preg_quote( $property, '/' ) . '\s*\>/', $value, $formula );
-			}
-		}
-		return $formula;
 	}
 
 	/**

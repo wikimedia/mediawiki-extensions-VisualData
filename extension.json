@@ -1,7 +1,7 @@
 {
 	"name": "VisualData",
 	"author": "thomas-topway-it",
-	"version": "1.0",
+	"version": "1.0.1",
 	"url": "https://www.mediawiki.org/wiki/Extension:VisualData",
 	"descriptionmsg": "visualdata-extension-desc",
 	"license-name": "GPL-2.0-or-later",
@@ -243,30 +243,6 @@
 			"dependencies": [
 			]
 		},
-		"ext.VisualData.PageButtons": {
-			"position": "top",
-			"scripts": [
-				"VisualDataFunctions.js",
-				"VisualDataPageButtons.js"
-			],
-			"styles": [
-			],
-			"dependencies": [
-				"ext.VisualData.promise-polyfill",
-				"mediawiki.util",
-				"mediawiki.base",
-				"mediawiki.cookie",
-				"oojs-ui-core",
-				"oojs-ui-widgets",
-				"mediawiki.storage",
-				"oojs-ui.styles.icons-media",
-				"oojs-ui.styles.icons-movement",
-				"oojs-ui.styles.icons-interactions",
-				"oojs-ui.styles.icons-editing-core"
-			],
-			"messages": [
-			]
-		},
 		"ext.VisualData.EditSchemas": {
 			"position": "top",
 			"scripts": [
@@ -346,8 +322,9 @@
 				"visualdata-jsmodule-schemas-unique-items",
 				"visualdata-jsmodule-schemas-unique-items-help",
 				"visualdata-jsmodule-forms-field-options-from",
-				"visualdata-jsmodule-forms-optionsfrom-optionsvalues",
-				"visualdata-jsmodule-forms-optionsfrom-optionswikilist",
+				"visualdata-jsmodule-forms-optionsfrom-values",
+				"visualdata-jsmodule-forms-optionsfrom-wikilist",
+				"visualdata-jsmodule-forms-optionsfrom-askquery",
 				"visualdata-jsmodule-forms-field-options-values",
 				"visualdata-jsmodule-forms-field-options-label-formula",
 				"visualdata-jsmodule-forms-field-options-label-formula-help",
@@ -394,6 +371,7 @@
 				"visualdata-jsmodule-visualdata-delete",
 				"visualdata-jsmodule-visualdata-delete-data-confirm",
 				"visualdata-jsmodule-formfield-message-more-inputs",
+				"visualdata-jsmodule-formfield-message-options-askquery",
 				"visualdata-menutagmultiselect-placeholder",
 				"visualdata-jsmodule-formfield-message-schemapage",
 				"visualdata-jsmodule-schemas-container-schema",
@@ -406,8 +384,6 @@
 		}
 	},
 	"config": {
-		"VisualDataDisableJsonLD": false,
-		"VisualDataAddTrackingCategory": false,
 		"VisualDataDisableSidebarLink": false,
 		"VisualDataDisableNavigationLink": false,
 		"VisualDataOpenExternalLinksInNewTab": false,

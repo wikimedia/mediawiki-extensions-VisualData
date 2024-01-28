@@ -30,7 +30,7 @@ class VisualDataApiSubmitForm extends ApiBase {
 	 * @inheritDoc
 	 */
 	public function isWriteMode() {
-		return false;
+		return true;
 	}
 
 	/**

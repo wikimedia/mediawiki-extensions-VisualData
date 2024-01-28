@@ -113,24 +113,26 @@ class VisualDataHooks {
 		if ( !empty( $GLOBALS['wgVisualDataShowSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
+			
+			if ( array_key_exists( $slot, $slots ) ) {
+				$slot_content = $slots[ $slot ]->getContent();
+				$contentHandler = $slot_content->getContentHandler();
 
-			$slot_content = $slots[ $slot ]->getContent();
-			$contentHandler = $slot_content->getContentHandler();
-
-			// @TODO: find a more reliable method
-			if ( class_exists( 'MediaWiki\Content\Renderer\ContentParseParams' ) ) {
-				// see includes/content/AbstractContent.php
-				$cpoParams = new MediaWiki\Content\Renderer\ContentParseParams( $title, $revId, $options, $generateHtml );
-				$contentHandler->fillParserOutputInternal( $slot_content, $cpoParams, $output );
-
-			} else {
 				// @TODO: find a more reliable method
-				$output = MediaWikiServices::getInstance()->getParser()
-					->parse( $slot_content->getText(), $title, $options, true, true, $revId );
+				if ( class_exists( 'MediaWiki\Content\Renderer\ContentParseParams' ) ) {
+					// see includes/content/AbstractContent.php
+					$cpoParams = new MediaWiki\Content\Renderer\ContentParseParams( $title, $revId, $options, $generateHtml );
+					$contentHandler->fillParserOutputInternal( $slot_content, $cpoParams, $output );
+
+				} else {
+					// @TODO: find a more reliable method
+					$output = MediaWikiServices::getInstance()->getParser()
+						->parse( $slot_content->getText(), $title, $options, true, true, $revId );
+				}
+				// this will prevent includes/content/AbstractContent.php
+				// fillParserOutput from running
+				return false;
 			}
-			// this will prevent includes/content/AbstractContent.php
-			// fillParserOutput from running
-			return false;
 		}
 	}
 
@@ -398,22 +400,6 @@ class VisualDataHooks {
 			] );
 
 			$out->addModules( 'ext.VisualData.EditSchemas' );
-		}
-
-		if ( $parserOutput->getExtensionData( 'visualdatabutton' ) !== null ) {
-			$pageButtons = $parserOutput->getExtensionData( 'visualdatabuttons' );
-
-			foreach ( $pageButtons as $buttonID => $value ) {
-				if ( !empty( $value['preload'] ) ) {
-					$pageButtons[$buttonID]['data'] = \VisualData::getPreloadData( $value['preload'] );
-				}
-			}
-
-			$out->addJsConfigVars( [
-				'visualdata-pageButtons' => json_encode( $pageButtons, true ),
-			] );
-
-			$out->addModules( 'ext.VisualData.PageButtons' );
 		}
 	}
 

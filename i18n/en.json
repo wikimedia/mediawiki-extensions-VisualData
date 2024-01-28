@@ -66,17 +66,21 @@
 	"visualdata-parserfunction-button-label-description": "button label",
 	"visualdata-parserfunction-button-label-example": "",
 
+	"visualdata-parserfunction-button-value-label": "label",
+	"visualdata-parserfunction-button-value-description": "button value",
+	"visualdata-parserfunction-button-value-example": "",
+
 	"visualdata-parserfunction-button-callback-label": "callback",
 	"visualdata-parserfunction-button-callback-description": "(javascript) callback function",
 	"visualdata-parserfunction-button-callback-example": "",
 
-	"visualdata-parserfunction-button-preload-label": "preload",
-	"visualdata-parserfunction-button-preload-description": "pagename with json data",
-	"visualdata-parserfunction-button-preload-example": "",
+	"visualdata-parserfunction-button-schema-label": "schema",
+	"visualdata-parserfunction-button-schema-description": "schema name",
+	"visualdata-parserfunction-button-schema-example": "",
 
-	"visualdata-parserfunction-button-value-label": "value",
-	"visualdata-parserfunction-button-value-description": "value string",
-	"visualdata-parserfunction-button-value-example": "",
+	"visualdata-parserfunction-button-edit-page-label": "edit-page",
+	"visualdata-parserfunction-button-edit-page-description": "edit page",
+	"visualdata-parserfunction-button-edit-page-example": "",
 
 	"visualdata-parserfunction-button-icon-label": "icon",
 	"visualdata-parserfunction-button-icon-description": "icon name (Mediawiki's OOUI)",
@@ -298,8 +302,15 @@
 	"visualdata-jsmodule-schemas-unique-items": "unique items",
 	"visualdata-jsmodule-schemas-unique-items-help": "",
 	"visualdata-jsmodule-forms-field-options-from": "Options from",
+	
 	"visualdata-jsmodule-forms-optionsfrom-optionsvalues": "as defined",
 	"visualdata-jsmodule-forms-optionsfrom-optionswikilist": "wiki list",
+	
+	"visualdata-jsmodule-forms-field-options-from": "Options from",
+	"visualdata-jsmodule-forms-optionsfrom-values": "as defined",
+	"visualdata-jsmodule-forms-optionsfrom-wikilist": "wiki list",
+	"visualdata-jsmodule-forms-optionsfrom-askquery": "ask query",
+	
 	"visualdata-jsmodule-forms-field-options-values": "enter one or more values",
 	"visualdata-jsmodule-forms-field-options-label-formula": "options label formula",
 	"visualdata-jsmodule-forms-field-options-label-formula-help": "This will adjust how options are shown to the user without affecting their saved value. <value> will be replaced with the value of the current option. You can use parser functions and wikitext.",
@@ -325,7 +336,7 @@
 	"visualdata-jsmodule-forms-content-models": "Set content-model",
 	"visualdata-jsmodule-forms-pagename": "Page name",
 	"visualdata-jsmodule-forms-field-valueformula": "value formula",
-	"visualdata-jsmodule-forms-field-valueformula-help": "enter a template/parser function if you want to alter the value of this field before saving. Use <value> to retrieve the value of the current field, or <name> to retrieve the value of other fields in the same form: if a nested property use the complete path separated by slashes and omit array indexes for multiple items",
+	"visualdata-jsmodule-forms-field-valueformula-help": "enter a template/parser function if you want to alter the value of this field before saving. Use <value> to retrieve the value of the current field, or <name> to retrieve the value of other fields in the same form: if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items",
 	"visualdata-jsmodule-forms-visibility-create-only": "create only",
 	"visualdata-jsmodule-forms-visibility-hidden": "hidden",
 	"visualdata-jsmodule-schemas-alert-existing-item": "existing item",
@@ -350,9 +361,9 @@
 	"visualdata-jsmodule-forms-field-askquery-schema-label": "schema",
 	"visualdata-jsmodule-forms-field-askquery-schema-help": "schema to be queried",
 	"visualdata-jsmodule-forms-field-askquery-label": "ask query",
-	"visualdata-jsmodule-forms-field-askquery-help": "enter an ask query (wikitext and parser functions allowed). Use <value> to use the current value of the lookup element, or <name> to retrieve the value of other fields in the same form: if a nested property use the complete path separated by slashes and omit array indexes for multiple items",
+	"visualdata-jsmodule-forms-field-askquery-help": "Enter an ask query (wikitext and parser functions allowed). Use <value> to use the current value of the lookup element, or <name> to retrieve the value of other fields in the same form: if a nested property use the complete path separated by slashes and omit array indexes for multiple items",
 	"visualdata-jsmodule-forms-field-printouts": "printouts",
-	"visualdata-jsmodule-forms-field-printouts-help": "enter the properties to be retrieved by the query. If empty, the query will return the page titles",
+	"visualdata-jsmodule-forms-field-printouts-help": "Enter the properties to be retrieved by the query (if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items). Use 'pagetitle' to return the page titles.",
 
 	"visualdata-jsmodule-forms-field-optionformula": "option value formula",
 	"visualdata-jsmodule-forms-field-optionformula-help": "wikitext and parser functions allowed (use <name> to retrieve the value of the requested properties, where 'name' is the full path separated by slashes if a nested property)",
@@ -364,6 +375,7 @@
 
 	"visualdata-special-submit-notitle": "title not set or invalid",
 	"visualdata-jsmodule-formfield-message-more-inputs": "Available input widgets depend on the data-type and the multiple toggle",
+	"visualdata-jsmodule-formfield-message-options-askquery": "Selected input widget will show all options at once, use 'LookupElement' or 'MenuTagSearchMultiselect' for lists of arbitrary length",
 
 	"visualdata-menutagmultiselect-placeholder": "search items",
 
@@ -373,5 +385,4 @@
 	"visualdata-jsmodule-dialog-cancel": "cancel",
 	"visualdata-jsmodule-dialog-main": "main",
 	"visualdata-special-browse-pager-noschema": "no schema"
-
 }

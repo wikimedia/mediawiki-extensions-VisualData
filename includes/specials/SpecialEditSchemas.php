@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2021-2023, https://wikisphere.org
+ * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
 // @TODO implement as form
@@ -63,6 +63,9 @@ class SpecialEditSchemas extends SpecialPage {
 		$user = $this->getUser();
 
 		$this->user = $user;
+
+		// This will throw exceptions if there's a problem
+		// $this->checkExecutePermissions( $user );
 
 		$securityLevel = $this->getLoginSecurityLevel();
 
@@ -113,8 +116,6 @@ class SpecialEditSchemas extends SpecialPage {
 
 		$schemas = array_unique( $schemas );
 
-		$formID = \VisualData::formID( $this->title ? $this->title : $out->getTitle(), $schemas, 1 );
-
 		$targetSlot = \VisualData::getTargetSlot( $this->title );
 
 		$options = [
@@ -139,7 +140,7 @@ class SpecialEditSchemas extends SpecialPage {
 		// }
 
 		$pageForms = [
-			$formID => [
+			[
 				'options' => $params,
 				'schemas' => $schemas
 			]
@@ -168,7 +169,7 @@ class SpecialEditSchemas extends SpecialPage {
 		);
 
 		$out->addHTML( Html::rawElement( 'div', [
-				'id' => 'visualdataform-wrapper-' . $formID,
+				'id' => 'visualdataform-wrapper-' . ( count( $pageForms ) - 1 ),
 				'class' => 'VisualDataFormWrapper'
 			], $loadingContainer )
 		);

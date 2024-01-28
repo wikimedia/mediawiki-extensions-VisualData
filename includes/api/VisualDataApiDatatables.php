@@ -19,8 +19,11 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
+
+use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
+use MediaWiki\Extension\VisualData\ResultPrinters\QueryResultPrinter as QueryResultPrinter;
 
 class VisualDataApiDatatables extends ApiBase {
 
@@ -85,7 +88,7 @@ class VisualDataApiDatatables extends ApiBase {
 		$output = RequestContext::getMain()->getOutput();
 		$templates = [];
 
-		[ $results, $isHtml ] = \VisualData::getResults(
+		$resultPrinter = \VisualData::getResults(
 			$parser,
 			$output,
 			$query,
@@ -93,6 +96,7 @@ class VisualDataApiDatatables extends ApiBase {
 			$printouts,
 			$params_
 		);
+		$results = ( $resultPrinter ? $resultPrinter->getResults() : [] );
 
 		$rows = [];
 		foreach ( $results as $row ) {
