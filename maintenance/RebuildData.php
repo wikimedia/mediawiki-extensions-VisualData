@@ -154,11 +154,11 @@ class RebuildData extends Maintenance {
 		for ( $i = 0; $i <= $maxByPageId; $i++ ) {
 			$title = Title::newFromID( $i );
 
-			echo "processing $i/$maxByPageId" . PHP_EOL;
-
 			if ( !$title || !$title->isKnown() ) {
 				continue;
 			}
+
+			echo "processing $i/$maxByPageId" . PHP_EOL;
 
 			foreach ( $this->excludePrefix as $prefix ) {
 				if ( strpos( $title->getFullText(), $prefix ) === 0 ) {
