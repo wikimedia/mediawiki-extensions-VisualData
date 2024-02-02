@@ -90,8 +90,8 @@ const VisualDataContentBlock = function ( phpConfig, windowManager ) {
 
 		items.push(
 			new OO.ui.FieldLayout( contentInput, {
-				label: mw.msg( 'visualdata-jsmodule-forms-contentblock-content' ),
-				help: mw.msg( 'visualdata-jsmodule-forms-contentblock-content-help' ),
+				label: mw.msg( 'visualdata-jsmodule-contentblock-content' ),
+				help: mw.msg( 'visualdata-jsmodule-contentblock-content-help' ),
 				helpInline: true,
 				align: 'top'
 			} )
@@ -225,7 +225,7 @@ const VisualDataContentBlock = function ( phpConfig, windowManager ) {
 			fieldName ||
 			VisualDataFunctions.createNewKey(
 				parentObj,
-				mw.msg( 'visualdata-jsmodule-forms-contentblock-newlabel' )
+				mw.msg( 'visualdata-jsmodule-contentblock-newlabel' )
 			);
 
 		var processDialog = new ProcessDialog( {
