@@ -238,7 +238,7 @@ const VisualDataContentBlock = function ( phpConfig, windowManager ) {
 				// The following messages are used here:
 				// * visualdata-jsmodule-manageproperties-define-property
 				// * visualdata-jsmodule-manageproperties-define-property - [name]
-				'visualdata-jsmodule-forms-definefield'
+				'visualdata-jsmodule-formfield-definefield'
 			) + ( fieldName ? ' - ' + fieldName : '' ) }
 		);
 	}
