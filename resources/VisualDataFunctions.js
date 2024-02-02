@@ -308,7 +308,7 @@ VisualDataFunctions = ( function () {
 						flags: [ 'progressive' ],
 						icon: 'upload',
 						// classes: [ 'visualdata-SelectFileWidget-button' ],
-						label: mw.msg( 'visualdata-jsmodule-visualdata-upload' )
+						label: mw.msg( 'visualdata-jsmodule-forms-upload' )
 					};
 				}
 				break;
