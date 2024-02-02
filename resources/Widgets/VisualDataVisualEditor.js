@@ -67,6 +67,7 @@
 		this.destroyEditor();
 		var self = this;
 		self.initialized = true;
+
 		this.loadVEForAll().then( function () {
 			// if (!self.isHtml) {
 			// 	return;
@@ -151,8 +152,8 @@
 		var self = this;
 		var editor = this.getEditor();
 
-		if ( !this.initialized ) {
-			return null;
+		if ( !this.initialized || !editor ) {
+			return this.textarea.val();
 		}
 
 		// if (this.isHtml) {

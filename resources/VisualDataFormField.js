@@ -133,19 +133,19 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				{
 					data: 'options-values',
 					label: mw.msg(
-						'visualdata-jsmodule-forms-optionsfrom-values'
+						'visualdata-jsmodule-formfield-optionsfrom-values'
 					)
 				},
 				{
 					data: 'options-wikilist',
 					label: mw.msg(
-						'visualdata-jsmodule-forms-optionsfrom-wikilist'
+						'visualdata-jsmodule-formfield-optionsfrom-wikilist'
 					)
 				},
 				{
 					data: 'options-askquery',
 					label: mw.msg(
-						'visualdata-jsmodule-forms-optionsfrom-askquery'
+						'visualdata-jsmodule-formfield-optionsfrom-askquery'
 					)
 				}
 			],
@@ -158,7 +158,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var fieldNullValue = new OO.ui.FieldLayout( nullValueInput, {
 			label: '',
-			help: mw.msg( 'visualdata-jsmodule-forms-field-nullvalue' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-nullvalue' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -170,7 +170,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var fieldSelectOptionsFrom = new OO.ui.FieldLayout( selectOptionsFrom, {
 			label: new OO.ui.HtmlSnippet(
-				mw.msg( 'visualdata-jsmodule-forms-field-options-from' )
+				mw.msg( 'visualdata-jsmodule-formfield-options-from' )
 			),
 			align: 'top'
 		} );
@@ -194,7 +194,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var fieldOptionsValues = new OO.ui.FieldLayout( optionsValuesInput, {
 			label: '',
-			help: mw.msg( 'visualdata-jsmodule-forms-field-options-values' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-options-values' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -207,7 +207,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var fieldWikilist = new OO.ui.FieldLayout( wikilistInput, {
 			label: '',
-			help: mw.msg( 'visualdata-jsmodule-forms-field-wikilist' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-wikilist' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -225,10 +225,10 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			optionsLabelFormulaInput,
 			{
 				label: mw.msg(
-					'visualdata-jsmodule-forms-field-options-label-formula'
+					'visualdata-jsmodule-formfield-options-label-formula'
 				),
 				help: mw.msg(
-					'visualdata-jsmodule-forms-field-options-label-formula-help'
+					'visualdata-jsmodule-formfield-options-label-formula-help'
 				),
 				helpInline: true,
 				align: 'top'
@@ -337,8 +337,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		} );
 
 		var fieldAskquery = new OO.ui.FieldLayout( askqueryInput, {
-			label: mw.msg( 'visualdata-jsmodule-forms-field-askquery-label' ),
-			help: mw.msg( 'visualdata-jsmodule-forms-field-askquery-help' ),
+			label: mw.msg( 'visualdata-jsmodule-formfield-askquery-label' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-askquery-help' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -355,9 +355,9 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var fieldSchema = new OO.ui.FieldLayout( schemaInput, {
 			label: mw.msg(
-				'visualdata-jsmodule-forms-field-askquery-schema-label'
+				'visualdata-jsmodule-formfield-askquery-schema-label'
 			),
-			help: mw.msg( 'visualdata-jsmodule-forms-field-askquery-schema-help' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-askquery-schema-help' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -379,8 +379,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		} );
 
 		var fieldPrintouts = new OO.ui.FieldLayout( printoutsInput, {
-			label: mw.msg( 'visualdata-jsmodule-forms-field-printouts' ),
-			help: mw.msg( 'visualdata-jsmodule-forms-field-printouts-help' ),
+			label: mw.msg( 'visualdata-jsmodule-formfield-printouts' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-printouts-help' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -392,8 +392,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		} );
 
 		var fieldOptionFormula = new OO.ui.FieldLayout( optionFormulaInput, {
-			label: mw.msg( 'visualdata-jsmodule-forms-field-optionformula' ),
-			help: mw.msg( 'visualdata-jsmodule-forms-field-optionformula-help' ),
+			label: mw.msg( 'visualdata-jsmodule-formfield-optionformula' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-optionformula-help' ),
 			helpInline: true,
 			align: 'top'
 		} );
@@ -412,10 +412,10 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			optionsLabelFormulaInput,
 			{
 				label: mw.msg(
-					'visualdata-jsmodule-forms-field-options-label-formula'
+					'visualdata-jsmodule-formfield-options-label-formula'
 				),
 				help: mw.msg(
-					'visualdata-jsmodule-forms-field-options-label-formula-help'
+					'visualdata-jsmodule-formfield-options-label-formula-help'
 				),
 				helpInline: true,
 				align: 'top'
@@ -565,9 +565,9 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		items.push(
 			new OO.ui.FieldLayout( helpMessageInput, {
-				label: mw.msg( 'visualdata-jsmodule-forms-field-help-message' ),
+				label: mw.msg( 'visualdata-jsmodule-formfield-help-message' ),
 				helpInline: true,
-				help: mw.msg( 'visualdata-jsmodule-forms-contentblock-content-help' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-contentblock-content-help' ),
 				align: 'top'
 			} )
 		);
@@ -576,11 +576,11 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var visibilityInput = new OO.ui.DropdownInputWidget( {
 			options: VisualDataFunctions.createDropDownOptions( {
-				visible: mw.msg( 'visualdata-jsmodule-forms-visibility-visible' ),
+				visible: mw.msg( 'visualdata-jsmodule-formfield-visibility-visible' ),
 				'oncreate-only': mw.msg(
-					'visualdata-jsmodule-forms-visibility-create-only'
+					'visualdata-jsmodule-formfield-visibility-create-only'
 				),
-				hidden: mw.msg( 'visualdata-jsmodule-forms-visibility-hidden' )
+				hidden: mw.msg( 'visualdata-jsmodule-formfield-visibility-hidden' )
 			} ),
 			value: visibilityInputValue
 		} );
@@ -589,8 +589,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		items.push(
 			new OO.ui.FieldLayout( visibilityInput, {
-				label: mw.msg( 'visualdata-jsmodule-forms-field-visibility-label' ),
-				help: mw.msg( 'visualdata-jsmodule-forms-field-visibility-help' ),
+				label: mw.msg( 'visualdata-jsmodule-formfield-visibility-label' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-visibility-help' ),
 				helpInline: true,
 				align: 'top'
 			} )
@@ -1024,8 +1024,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		items.push(
 			new OO.ui.FieldLayout( valueFormulaInput, {
-				label: mw.msg( 'visualdata-jsmodule-forms-field-valueformula' ),
-				help: mw.msg( 'visualdata-jsmodule-forms-field-valueformula-help' ),
+				label: mw.msg( 'visualdata-jsmodule-formfield-valueformula' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-valueformula-help' ),
 				helpInline: true,
 				align: 'top'
 			} )
@@ -1253,7 +1253,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 					// The following messages are used here:
 					// * visualdata-jsmodule-manageproperties-define-property
 					// * visualdata-jsmodule-manageproperties-define-property - [name]
-					'visualdata-jsmodule-forms-definefield'
+					'visualdata-jsmodule-formfield-definefield'
 				) + ( fieldName ? ' - ' + fieldName : '' )
 		} );
 	}

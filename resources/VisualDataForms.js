@@ -113,7 +113,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// add: "please report the issue in the talk page
 		// of the extension"
 		Fields[ schemaName ].setLabel(
-			errorMessage || mw.msg( 'visualdata-jsmodule-pageforms-form-error' )
+			errorMessage || mw.msg( 'visualdata-jsmodule-forms-form-error' )
 		);
 
 		for ( var path in errors ) {
@@ -303,22 +303,20 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			};
 
 			return new Promise( ( resolve, reject ) => {
-				mw.loader.using( 'mediawiki.api', function () {
-					new mw.Api()
-						.postWithToken( 'csrf', payload )
-						.done( function ( thisRes ) {
-							if ( payload.action in thisRes ) {
-								var thisData = thisRes[ payload.action ];
-								thisData = JSON.parse( thisData.result );
-								resolve( thisData );
-							}
-						} )
-						.fail( function ( thisRes ) {
-							// eslint-disable-next-line no-console
-							console.error( 'visualdata-askquery', thisRes );
-							reject( thisRes );
-						} );
-				} );
+				new mw.Api()
+					.postWithToken( 'csrf', payload )
+					.done( function ( thisRes ) {
+						if ( payload.action in thisRes ) {
+							var thisData = thisRes[ payload.action ];
+							thisData = JSON.parse( thisData.result );
+							resolve( thisData );
+						}
+					} )
+					.fail( function ( thisRes ) {
+						// eslint-disable-next-line no-console
+						console.error( 'visualdata-askquery', thisRes );
+						reject( thisRes );
+					} );
 			} ).catch( ( err ) => {
 				VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
 			} );
@@ -756,12 +754,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		{
 			action: 'save',
 			// modes: "edit",
-			label: mw.msg( 'visualdata-jsmodule-visualdata-searchdialog-save' ),
+			label: mw.msg( 'visualdata-jsmodule-forms-searchdialog-save' ),
 			flags: [ 'primary', 'progressive' ]
 		},
 		{
 			// modes: "edit",
-			label: mw.msg( 'visualdata-jsmodule-visualdata-cancel' ),
+			label: mw.msg( 'visualdata-jsmodule-forms-cancel' ),
 			flags: [ 'safe', 'close' ]
 		}
 	];
@@ -791,7 +789,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					}
 
 					if ( missingSchemas.length ) {
-						VisualDataSchemas.loadSchemas( missingSchemas );
+						VisualData.loadSchemas( missingSchemas );
 					} else {
 						updatePanels();
 					}
@@ -824,7 +822,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		WindowManager.newWindow( processDialogSearch, {
 			title: mw.msg(
-				'visualdata-jsmodule-visualdata-dialogsearch-selectschemas'
+				'visualdata-jsmodule-forms-dialogsearch-selectschemas'
 			)
 		} );
 	}
@@ -856,7 +854,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		};
 
 		var loadDataBeforeSelect = function () {
-			var dataToLoad = VisualDataFunctions.matchLoadedData( Config, [
+			var dataToLoad = VisualData.matchLoadedData( Config, [
 				'schemas'
 			] );
 
@@ -867,7 +865,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			this.setDisabled( true );
 			this.pushPending();
 
-			VisualDataFunctions.loadData( Config, dataToLoad )
+			VisualData.loadData( Config, dataToLoad )
 				.then( ( res ) => {
 					if ( 'schemas' in res ) {
 						Schemas = res.schemas;
@@ -897,7 +895,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				name: 'addremoveschemas',
 				icon: 'add',
 				title: mw.msg(
-					'visualdata-jsmodule-visualdata-addremoveschemas'
+					'visualdata-jsmodule-forms-addremoveschemas'
 				),
 				onSelect: onSelect
 			} );
@@ -956,7 +954,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		};
 
 		var loadDataBeforeSelect = function () {
-			var dataToLoad = VisualDataFunctions.matchLoadedData( Config, [
+			var dataToLoad = VisualData.matchLoadedData( Config, [
 				// "forms",
 				'schemas'
 				// "semantic-properties",
@@ -979,7 +977,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			$( ToolbarMain.$bar ).find( '.wrapper' ).css( 'pointer-events', 'none' );
 
-			VisualDataFunctions.loadData( Config, dataToLoad )
+			VisualData.loadData( Config, dataToLoad )
 				.then( ( res ) => {
 					// this.setDisabled(false);
 					// this.popPending();
@@ -1015,13 +1013,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			{
 				name: 'visualdata',
 				icon: null,
-				title: mw.msg( 'visualdata-jsmodule-visualdata-page-properties' ),
+				title: mw.msg( 'visualdata-jsmodule-forms-edit-data' ),
 				onSelect: onSelect
 			},
 			{
 				name: 'manage-schemas',
 				icon: null,
-				title: mw.msg( 'visualdata-jsmodule-visualdata-manage-schemas' ),
+				title: mw.msg( 'visualdata-jsmodule-forms-manage-schemas' ),
 				onSelect: loadDataBeforeSelect
 				// config: {
 				// 	data: { disabled: disabled },
@@ -1030,7 +1028,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			// {
 			// 	name: 'manage-forms',
 			// 	icon: null,
-			// 	title: mw.msg( 'visualdata-jsmodule-visualdata-manage-forms' ),
+			// 	title: mw.msg( 'visualdata-jsmodule-forms-manage-forms' ),
 			// 	onSelect: loadDataBeforeSelect
 			// 	// config: {
 			// 	// 	data: { disabled: disabled },
@@ -1540,7 +1538,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 					items.push(
 						new OO.ui.FieldLayout( inputWidget, {
-							label: mw.msg( 'visualdata-jsmodule-formedit-freetext' ),
+							label: mw.msg( 'visualdata-jsmodule-forms-freetext' ),
 							align: data.fieldAlign
 						} )
 					);
@@ -2162,9 +2160,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	function getArticlePanel() {
 		var userDefined = Config.isNewPage && Form.options[ 'edit-page' ] === '';
 
-		var editFreeText = Config.isNewPage && Config.context === 'EditSchemas';
-		var editContentModel = Config.context === 'EditSchemas';
-		var editCategories = Config.context === 'EditSchemas';
+		var editFreeText = Config.isNewPage && Config.context === 'EditData';
+		var editContentModel = Config.context === 'EditData';
+		var editCategories = Config.context === 'EditData';
 
 		var categories = [];
 
@@ -2231,7 +2229,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			// classes: ["PanelProperties-panel-section"],
 			data: {
 				name: 'article',
-				label: mw.msg( 'visualdata-jsmodule-formedit-wiki' ),
+				label: mw.msg( 'visualdata-jsmodule-forms-wiki' ),
 				userDefined: userDefined,
 				editFreeText: editFreeText,
 				editCategories: editCategories,
@@ -2419,6 +2417,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		// this.$body.append(this.data.OuterStack.$element);
 
+		// showVisualEditor();
+
 		setTimeout( function () {
 			VisualDataFunctions.removeNbspFromLayoutHeader(
 				'#visualdataform-wrapper-dialog-' + FormID
@@ -2432,7 +2432,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			( action === 'delete' &&
 				// eslint-disable-next-line no-alert
 				!confirm(
-					mw.msg( 'visualdata-jsmodule-visualdata-delete-data-confirm' )
+					mw.msg( 'visualdata-jsmodule-forms-delete-data-confirm' )
 				) )
 		) {
 			return ProcessDialog.super.prototype.getActionProcess.call( this, action );
@@ -2482,39 +2482,38 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 								action: 'visualdata-submit-form'
 							};
 
-							return new Promise( ( resolve, reject ) => {
-								mw.loader.using( 'mediawiki.api', function () {
-									new mw.Api()
-										.postWithToken( 'csrf', payload )
-										.done( function ( thisRes ) {
-											resolve();
-											if ( payload.action in thisRes ) {
-												var data = JSON.parse( thisRes[ payload.action ].result );
-												if ( !data.errors.length ) {
-													WindowManager.closeActiveWindow();
-													// @FIXME reload only if the changes affect
-													// the current page
-													if ( data[ 'target-url' ] === window.location.href ) {
-														window.location.reload();
-													} else {
-														window.location.href = data[ 'target-url' ];
-													}
+							return new Promise( ( resolve, reject ) => {								
+								new mw.Api()
+									.postWithToken( 'csrf', payload )
+									.done( function ( thisRes ) {
+										resolve();
+										if ( payload.action in thisRes ) {
+											var data = JSON.parse( thisRes[ payload.action ].result );
+											if ( !data.errors.length ) {
+												WindowManager.closeActiveWindow();
+												// @FIXME reload only if the changes affect
+												// the current page
+												if ( data[ 'target-url' ] === window.location.href ) {
+													window.location.reload();
 												} else {
-													VisualDataFunctions.OOUIAlert(
-														new OO.ui.HtmlSnippet( data.errors.join( '<br />' ) ),
-														{
-															size: 'medium'
-														}
-													);
+													window.location.href = data[ 'target-url' ];
 												}
+											} else {
+												VisualDataFunctions.OOUIAlert(
+													new OO.ui.HtmlSnippet( data.errors.join( '<br />' ) ),
+													{
+														size: 'medium'
+													}
+												);
 											}
-										} )
-										.fail( function ( thisRes ) {
-											// eslint-disable-next-line no-console
-											console.error( 'visualdata-submit-form', res );
-											reject( thisRes );
-										} );
-								} );
+										}
+									} )
+									.fail( function ( thisRes ) {
+										// eslint-disable-next-line no-console
+										console.error( 'visualdata-submit-form', res );
+										reject( thisRes );
+									} );
+								
 							} );
 						} ).catch( ( err ) => {
 							VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
@@ -2594,7 +2593,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function hasStoredJsonData() {
-		if ( Config.context !== 'EditSchemas' && Form.options.action !== 'edit' ) {
+		if ( Config.context !== 'EditData' && Form.options.action !== 'edit' ) {
 			return false;
 		}
 
@@ -2761,7 +2760,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			label:
 				!( 'submit-button-text' in Form.options ) ||
 				Form.options[ 'submit-button-text' ] === '' ?
-					mw.msg( 'visualdata-jsmodule-visualdata-submit' ) :
+					mw.msg( 'visualdata-jsmodule-forms-submit' ) :
 					Form.options[ 'submit-button-text' ],
 
 			flags: [ 'primary', 'progressive' ],
@@ -2776,7 +2775,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			label:
 				!( 'validate-button-text' in Form.options ) ||
 				Form.options[ 'validate-button-text' ] === '' ?
-					mw.msg( 'visualdata-jsmodule-visualdata-validate' ) :
+					mw.msg( 'visualdata-jsmodule-forms-validate' ) :
 					Form.options[ 'validate-button-text' ],
 			classes: [ 'VisualDataFormSubmitButton' ],
 			flags: [ 'primary', 'progressive' ]
@@ -2807,7 +2806,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		var printDeleteButton = hasStoredJsonData();
 
 		DeleteButton = new OO.ui.ButtonInputWidget( {
-			label: mw.msg( 'visualdata-jsmodule-visualdata-delete' ),
+			label: mw.msg( 'visualdata-jsmodule-forms-delete' ),
 			classes: [ 'VisualDataFormSubmitButton' ],
 			flags: [ 'destructive' ],
 			type: 'submit'
@@ -2816,7 +2815,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		formContent.push( DeleteButton.$element );
 
 		GoBackButton = new OO.ui.ButtonInputWidget( {
-			label: mw.msg( 'visualdata-jsmodule-visualdata-goback' ),
+			label: mw.msg( 'visualdata-jsmodule-forms-goback' ),
 			classes: [ 'VisualDataFormSubmitButton' ],
 			flags: [ 'progressive' ],
 			icon: 'arrowPrevious'
@@ -2863,7 +2862,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			if (
 				// eslint-disable-next-line no-alert
 				confirm(
-					mw.msg( 'visualdata-jsmodule-visualdata-delete-data-confirm' )
+					mw.msg( 'visualdata-jsmodule-forms-delete-data-confirm' )
 				)
 			) {
 				form.$element.data( { delete: true } );
@@ -2884,13 +2883,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		form.$element.on( 'submit', onSubmit );
 
-		var editToolbar = Config.canmanageschemas;
+		var editToolbar = Config.canmanageschemas || Config.caneditdata;
 
 		if ( Config.context === 'parserfunction' || !editToolbar ) {
 			$( '#visualdataform-wrapper-' + FormID ).html( form.$element );
 
 			// eslint-disable-next-line no-jquery/no-global-selector
 			$( '#mw-rcfilters-spinner-wrapper' ).remove();
+
+			// showVisualEditor();
 
 			setTimeout( function () {
 				VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
@@ -2900,7 +2901,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		var items = [];
-		ToolbarMain = createToolbar( Config.context === 'EditSchemas' );
+		ToolbarMain = createToolbar( Config.context === 'EditData' );
 
 		var frameA = new OO.ui.PanelLayout( {
 			$content: [ ToolbarMain.$element, form.$element ],
@@ -2912,10 +2913,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		items.push( frameA );
 
-		ActionToolbarMain = createActionToolbar( Config.context === 'EditSchemas' );
-		ToolbarMain.$actions.append( ActionToolbarMain.$element );
-
 		if ( Config.canmanageschemas ) {
+			ActionToolbarMain = createActionToolbar( Config.context === 'EditData' );
+			ToolbarMain.$actions.append( ActionToolbarMain.$element );
+
 			// https://gerrit.wikimedia.org/r/plugins/gitiles/oojs/ui/+/c2805c7e9e83e2f3a857451d46c80231d1658a0f/demos/pages/layouts.js
 			var toolbarSchemas = VisualDataSchemas.createToolbarA();
 			var contentSchemas = new OO.ui.PanelLayout( {
@@ -2925,7 +2926,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				expanded: false,
 				framed: true,
 				padded: true,
-				classes: [ 'VisualDataEditSchemasOuterStackPanel' ]
+				classes: [ 'VisualDataEditDataOuterStackPanel' ]
 			} );
 
 			var frameSchemas = new OO.ui.PanelLayout( {
@@ -2968,7 +2969,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		if ( Config.canmanageschemas ) {
 			var actionToolbarSchemas = createActionToolbar(
-				Config.context === 'EditSchemas'
+				Config.context === 'EditData'
 			);
 			toolbarSchemas.$actions.append( actionToolbarSchemas.$element );
 		}
@@ -2991,6 +2992,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// }
 
 		$( '#mw-rcfilters-spinner-wrapper' ).remove();
+
+		// showVisualEditor();
 
 		setTimeout( function () {
 			VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
@@ -3030,11 +3033,9 @@ $( function () {
 		submissionData = {};
 	}
 
-	var instances = [];
-	if (
-		config.context === 'parserfunction' ||
-		config.context === 'EditSchemas'
-	) {
+	function init() {
+		var instances = [];
+
 		for ( var formID in pageForms ) {
 			var form = pageForms[ formID ];
 
@@ -3093,18 +3094,24 @@ $( function () {
 				childList: true
 			} );
 		}
+
+		return instances;
 	}
 
-	// @TODO use a standard class initialization
-	// remove autoload
-	VisualDataSchemas.preInitialize(
-		config,
-		windowManager,
-		schemas,
-		instances
-	);
+	if ( !config.canmanageschemas ) {
+		VisualData.setVars( config, schemas, init() );
 
-	if ( config.context === 'ManageSchemas' ) {
-		VisualDataSchemas.initialize();
+	} else {
+		mw.loader.using( 'ext.VisualData.ManageSchemas', function () {
+			var instances = init();
+			VisualData.setVars( config, schemas, instances );
+			VisualDataSchemas.setVars(
+				config,
+				windowManager,
+				schemas,
+				instances
+			);
+		} );
 	}
+
 } );

@@ -397,10 +397,10 @@ class VisualData {
 		self::$userGroupManager = MediaWikiServices::getInstance()->getUserGroupManager();
 		self::$schemaProcessor = new SchemaProcessor();
 
-		if ( !array_key_exists( 'wgVisualDataShowSlotsNavigation', $GLOBALS )
-			&& self::$User->isAllowed( 'visualdata-canmanageschemas' ) ) {
-			$GLOBALS['wgVisualDataShowSlotsNavigation'] = true;
-		}
+		// if ( !array_key_exists( 'wgVisualDataDisableSlotsNavigation', $GLOBALS )
+		// 	&& self::$User->isAllowed( 'visualdata-canmanageschemas' ) ) {
+		// 	$GLOBALS['wgVisualDataDisableSlotsNavigation'] = true;
+		// }
 
 		$GLOBALS['wgVisualDataResultPrinterClasses'] = [
 			'table' => 'TableResultPrinter',
@@ -934,6 +934,10 @@ class VisualData {
 		}
 		self::$cachedJsonData[ $key ] = false;
 
+		if ( !$title->isKnown() ) {
+			return false;
+		}
+
 		$wikiPage = self::getWikiPage( $title );
 
 		if ( !$wikiPage ) {
@@ -1319,9 +1323,9 @@ class VisualData {
 	 * @return Title|null
 	 */
 	private static function getTitleIfKnown( $titletText ) {
-		$title_ = Title::newFromText( $titletText );
-		if ( $title_ && $title_->isKnown() ) {
-			return $title_;
+		$title = Title::newFromText( $titletText );
+		if ( $title && $title->isKnown() ) {
+			return $title;
 		}
 		return null;
 	}
@@ -1333,12 +1337,12 @@ class VisualData {
 	 * @return array
 	 */
 	private static function processPageForms( $title, $pageForms, $config ) {
-		if ( $config['context'] !== 'EditSchemas' ) {
+		if ( $config['context'] !== 'EditData' ) {
 			$databaseManager = new DatabaseManager();
 		}
 
 		foreach ( $pageForms as $formID => $value ) {
-			if ( $config['context'] !== 'EditSchemas' ) {
+			if ( $config['context'] !== 'EditData' ) {
 				$databaseManager->storeLink( $title, 'form', $value['schemas'] );
 			}
 
@@ -1352,12 +1356,14 @@ class VisualData {
 			}
 
 			if ( $value['options']['action'] === 'edit' ) {
-				if ( $title && $title->isKnown() ) {
+				if ( $title ) {
 					$editTitle = $title;
 				}
 
 				if ( !empty( $value['options']['edit-page'] ) ) {
-					$editTitle = self::getTitleIfKnown( $value['options']['edit-page'] );
+					// $editTitle = self::getTitleIfKnown( $value['options']['edit-page'] );
+					// can be unknown
+					$editTitle = Title::newFromText( $value['options']['edit-page'] );
 				}
 
 				if ( $editTitle ) {
@@ -1432,6 +1438,7 @@ class VisualData {
 	 */
 	public static function addJsConfigVars( $out, $obj ) {
 		$title = $out->getTitle();
+		$user = $out->getUser();
 		$loadedData = [];
 
 		if ( isset( $obj['pageForms'] ) ) {
@@ -1452,9 +1459,9 @@ class VisualData {
 			}
 		}
 
-		// load all schemas also if context is !== than 'EditSchemas'
+		// load all schemas also if context is !== than 'EditData'
 		// to display them in ask query schemas and other inputs
-		if ( ( self::$User->isAllowed( 'visualdata-caneditschemas' )
+		if ( ( self::$User->isAllowed( 'visualdata-caneditdata' )
 				|| self::$User->isAllowed( 'visualdata-canmanageschemas' )
 			) ) {
 			$loadedData[] = 'schemas';
@@ -1476,10 +1483,14 @@ class VisualData {
 		}
 
 		$VEForAll = false;
-		if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) ) {
+		if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) 
+			&& self::VEenabledForUser( $user ) ) {
+			$userOptionsManager = MediaWikiServices::getInstance()->getUserOptionsManager();
+			$userOptionsManager->setOption( $user, 'visualeditor-enable', true );
 			$VEForAll = true;
 			$out->addModules( 'ext.veforall.main' );
 		}
+
 		$default = [
 			'schemas' => [],
 			'pageForms' => [],
@@ -1495,7 +1506,7 @@ class VisualData {
 
 				'loadedData' => $loadedData,
 				'allowedMimeTypes' => $allowedMimeTypes,
-				'caneditschemas' => self::$User->isAllowed( 'visualdata-caneditschemas' ),
+				'caneditdata' => self::$User->isAllowed( 'visualdata-caneditdata' ),
 				'canmanageschemas' => self::$User->isAllowed( 'visualdata-canmanageschemas' ),
 				// 'canmanageforms' => self::$User->isAllowed( 'visualdata-canmanageforms' ),
 				'contentModels' => array_flip( self::getContentModels() ),
@@ -1526,6 +1537,23 @@ class VisualData {
 			'visualdata-config' => json_encode( $obj['config'], true ),
 			'visualdata-show-notice-outdated-version' => $showOutdatedVersion
 		] );
+	}
+
+	/**
+	 * @see VisualEditor/includes/Hooks.php
+	 * @param User $user
+	 * @return bool
+	 */
+	private static function VEenabledForUser( $user ) {
+		$services = MediaWikiServices::getInstance();
+		$veConfig = $services->getConfigFactory()->makeConfig( 'visualeditor' );
+		$userOptionsLookup = $services->getUserOptionsLookup();
+		$isBeta = $veConfig->get( 'VisualEditorEnableBetaFeature' );
+
+		return ( $isBeta ?
+			$userOptionsLookup->getOption( $user, 'visualeditor-enable' ) :
+			!$userOptionsLookup->getOption( $user, 'visualeditor-betatempdisable' ) ) &&
+			!$userOptionsLookup->getOption( $user, 'visualeditor-autodisable' );		
 	}
 
 	/**

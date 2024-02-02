@@ -142,7 +142,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		$context = new RequestContext();
 		$context->setTitle( !empty( $params['target-page'] ) ? Title::newFromText( $params['target-page'] ) :
-			SpecialPage::getTitleFor( 'EditSchemas' ) );
+			SpecialPage::getTitleFor( 'EditData' ) );
 
 		$output = $context->getOutput();
 

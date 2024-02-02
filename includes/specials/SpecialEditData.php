@@ -24,7 +24,7 @@
 
 // @TODO implement as form
 
-class SpecialEditSchemas extends SpecialPage {
+class SpecialEditData extends SpecialPage {
 
 	/** @var title */
 	protected $title;
@@ -40,7 +40,7 @@ class SpecialEditSchemas extends SpecialPage {
 		$listed = false;
 
 		// https://www.mediawiki.org/wiki/Manual:Special_pages
-		parent::__construct( 'EditSchemas', '', $listed );
+		parent::__construct( 'EditData', '', $listed );
 	}
 
 	/**
@@ -48,10 +48,10 @@ class SpecialEditSchemas extends SpecialPage {
 	 */
 	public function getDescription() {
 		if ( !$this->title || !$this->title->isKnown() ) {
-			return $this->msg( "visualdata-editschemas-new-article" )->text();
+			return $this->msg( "visualdata-editdata-new-article" )->text();
 		}
 
-		return $this->msg( "visualdata-editschemas-edit", $this->title->getText() )->text();
+		return $this->msg( "visualdata-editdata-edit", $this->title->getText() )->text();
 	}
 
 	/** @inheritDoc */
@@ -76,11 +76,6 @@ class SpecialEditSchemas extends SpecialPage {
 
 		$this->addHelpLink( 'Extension:VisualData' );
 
-		// if ( !$user->isAllowed( 'visualdata-caneditschemas' ) ) {
-		// 	$this->displayRestrictionError();
-		// 	return;
-		// }
-
 		if ( $par ) {
 			// NS_MAIN is ignored if $par is prefixed
 			$title = Title::newFromText( $par, NS_MAIN );
@@ -90,7 +85,8 @@ class SpecialEditSchemas extends SpecialPage {
 
 		$this->setData( $out );
 		$out->setPageTitle( $this->getDescription() );
-		$out->addModules( 'ext.VisualData.EditSchemas' );
+
+		$out->addModules( 'ext.VisualData.Forms' );
 	}
 
 	/**
@@ -119,7 +115,7 @@ class SpecialEditSchemas extends SpecialPage {
 		$targetSlot = \VisualData::getTargetSlot( $this->title );
 
 		$options = [
-			'action' => ( $this->title && $this->title->isKnown() ? 'edit' : 'create' ),
+			'action' => ( $this->title ? 'edit' : 'create' ),
 			'target-slot' => $targetSlot,
 			'edit-freetext' => ( !$this->title || !$this->title->isKnown() ),
 		];
@@ -149,7 +145,7 @@ class SpecialEditSchemas extends SpecialPage {
 		\VisualData::addJsConfigVars( $out, [
 			'pageForms' => $pageForms,
 			'config' => [
-				'context' => 'EditSchemas',
+				'context' => 'EditData',
 				'loadedData' => [],
 			]
 		] );

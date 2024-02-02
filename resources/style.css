@@ -54,7 +54,7 @@
 	max-width: 600px;
 }
 
-.VisualDataForm.VisualDataFormContext-EditSchemas {
+.VisualDataForm.VisualDataFormContext-EditData {
 	max-width: none;
 	background: #f8f9fa;
 }
@@ -62,7 +62,7 @@
 .visualdata-datatable {
 }
 
-.VisualDataEditSchemasOuterStackPanel.oo-ui-panelLayout-padded.oo-ui-panelLayout-framed {
+.VisualDataEditDataOuterStackPanel.oo-ui-panelLayout-padded.oo-ui-panelLayout-framed {
 	margin: 0;
 }
 
@@ -213,5 +213,10 @@
 .VisualDataPageButtonsActionField .oo-ui-actionFieldLayout-input,
 .VisualDataPageButtonsActionField .oo-ui-actionFieldLayout-button {
 	display: inline;
+}
+
+body > .oo-ui-windowManager,
+.oo-ui-defaultOverlay {
+	font-size: 0.875em;
 }
 

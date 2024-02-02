@@ -39,8 +39,8 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function initExtension( $credits = [] ) {
-		if ( !is_array( $GLOBALS['wgVisualDataEditSchemasNamespaces'] ) ) {
-			$GLOBALS['wgVisualDataEditSchemasNamespaces'] = [ 0 ];
+		if ( !is_array( $GLOBALS['wgVisualDataEditDataNamespaces'] ) ) {
+			$GLOBALS['wgVisualDataEditDataNamespaces'] = [ 0 ];
 		}
 	}
 
@@ -84,7 +84,7 @@ class VisualDataHooks {
 	public static function onBeforeInitialize( \Title &$title, $unused, \OutputPage $output, \User $user, \WebRequest $request, $mediaWiki ) {
 		\VisualData::initialize();
 
-		if ( !empty( $GLOBALS['wgVisualDataShowSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 
@@ -110,7 +110,7 @@ class VisualDataHooks {
 		$databaseManager = new DatabaseManager();
 		$databaseManager->removeLinks( $title );
 
-		if ( !empty( $GLOBALS['wgVisualDataShowSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 			
@@ -204,12 +204,12 @@ class VisualDataHooks {
 			return;
 		}
 
-		// if ( isset( $GLOBALS['wgVisualDataJsonDataTrackingCategory'] ) ) {
-		// 	$jsonData = \VisualData::getJsonData( $title );
-		// 	if ( !empty( $jsonData ) ) {
-		// 		$parser->addTrackingCategory( 'jsondata-tracking-category' );
-		// 	}
-		// }
+		if ( isset( $GLOBALS['wgVisualDataJsonDataTrackingCategory'] ) ) {
+			$jsonData = \VisualData::getJsonData( $title );
+			if ( !empty( $jsonData ) ) {
+				$parser->addTrackingCategory( 'visualdata-jsondata-tracking-category' );
+			}
+		}
 	}
 
 	/**
@@ -368,7 +368,7 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function onPageRenderingHash( &$confstr, User $user, &$forOptions ) {
-		if ( !empty( $GLOBALS['wgVisualDataShowSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
 			$confstr .= '!' . $_GET['slot'];
 		}
 	}
@@ -382,6 +382,7 @@ class VisualDataHooks {
 		$parserOutput->addWrapperDivClass( 'visualdata-content-model-' . $out->getTitle()->getContentModel() );
 
 		$title = $out->getTitle();
+		$user = $out->getUser();
 		$databaseManager = new DatabaseManager();
 		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
 			$queryParams = $parserOutput->getExtensionData( 'visualdataquerydata' );
@@ -399,7 +400,7 @@ class VisualDataHooks {
 				]
 			] );
 
-			$out->addModules( 'ext.VisualData.EditSchemas' );
+			$out->addModules( 'ext.VisualData.Forms' );
 		}
 	}
 
@@ -413,7 +414,7 @@ class VisualDataHooks {
 			return;
 		}
 
-		$specialpage_title = SpecialPage::getTitleFor( 'EditSchemas' );
+		$specialpage_title = SpecialPage::getTitleFor( 'EditData' );
 		$bar[ wfMessage( 'visualdata-sidepanel-section' )->text() ][] = [
 			'text'   => wfMessage( 'visualdata-new-article' )->text(),
 			'class'   => "visualdata-new-article",
@@ -421,12 +422,9 @@ class VisualDataHooks {
 		];
 
 		$user = $skin->getUser();
-
 		$title = $skin->getTitle();
 
-		if ( $user->isAllowed( 'visualdata-canmanageschemas' )
-			|| $user->isAllowed( 'visualdata-caneditschema' )
-		) {
+		if ( $user->isAllowed( 'visualdata-canmanageschemas' ) ) {
 			$specialpage_title = SpecialPage::getTitleFor( 'ManageSchemas' );
 			$bar[ wfMessage( 'visualdata-sidepanel-section' )->text() ][] = [
 				'text'   => wfMessage( 'visualdata-sidepanel-manageschemas' )->text(),
@@ -468,28 +466,24 @@ class VisualDataHooks {
 
 		$errors = [];
 		if ( \VisualData::checkWritePermissions( $user, $title, $errors )
-			&& $user->isAllowed( 'visualdata-caneditschemas' )
+			&& $user->isAllowed( 'visualdata-caneditdata' )
 			&& !$title->isSpecialPage()
-			&& in_array( $title->getNamespace(), $GLOBALS['wgVisualDataEditSchemasNamespaces'] )
+			&& in_array( $title->getNamespace(), $GLOBALS['wgVisualDataEditDataNamespaces'] )
 		 ) {
 			$link = [
-				'class' => ( $skinTemplate->getRequest()->getVal( 'action' ) === 'editschemas' ? 'selected' : '' ),
-				'text' => wfMessage( 'visualdata-editschemas-label' )->text(),
-				'href' => $title->getLocalURL( 'action=editschemas' )
+				'class' => ( $skinTemplate->getRequest()->getVal( 'action' ) === 'editdata' ? 'selected' : '' ),
+				'text' => wfMessage( 'visualdata-editdata-label' )->text(),
+				'href' => $title->getLocalURL( 'action=editdata' )
 			];
 
 			$keys = array_keys( $links['views'] );
 			$pos = array_search( 'edit', $keys );
 
 			$links['views'] = array_intersect_key( $links['views'], array_flip( array_slice( $keys, 0, $pos + 1 ) ) )
-				+ [ 'editschemas' => $link ] + array_intersect_key( $links['views'], array_flip( array_slice( $keys, $pos + 1 ) ) );
+				+ [ 'editdata' => $link ] + array_intersect_key( $links['views'], array_flip( array_slice( $keys, $pos + 1 ) ) );
 		}
 
-		if ( !empty( $GLOBALS['wgVisualDataDisableNavigationLink'] ) ) {
-			return;
-		}
-
-		if ( !empty( $GLOBALS['wgVisualDataShowSlotsNavigation'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) ) {
 			$slots = \VisualData::getSlots( $title );
 			if ( $slots ) {
 				$namespaces = $links['namespaces'];
@@ -546,22 +540,6 @@ class VisualDataHooks {
 			if ( empty( $_POST ) ) {
 				unset( $_SESSION['visualdataform-submissiondata'] );
 			}
-		}
-	}
-
-	/**
-	 * *** open external links in a new window
-	 * @param string &$url
-	 * @param string &$text
-	 * @param string &$link
-	 * @param array &$attribs
-	 * @param string $linktype
-	 * @return void
-	 */
-	public static function onLinkerMakeExternalLink( &$url, &$text, &$link, &$attribs, $linktype ) {
-		if ( !empty( $GLOBALS['wgVisualDataOpenExternalLinksInNewTab'] )
-			&& !array_key_exists( 'target', $attribs ) ) {
-			$attribs['target'] = '_blank';
 		}
 	}
 

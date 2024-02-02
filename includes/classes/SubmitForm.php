@@ -307,8 +307,8 @@ class SubmitForm {
 
 		if ( !empty( $data['options']['action'] ) && $data['options']['action'] === 'delete' ) {
 			// @FIXME remove only deleted schemas
-			// if context !== EditSchemas
-			if ( $data['config']['context'] === 'EditSchemas' ) {
+			// if context !== EditData
+			if ( $data['config']['context'] === 'EditData' ) {
 				unset( $jsonData['schemas'] );
 				unset( $jsonData['schemas-data'] );
 				$databaseManager->deletePage( $editTitle );
@@ -333,7 +333,7 @@ class SubmitForm {
 			// @TODO update database
 			return [
 				'errors' => [],
-				'target-url' => $data['config']['context'] === 'EditSchemas' ? $editTitle->getFullUrl()
+				'target-url' => $data['config']['context'] === 'EditData' ? $editTitle->getFullUrl()
 					: $data['options']['origin-url']
 			];
 		}
@@ -561,7 +561,7 @@ class SubmitForm {
 		}
 
 		// success, run hook
-		MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnEditSchemasSave', [
+		MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnEditDataSave', [
 			$this->user,
 			$targetTitle,
 			$jsonData,

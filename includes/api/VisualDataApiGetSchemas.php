@@ -43,7 +43,7 @@ class VisualDataApiGetSchemas extends ApiBase {
 	 */
 	public function execute() {
 		$user = $this->getUser();
-		if ( !$user->isAllowed( 'visualdata-caneditschemas' ) ) {
+		if ( !$user->isAllowed( 'visualdata-caneditdata' ) ) {
 			$this->dieWithError( 'apierror-visualdata-permissions-error' );
 		}
 		\VisualData::initialize();

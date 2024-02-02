@@ -897,7 +897,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 	OO.inheritClass( ProcessDialogSearch, OO.ui.ProcessDialog );
 	ProcessDialogSearch.static.name = DialogSearchName;
 	ProcessDialogSearch.static.title = mw.msg(
-		'visualdata-jsmodule-forms-selectfield'
+		'visualdata-jsmodule-inputconfig-selectfield'
 	);
 	ProcessDialogSearch.prototype.initialize = function () {
 		ProcessDialogSearch.super.prototype.initialize.apply( this, arguments );

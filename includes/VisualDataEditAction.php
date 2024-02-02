@@ -28,7 +28,7 @@ class VisualDataEditAction extends Action {
 	 * @return string lowercase
 	 */
 	public function getName() {
-		return 'editschemas';
+		return 'editdata';
 	}
 
 	/**
@@ -40,8 +40,8 @@ class VisualDataEditAction extends Action {
 		$output = $this->getOutput();
 		$title = $article->getTitle();
 
-		$specialEditSchemas = new SpecialEditSchemas();
-		$specialEditSchemas->execute( $title->getFullText() );
+		$specialEditData = new SpecialEditData();
+		$specialEditData->execute( $title->getFullText() );
 
 		return false;
 	}

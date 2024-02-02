@@ -39,7 +39,7 @@ $( function () {
 							type: 'warning',
 							label: new OO.ui.HtmlSnippet(
 								mw.msg(
-									'visualdata-jsmodule-visualdata-outdated-version'
+									'visualdata-jsmodule-outdated-version'
 								)
 							),
 							// *** this does not work before ooui v0.43.0

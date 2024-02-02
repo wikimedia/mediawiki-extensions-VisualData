@@ -22,17 +22,17 @@
 /* eslint-disable no-tabs */
 /* eslint-disable no-underscore-dangle */
 
-const VisualDataSchemas = ( function () {
-	var VisualDataFormFieldInst;
-	var VisualDataContentBlockInst;
-	var Config;
+VisualDataSchemas = ( function () {
 	var Models = [];
 	var SelectedItems = [];
-	var Schemas;
 	var DataTable;
 	var DialogName = 'dialogSchemas';
+	var Config;
 	var WindowManager;
-	var VisualDataForms = [];
+	var Schemas = [];
+	var VisualDataForms;
+	var VisualDataFormFieldInst;
+	var VisualDataContentBlockInst;
 
 	function getModel() {
 		return Models[ Models.length - 1 ];
@@ -109,41 +109,6 @@ const VisualDataSchemas = ( function () {
 			return null;
 		}
 		return SelectedItems[ SelectedItems.length - 1 ];
-	}
-
-	function updateData( data ) {
-		switch ( data[ 'result-action' ] ) {
-			case 'update':
-				Schemas = jQuery.extend( Schemas, data.schemas );
-				break;
-
-			case 'delete':
-				for ( var schemaName of data[ 'deleted-items' ] ) {
-					delete Schemas[ schemaName ];
-				}
-				break;
-
-			case 'create':
-				Schemas = jQuery.extend( Schemas, data.schemas );
-				Schemas = VisualDataFunctions.sortObjectByKeys( Schemas );
-				break;
-
-			case 'rename':
-				delete Schemas[ data[ 'previous-label' ] ];
-				Schemas = jQuery.extend( Schemas, data.schemas );
-				Schemas = VisualDataFunctions.sortObjectByKeys( Schemas );
-				break;
-		}
-
-		if ( Config.context !== 'ManageSchemas' ) {
-			for ( var instance of VisualDataForms ) {
-				instance.updateSchemas( Schemas );
-			}
-		}
-
-		initialize();
-
-		return true;
 	}
 
 	function orderFields( fields, panel ) {
@@ -328,8 +293,7 @@ const VisualDataSchemas = ( function () {
 			data: data,
 			// stateSave: true,
 			columns: [ '' ].concat(
-				mw
-					.msg( 'visualdata-jsmodule-visualdata-columns-schemas-dialog' )
+				mw.msg( 'visualdata-jsmodule-schemas-properties-columns' )
 					.split( /\s*,\s*/ )
 					.map( function ( x ) {
 						return { title: x };
@@ -556,7 +520,7 @@ const VisualDataSchemas = ( function () {
 				setTimeout( function () {
 					initPropertiesTab( data.initialTab );
 					VisualDataFunctions.removeNbspFromLayoutHeader(
-						'#visualdata-ProcessDialogEditSchemas'
+						'#visualdata-ProcessDialogEditData'
 					);
 				}, 30 );
 
@@ -701,12 +665,12 @@ const VisualDataSchemas = ( function () {
 														{ size: 'medium' }
 													);
 												}
-												if ( updateData( data ) === true ) {
-													Models.pop();
-													SelectedItems.pop();
-													WindowManager.closeActiveWindow();
-													initializeDataTable();
-												}
+												Schemas = VisualData.updateSchemas( data, data[ 'result-action' ] );
+												// initialize();
+												Models.pop();
+												SelectedItems.pop();
+												WindowManager.closeActiveWindow();
+												initializeDataTable();
 											}
 										}
 									} else {
@@ -1394,38 +1358,6 @@ const VisualDataSchemas = ( function () {
 		);
 	};
 
-	function loadSchemas( schemas ) {
-		var payload = {
-			action: 'visualdata-get-schemas',
-			schemas: schemas.join( '|' )
-		};
-
-		return new Promise( ( resolve, reject ) => {
-			new mw.Api()
-				.postWithToken( 'csrf', payload )
-				.done( function ( res ) {
-					// console.log('visualdata-get-schemas res', res)
-					if ( payload.action in res ) {
-						var thisSchemas = JSON.parse( res[ payload.action ].schemas );
-						for ( var i in thisSchemas ) {
-							Schemas[ i ] = thisSchemas[ i ];
-						}
-						resolve();
-						for ( var instance of VisualDataForms ) {
-							instance.updateSchemas( Schemas );
-						}
-					}
-				} )
-				.fail( function ( res ) {
-					// eslint-disable-next-line no-console
-					console.error( 'visualdata-get-schemas', res );
-					reject( res );
-				} );
-		} ).catch( ( err ) => {
-			VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
-		} );
-	}
-
 	function openDialog( schema, propName, initialTab ) {
 		if ( !schema ) {
 			SelectedItems.push( {
@@ -1467,7 +1399,7 @@ const VisualDataSchemas = ( function () {
 		if ( !propName ) {
 			processDialog = new ProcessDialog( {
 				size: 'larger',
-				id: 'visualdata-ProcessDialogEditSchema'
+				id: 'visualdata-ProcessDialogEditData'
 			} );
 
 			title =
@@ -1550,7 +1482,10 @@ const VisualDataSchemas = ( function () {
 
 	function openSchemaDialog( label, initialTab ) {
 		if ( !Object.keys( Schemas[ label ] ).length ) {
-			loadSchemas( [ label ] ).then( function () {
+			VisualData.loadSchemas( [ label ] ).then( function ( schemas ) {
+				for ( var i in schemas ) {
+					Schemas[ i ] = schemas[ i ];
+				}
 				openDialog( Schemas[ label ], null, initialTab );
 			} );
 		} else {
@@ -1679,23 +1614,6 @@ const VisualDataSchemas = ( function () {
 		return toolbar;
 	}
 
-	function preInitialize( config, windowManager, schemas, visualDataForms ) {
-		Config = config;
-		WindowManager = windowManager;
-		Schemas = schemas;
-		VisualDataForms = visualDataForms;
-
-		VisualDataFormFieldInst = new VisualDataFormField(
-			config,
-			windowManager,
-			Schemas
-		);
-		VisualDataContentBlockInst = new VisualDataContentBlock(
-			config,
-			windowManager
-		);
-	}
-
 	function initialize() {
 		if ( Config.context === 'ManageSchemas' ) {
 			$( '#schemas-wrapper' ).empty();
@@ -1725,12 +1643,27 @@ const VisualDataSchemas = ( function () {
 
 		initializeDataTable();
 	}
+	
+	function setVars( config, windowManager, schemas, visualDataForms ) {
+		Config = config;
+		WindowManager = windowManager;
+		Schemas = schemas;
+		VisualDataForms = visualDataForms;
+
+		VisualDataFormFieldInst = new VisualDataFormField(
+			config,
+			windowManager,
+			Schemas
+		);
+		VisualDataContentBlockInst = new VisualDataContentBlock(
+			config,
+			windowManager
+		);
+	}
 
 	return {
 		initialize,
 		createToolbarA,
-		initializeDataTable,
-		preInitialize,
 		openDialog,
 		parentSchemaContainer,
 		getPropertyValue,
@@ -1738,7 +1671,31 @@ const VisualDataSchemas = ( function () {
 		getModel,
 		handleSaveArray,
 		getWidgetValue,
-		loadSchemas,
-		openSchemaDialog
+		openSchemaDialog,
+		setVars
 	};
 }() );
+
+$( function () {
+	var config = JSON.parse( mw.config.get( 'visualdata-config' ) );
+	// console.log("config", config);
+
+	if ( config.context === 'ManageSchemas' ) {
+		var schemas = JSON.parse( mw.config.get( 'visualdata-schemas' ) );
+		// console.log("schemas", schemas);
+
+		var windowManager = new VisualDataWindowManager();
+		var instances = [];
+		VisualData.setVars( config, schemas, instances );
+
+		VisualDataSchemas.setVars(
+			config,
+			windowManager,
+			schemas,
+			instances
+		);
+		
+		VisualDataSchemas.initialize();
+	}
+
+} );

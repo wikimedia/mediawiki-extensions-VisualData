@@ -21,7 +21,7 @@
 
 /* eslint-disable no-tabs */
 
-const VisualDataFunctions = ( function () {
+VisualDataFunctions = ( function () {
 	/*
 		AVAILABLE INPUTS ...
 		"OO.ui.TextInputWidget",
@@ -85,10 +85,6 @@ const VisualDataFunctions = ( function () {
 
 	var lookupInputs = [ 'LookupElement', 'MenuTagSearchMultiselect' ];
 
-	function matchLoadedData( config, dataToLoad ) {
-		return dataToLoad.filter( ( x ) => !inArray( x, config.loadedData ) );
-	}
-
 	function isPromise( value ) {
 		return isObject( value ) && 'then' in value;
 	}
@@ -115,41 +111,6 @@ const VisualDataFunctions = ( function () {
 		}
 
 		return value;
-	}
-
-	function loadData( config, dataToLoad ) {
-		return new Promise( ( resolve, reject ) => {
-			var payload = {
-				action: 'visualdata-load-data',
-				dataset: dataToLoad.join( '|' ),
-				format: 'json'
-			};
-			mw.loader.using( 'mediawiki.api', function () {
-				new mw.Api()
-					.postWithToken( 'csrf', payload )
-					.done( function ( res ) {
-						if ( payload.action in res ) {
-							var data = res[ payload.action ];
-							for ( var i in data ) {
-								data[ i ] = JSON.parse( data[ i ] );
-							}
-							config.loadedData = config.loadedData.concat( dataToLoad );
-							resolve( data );
-						} else {
-							reject();
-						}
-					} )
-					.fail( function ( res ) {
-						// eslint-disable-next-line no-console
-						console.error( 'visualdata-load-data error', res );
-						reject( res );
-					} );
-			} );
-		} );
-		// *** catch is performed in the calling function
-		// .catch( ( err ) => {
-		// 	VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
-		// } );
 	}
 
 	function inputNameFromLabel( inputName ) {
@@ -786,8 +747,6 @@ const VisualDataFunctions = ( function () {
 		getAvailableInputs,
 		inputInstanceFromName,
 		isMultiselect,
-		matchLoadedData,
-		loadData,
 		getPreferredInput,
 		lookupInputs,
 		labelFormulaInputs,
@@ -796,6 +755,7 @@ const VisualDataFunctions = ( function () {
 		deepCopy,
 		isPromise,
 		waitUntil,
-		executeFunctionByName
+		executeFunctionByName,
+		inArray
 	};
 }() );

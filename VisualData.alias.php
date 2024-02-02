@@ -12,7 +12,7 @@ $specialPageAliases = [];
  */
 $specialPageAliases['en'] = [
 	'ManageSchemas' => [ 'ManageSchemas' ],
-	'EditSchemas' => [ 'EditSchemas' ],
+	'EditData' => [ 'EditData' ],
 	'VisualDataSubmit' => [ 'VisualDataSubmit' ],
 	'VisualDataBrowse' => [ 'VisualDataBrowse' ]
 ];
