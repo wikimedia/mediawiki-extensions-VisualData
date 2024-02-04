@@ -46,7 +46,8 @@ class JsonResultPrinter extends ResultPrinter {
 	 * @return string
 	 */
 	public function processResults( $results, $schema ) {
-		$this->output->addModuleStyles( [ 'mediawiki.content.json' ] );
+		// *** not working MW 1.41.0
+		// $this->output->addModuleStyles( [ 'mediawiki.content.json' ] );
 
 		$ret = [];
 		foreach ( $results as $value ) {

@@ -74,7 +74,6 @@ class ResultPrinter {
 			'separator' => [ '', 'string' ],
 			'values-separator' => [ ', ', 'string' ],
 			'template' => [ '', 'string' ],
-			'template' => [ '', 'string' ],
 			'pagetitle' => [ 'pagetitle', 'string' ],
 			'pagetitle-name' => [ 'pagetitle-name', 'string' ],
 			'articleid-name' => [ 'articleid', 'string' ],

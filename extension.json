@@ -389,6 +389,7 @@
 				"style.css"
 			],
 			"dependencies": [
+				"mediawiki.content.json"
 			]
 		}
 	},
