@@ -275,6 +275,7 @@
 	"visualdata-jsmodule-formfield-name-help": "unique identifier",
 	"visualdata-jsmodule-formfield-label": "label",
 	"visualdata-jsmodule-formfield-help-message": "help message",
+	"visualdata-jsmodule-formfield-help-message-help": "wikitext and parser functions allowed",
 	"visualdata-jsmodule-formfield-visibility-label": "visibility",
 	"visualdata-jsmodule-formfield-visibility-visible": "visible",
 	"visualdata-jsmodule-formfield-visibility-help": "",

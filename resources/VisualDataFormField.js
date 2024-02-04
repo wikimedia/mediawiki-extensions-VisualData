@@ -567,7 +567,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			new OO.ui.FieldLayout( helpMessageInput, {
 				label: mw.msg( 'visualdata-jsmodule-formfield-help-message' ),
 				helpInline: true,
-				help: mw.msg( 'visualdata-jsmodule-formfield-contentblock-content-help' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-help-message-help' ),
 				align: 'top'
 			} )
 		);
