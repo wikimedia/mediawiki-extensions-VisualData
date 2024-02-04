@@ -56,6 +56,9 @@ class ResultPrinter {
 	/** @var array */
 	public $printouts;
 
+	/** @var array */
+	public $templates;
+
 	/**
 	 * @param Parser $parser
 	 * @param Output $output
