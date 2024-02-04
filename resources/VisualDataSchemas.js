@@ -362,7 +362,7 @@ VisualDataSchemas = ( function () {
 			buttonWidgetDelete.on( 'click', function () {
 				VisualDataFunctions.OOUIAlert(
 					new OO.ui.HtmlSnippet(
-						mw.msg( 'visualdata-jsmodule-visualdata-delete-confirm' )
+						mw.msg( 'visualdata-jsmodule-forms-delete-confirm' )
 					),
 					{ size: 'medium' },
 					function () {
