@@ -170,7 +170,7 @@ const VisualDataContentBlock = function ( phpConfig, windowManager ) {
 				if ( objName === '' ) {
 					alert = mw.msg( 'visualdata-jsmodule-formfield-empty-field' );
 				} else if ( objName !== CurrentKey && objName in ParentObj ) {
-					alert = mw.msg( 'visualdata-jsmodule-formfield-existing-field' );
+					alert = mw.msg( 'visualdata-jsmodule-schemas-alert-existing-item' );
 				}
 
 				if ( alert ) {
