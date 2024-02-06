@@ -122,8 +122,12 @@ class SchemaProcessor {
 		'min' => 'minimum',
 		'validate' => 'pattern',
 		'allowDuplicates' => 'uniqueItems',
-		'readOnly' => 'readOnly',
-		'disabled' => 'readOnly',
+
+		// @FIXME this is correct by the point
+		// of view of conversion to/from schema
+		// but OO.ui widgets use both
+		// 'readOnly' => 'readOnly',
+		// 'disabled' => 'readOnly',
 		'type' => 'format',
 		'tagLimit' => 'maxItems',
 		'min' => 'minInclusive',
