@@ -219,7 +219,8 @@
 				"visualdata-jsmodule-dialog-validate",
 				"visualdata-jsmodule-dialog-goback",
 				"visualdata-jsmodule-dialog-submit",
-				"visualdata-jsmodule-dialog-close"
+				"visualdata-jsmodule-dialog-close",
+				"visualdata-jsmodule-dialog-done"
 			]
 		},
 		"ext.VisualData.Forms": {

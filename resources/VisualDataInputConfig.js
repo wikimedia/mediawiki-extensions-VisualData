@@ -44,9 +44,12 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 
 	// @TODO add default for each of them
 	function getInputConfig( inputName ) {
-		switch ( inputName ) {
+		switch ( inputName ) {				
+			case 'mw.widgets.UserInputWidget':
+			case 'mw.widgets.TitleInputWidget':
+			case 'mw.widgets.DateInputWidget':
 			case 'OO.ui.TextInputWidget':
-				return {
+				var ret = {
 					accessKey: [ 'string', 'The access key' ],
 					autocomplete: [
 						'boolean', // 'boolean|string',
@@ -119,6 +122,82 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 					]
 					// value: ["string", "The value of the input."],
 				};
+
+				switch ( inputName ) {
+					case 'mw.widgets.DateInputWidget':
+						return jQuery.extend( ret, {
+							precision: [ 'day/month', " Date precision to use, 'day' or 'month'" ],
+							inputFormat: [
+								'string',
+								'Date format string to use for the textual input field'
+							],
+							displayFormat: [
+								'string',
+								'Date format string to use for the clickable label'
+							],
+							longDisplayFormat: [
+								'boolean',
+								'If a custom displayFormat is not specified, use unabbreviated day of the week and month names in the default language-specific displayFormat'
+							],
+							placeholderLabel: [
+								'string',
+								'Placeholder text shown when the widget is not'
+							],
+							placeholderDateFormat: [
+								'string',
+								"User-visible date format string displayed in the textual input field when it's empty"
+							],
+							mustBeAfter: [ 'date', 'Validates the date to be after this' ],
+							mustBeBefore: [ 'date', 'Validates the date to be before this' ]
+						} );
+				
+					case 'mw.widgets.TitleInputWidget':
+						return jQuery.extend( ret, {
+							limit: [ 'integer', 'Number of results to show' ],
+							namespace: [ 'integer', 'Namespace to prepend to queries' ],
+							maxLength: [ 'integer', 'Maximum query length' ],
+							relative: [
+								'boolean',
+								'If a namespace is set, display titles relative to it'
+							],
+							suggestions: [ 'boolean', 'Display search suggestions' ],
+							showRedirectTargets: [ 'boolean', 'Show the targets of redirects' ],
+							showImages: [ 'boolean', 'Show page images' ],
+							showDescriptions: [ 'boolean', 'Show page descriptions' ],
+							showDisambigsLast: [
+								'boolean',
+								'Show disambiguation pages as the last results'
+							],
+							showMissing: [ 'boolean', 'Show missing pages' ],
+							showInterwikis: [
+								'boolean',
+								'Show pages with a valid interwiki prefix'
+							],
+							addQueryInput: [ 'boolean', "Add exact user's input query to results" ],
+							excludeCurrentPage: [
+								'boolean',
+								'Exclude the current page from suggestions'
+							],
+							excludeDynamicNamespaces: [
+								'boolean',
+								'Exclude pages whose namespace is negative'
+							],
+							validateTitle: [ 'boolean', 'Whether the input must be a valid title' ],
+							required: [ 'boolean', 'Whether the input must not be empty' ],
+							highlightSearchQuery: [
+								'boolean',
+								'Highlight the partial query the user used for this title'
+							]
+						} );
+
+					case 'mw.widgets.UserInputWidget':
+						return jQuery.extend( ret, {
+							limit: [ 'integer', 'Number of results to show' ]
+						} );
+			
+					default:
+						return ret;
+				}
 
 			case 'OO.ui.ToggleSwitchWidget':
 				return {
@@ -254,6 +333,9 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 					// value: ["string", "The value of the input."],
 				};
 
+			case 'mw.widgets.UsersMultiselectWidget':
+			case 'mw.widgets.TitlesMultiselectWidget':
+			case 'mw.widgets.CategoryMultiselectWidget':
 			case 'OO.ui.TagMultiselectWidget':
 			case 'OO.ui.MenuTagMultiselectWidget':
 				var ret = {
@@ -325,12 +407,31 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 								'Clear the text input value when a menu option is chosen'
 							]
 						} );
+					case 'mw.widgets.CategoryMultiselectWidget':
+						return jQuery.extend( ret, {
+							limit: [ 'integer', 'Maximum number of results to load' ]
+						} );
+					case 'mw.widgets.TitlesMultiselectWidget':
+						return jQuery.extend( ret, {
+							clearInputOnChoose: [ 'boolean', 'clear input on choose' ],
+							inputPosition: [ 'string', 'input position' ],
+
+							allowEditTags: [ 'boolean', 'clear input on choose' ]
+						} );
+					case 'mw.widgets.UsersMultiselectWidget':
+						return jQuery.extend( ret, {
+							limit: [ 'integer', 'Number of results to show' ],
+							// name: [
+							// 	'string',
+							// 	'Name of input to submit results (when used in HTML forms)'
+							// ],
+							ipAllowed: [ 'boolean', 'Show IP addresses in autocomplete menu' ],
+							'ipRangeLimits.IPv4': [ 'integer', ' Maximum allowed IPv4 range' ],
+							'ipRangeLimits.IPv6': [ 'integer', ' Maximum allowed IPv6 range' ]
+						} );
 					default:
 						return ret;
 				}
-
-				// eslint-disable-next-line no-unreachable
-				break;
 
 			case 'OO.ui.ComboBoxInputWidget':
 				return {
@@ -582,114 +683,44 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 					// value: ["string", "The value of the input."],
 				};
 
-			case 'mw.widgets.DateInputWidget':
-				return {
-					precision: [ 'day/month', " Date precision to use, 'day' or 'month'" ],
-					inputFormat: [
-						'string',
-						'Date format string to use for the textual input field'
-					],
-					displayFormat: [
-						'string',
-						'Date format string to use for the clickable label'
-					],
-					longDisplayFormat: [
-						'boolean',
-						'If a custom displayFormat is not specified, use unabbreviated day of the week and month names in the default language-specific displayFormat'
-					],
-					placeholderLabel: [
-						'string',
-						'Placeholder text shown when the widget is not'
-					],
-					placeholderDateFormat: [
-						'string',
-						"User-visible date format string displayed in the textual input field when it's empty"
-					],
-					mustBeAfter: [ 'date', 'Validates the date to be after this' ],
-					mustBeBefore: [ 'date', 'Validates the date to be before this' ]
-				};
-
+			case 'OO.ui.InputWidget':
 			case 'mw.widgets.datetime.DateTimeInputWidget':
-				return {
-					type: [ 'string', "Whether to act like a 'date'" ],
-					required: [ 'boolean', 'Whether a value is required' ],
-					clearable: [ 'boolean', 'Whether to provide for blanking the value.' ],
-					// value: [
-					// 	'boolean',
-					// 	'Default value for the widget'
-					// ],
-					min: [ 'string', ' Minimum allowed date' ],
-					max: [ 'string', 'Maximum allowed date' ]
-				};
-
-			case 'mw.widgets.CategoryMultiselectWidget':
-				return {
-					limit: [ 'integer', 'Maximum number of results to load' ]
-				};
-
-			case 'mw.widgets.TitleInputWidget':
-				return {
-					limit: [ 'integer', 'Number of results to show' ],
-					namespace: [ 'integer', 'Namespace to prepend to queries' ],
-					maxLength: [ 'integer', 'Maximum query length' ],
-					relative: [
-						'boolean',
-						'If a namespace is set, display titles relative to it'
+				var ret = {
+					accessKey: [ 'string', 'The access key' ],
+					classes: [
+						'string',
+						'The names of the CSS classes to apply to the element.'
 					],
-					suggestions: [ 'boolean', 'Display search suggestions' ],
-					showRedirectTargets: [ 'boolean', 'Show the targets of redirects' ],
-					showImages: [ 'boolean', 'Show page images' ],
-					showDescriptions: [ 'boolean', 'Show page descriptions' ],
-					showDisambigsLast: [
-						'boolean',
-						'Show disambiguation pages as the last results'
+					dir: [ 'string', 'The directionality of the input (ltr/rtl).' ],
+					disabled: [ 'boolean', 'Disable the widget.' ],
+					id: [ 'string', 'The HTML id attribute used in the rendered tag.' ],
+					inputFilter: [
+						'string',
+						'The name of an input filter function. Input filters modify the value of an input before it is accepted'
 					],
-					showMissing: [ 'boolean', 'Show missing pages' ],
-					showInterwikis: [
-						'boolean',
-						'Show pages with a valid interwiki prefix'
-					],
-					addQueryInput: [ 'boolean', "Add exact user's input query to results" ],
-					excludeCurrentPage: [
-						'boolean',
-						'Exclude the current page from suggestions'
-					],
-					excludeDynamicNamespaces: [
-						'boolean',
-						'Exclude pages whose namespace is negative'
-					],
-					validateTitle: [ 'boolean', 'Whether the input must be a valid title' ],
-					required: [ 'boolean', 'Whether the input must not be empty' ],
-					highlightSearchQuery: [
-						'boolean',
-						'Highlight the partial query the user used for this title'
-					]
+					inputId: [ 'string', 'The value of the input’s HTML id attribute.' ],
+					name: [ 'string', 'The value of the input’s HTML name attribute.' ],
+					text: [ 'string', 'Text to insert' ],
+					title: [ 'string', 'The title text.' ],
+					// value: ["string", "The value of the input."],
 				};
 
-			case 'mw.widgets.TitlesMultiselectWidget':
-				return {
-					clearInputOnChoose: [ 'boolean', 'clear input on choose' ],
-					inputPosition: [ 'string', 'input position' ],
-
-					allowEditTags: [ 'boolean', 'clear input on choose' ]
-				};
-
-			case 'mw.widgets.UserInputWidget':
-				return {
-					limit: [ 'integer', 'Number of results to show' ]
-				};
-
-			case 'mw.widgets.UsersMultiselectWidget':
-				return {
-					limit: [ 'integer', 'Number of results to show' ],
-					// name: [
-					// 	'string',
-					// 	'Name of input to submit results (when used in HTML forms)'
-					// ],
-					ipAllowed: [ 'boolean', 'Show IP addresses in autocomplete menu' ],
-					'ipRangeLimits.IPv4': [ 'integer', ' Maximum allowed IPv4 range' ],
-					'ipRangeLimits.IPv6': [ 'integer', ' Maximum allowed IPv6 range' ]
-				};
+				switch ( inputName ) {
+					case 'mw.widgets.datetime.DateTimeInputWidget':
+						return jQuery.extend( ret, {
+							type: [ 'string', "Whether to act like a 'date'" ],
+							required: [ 'boolean', 'Whether a value is required' ],
+							clearable: [ 'boolean', 'Whether to provide for blanking the value.' ],
+							// value: [
+							// 	'boolean',
+							// 	'Default value for the widget'
+							// ],
+							min: [ 'string', ' Minimum allowed date' ],
+							max: [ 'string', 'Maximum allowed date' ]
+						} );
+					default:
+						return ret;
+				}
 
 			case 'ButtonMultiselectWidget':
 				return {
@@ -967,7 +998,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 		{
 			action: 'save',
 			modes: 'edit',
-			label: mw.msg( 'visualdata-jsmodule-forms-searchdialog-save' ),
+			label: mw.msg( 'visualdata-jsmodule-dialog-done' ),
 			flags: [ 'primary', 'progressive' ]
 		},
 		{

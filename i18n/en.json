@@ -361,6 +361,7 @@
 	"visualdata-jsmodule-dialog-goback": "go back",
 	"visualdata-jsmodule-dialog-submit": "submit",
 	"visualdata-jsmodule-dialog-close": "close",
+	"visualdata-jsmodule-dialog-done": "done",
 
 	"visualdata-jsmodule-formfield-askquery-schema-label": "schema",
 	"visualdata-jsmodule-formfield-askquery-schema-help": "schema to be queried",
