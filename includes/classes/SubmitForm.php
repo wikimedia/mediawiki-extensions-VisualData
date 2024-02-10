@@ -27,13 +27,16 @@ namespace MediaWiki\Extension\VisualData;
 use ApiMain;
 use CommentStoreComment;
 use ContentHandler;
+use ContentModelChange;
 use DerivativeRequest;
 use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
 use MediaWiki\Extension\VisualData\PublishStashedFile as PublishStashedFile;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
 use Parser;
+use RawMessage;
 use RequestContext;
+use Status;
 use Title;
 
 class SubmitForm {
@@ -223,6 +226,65 @@ class SubmitForm {
 	}
 
 	/**
+	 * @see includes/specials/SpecialChangeContentModel.php
+	 * @param WikiPage $page
+	 * @param string $model
+	 * @return Status
+	 */
+	public function changeContentModel( $page, $model ) {
+		// $page = $this->wikiPageFactory->newFromTitle( $title );
+
+		// ***edited
+		$performer = ( method_exists( RequestContext::class, 'getAuthority' ) ? $this->context->getAuthority()
+			: $this->user );
+
+		// ***edited
+		$services = MediaWikiServices::getInstance();
+		$contentModelChangeFactory = $services->getContentModelChangeFactory();
+
+		$changer = $contentModelChangeFactory->newContentModelChange(
+			// ***edited
+			$performer,
+			$page,
+
+			// ***edited
+			$model
+		);
+
+		// MW 1.36+
+		if ( method_exists( ContentModelChange::class, 'authorizeChange' ) ) {
+			$permissionStatus = $changer->authorizeChange();
+			if ( !$permissionStatus->isGood() ) {
+				// *** edited
+				$out = $this->output;
+				$wikitext = $out->formatPermissionStatus( $permissionStatus );
+				// Hack to get our wikitext parsed
+				return Status::newFatal( new RawMessage( '$1', [ $wikitext ] ) );
+			}
+
+		} else {
+			$errors = $changer->checkPermissions();
+			if ( $errors ) {
+				// *** edited
+				$out = $this->output;
+				$wikitext = $out->formatPermissionsErrorMessage( $errors );
+				// Hack to get our wikitext parsed
+				return Status::newFatal( new RawMessage( '$1', [ $wikitext ] ) );
+			}
+		}
+
+		// Can also throw a ThrottledError, don't catch it
+		$status = $changer->doContentModelChange(
+			// ***edited
+			$this->context,
+			// $data['reason'],
+			'',
+			true
+		);
+
+		return $status;
+	}
+	/**
 	 * @param \Title $targetTitle
 	 * @param \WikiPage $wikiPage
 	 * @param string $contentModel
@@ -234,20 +296,7 @@ class SubmitForm {
 			return false;
 		}
 
-		$services = MediaWikiServices::getInstance();
-
-		$wikipageFactory = null;
-		if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) {
-			$wikipageFactory = $services->getWikiPageFactory();
-		} elseif ( method_exists( MediaWikiServices::class, 'WikiPageFactory' ) ) {
-			$wikipageFactory = $services->WikiPageFactory();
-		}
-		$specialVisualData = new \SpecialVisualData(
-			$services->getContentHandlerFactory(),
-			$services->getContentModelChangeFactory(),
-			$wikipageFactory
-		);
-		$status = $specialVisualData->changeContentModel( $wikiPage, $contentModel );
+		$status = $this->changeContentModel( $wikiPage, $contentModel );
 		if ( !$status->isOK() ) {
 			$errors_ = $status->getErrorsByType( 'error' );
 			foreach ( $errors_ as $error ) {
