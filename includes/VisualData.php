@@ -410,6 +410,7 @@ class VisualData {
 			'json' => 'JsonResultPrinter',
 			'template' => 'TemplateResultPrinter',
 			'templates' => 'TemplateResultPrinter',
+			'raw' => 'TemplateResultPrinter',
 			'query' => 'QueryResultPrinter',
 			'json-raw' => 'JsonRawResultPrinter',
 		];

@@ -322,7 +322,9 @@ class ResultPrinter {
 	public function processParent( $schema, $value, $path ) {
 		$isArray = ( $schema['type'] === 'array' );
 		if ( $isArray ) {
-			return implode( $this->valueSeparator ?? '', $value );
+			unset( $value[$this->params['pagetitle-name']] );
+			unset( $value[$this->params['articleid-name']] );
+			return implode( $this->valuesSeparator ?? '', $value );
 		}
 
 		$ret = '';
@@ -331,6 +333,8 @@ class ResultPrinter {
 			$ret = $this->processTemplate( $this->templates[$path], $value );
 
 		} else {
+			unset( $value[$this->params['pagetitle-name']] );
+			unset( $value[$this->params['articleid-name']] );
 			$ret = implode( $this->separator ?? '', $value );
 		}
 
