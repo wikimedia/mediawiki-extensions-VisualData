@@ -257,7 +257,7 @@
 	"visualdata-editdata-edit": "Editing $1 (data)",
 	"visualdata-new-article": "New article",
 
-	"visualdata-jsmodule-outdated-version": "This version of VisualData is outdated. <a href=\"https://www.mediawiki.org/wiki/Special:ExtensionDistributor/VisualData\">Update</a>",
+	"visualdata-jsmodule-outdated-version": "This version of VisualData is outdated. <a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Special:ExtensionDistributor/VisualData\">Update</a> (<a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Extension:VisualData/Release_notes\">Release notes</a>)",
 
 	"manageschemas": "Manage Schemas",
 
