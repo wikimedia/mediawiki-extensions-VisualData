@@ -757,7 +757,7 @@ VisualDataFunctions = ( function () {
 
 	function isNaN( value ) {
 		// eslint-disable-next-line no-self-compare
-		return value === 'number' && value !== value;
+		return typeof value === 'number' && value !== value;
 	}
 
 	return {
