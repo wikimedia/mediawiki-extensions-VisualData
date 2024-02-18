@@ -24,8 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
 use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine as LuaStandaloneEngine;
+use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
 
 class ResultPrinter {
 
@@ -203,7 +203,7 @@ class ResultPrinter {
 		} );
 		return array_merge( $ret, [
 			$this->params['pagetitle-name'] => $title->getFullText(),
-			$this->params['articleid-name'] => $title->getArticleID()			
+			$this->params['articleid-name'] => $title->getArticleID()
 		] );
 	}
 

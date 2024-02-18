@@ -99,7 +99,6 @@ class SpecialManageSchemas extends SpecialPage {
 				'id' => 'schemas-wrapper',
 			], $loadingContainer )
 		);
-
 	}
 
 	/**

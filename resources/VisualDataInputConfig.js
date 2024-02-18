@@ -32,11 +32,11 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 	var processDialogSearch;
 	var Model;
 	var InputName;
-	// eslint-disable-next-line no-unused-vars
-	var PropertyType;
+	var CustomInputConfig;
 	var Callback;
 	var panelLayout;
 	var SelectedItems = {};
+	var HelpUrl;
 
 	function inArray( val, arr ) {
 		return arr.indexOf( val ) !== -1;
@@ -44,7 +44,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 
 	// @TODO add default for each of them
 	function getInputConfig( inputName ) {
-		switch ( inputName ) {				
+		switch ( inputName ) {
 			case 'mw.widgets.UserInputWidget':
 			case 'mw.widgets.TitleInputWidget':
 			case 'mw.widgets.DateInputWidget':
@@ -150,7 +150,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 							mustBeAfter: [ 'date', 'Validates the date to be after this' ],
 							mustBeBefore: [ 'date', 'Validates the date to be before this' ]
 						} );
-				
+
 					case 'mw.widgets.TitleInputWidget':
 						return jQuery.extend( ret, {
 							limit: [ 'integer', 'Number of results to show' ],
@@ -194,7 +194,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 						return jQuery.extend( ret, {
 							limit: [ 'integer', 'Number of results to show' ]
 						} );
-			
+
 					default:
 						return ret;
 				}
@@ -701,7 +701,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 					inputId: [ 'string', 'The value of the input’s HTML id attribute.' ],
 					name: [ 'string', 'The value of the input’s HTML name attribute.' ],
 					text: [ 'string', 'Text to insert' ],
-					title: [ 'string', 'The title text.' ],
+					title: [ 'string', 'The title text.' ]
 					// value: ["string", "The value of the input."],
 				};
 
@@ -934,7 +934,9 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 		ProcessDialogSearch.super.prototype.initialize.apply( this, arguments );
 		var self = this;
 		this.selectedItems = Object.keys( SelectedItems );
-		var obj = getInputConfig( InputName );
+
+		var obj = ( !CustomInputConfig ? getInputConfig( InputName ) :
+			CustomInputConfig( InputName ) );
 
 		function getItems( value ) {
 			var values = Object.keys( obj );
@@ -1085,7 +1087,8 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 		// eslint-disable-next-line no-unused-vars
 		var data = this.data;
 		var items = [];
-		var obj = getInputConfig( InputName );
+		var obj = ( !CustomInputConfig ? getInputConfig( InputName ) :
+			CustomInputConfig( InputName ) );
 
 		for ( var i in obj ) {
 			if ( !( i in SelectedItems ) ) {
@@ -1177,10 +1180,54 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 		}
 	];
 
+	function createActionToolbar() {
+		// see https://gerrit.wikimedia.org/r/plugins/gitiles/oojs/ui/+/refs/tags/v0.40.4/demos/pages/toolbars.js
+		var toolFactory = new OO.ui.ToolFactory();
+		var toolGroupFactory = new OO.ui.ToolGroupFactory();
+
+		var toolbar = new OO.ui.Toolbar( toolFactory, toolGroupFactory, {
+			actions: false
+		} );
+
+		var onSelect = function () {
+			window.open( HelpUrl, '_blank' ).focus();
+			this.setActive( false );
+		};
+
+		var toolGroup = [
+			{
+				name: 'help-button',
+				icon: 'helpNotice',
+				// title: mw.msg( 'visualdata-jsmodule-forms-toolbars-help-button' ),
+				onSelect: onSelect
+			}
+		];
+
+		// @see https://www.mediawiki.org/wiki/OOUI/Toolbars
+		toolbar.setup( [
+			{
+				type: 'bar',
+				include: [ 'help-button' ]
+			}
+		] );
+
+		VisualDataFunctions.createToolGroup(
+			toolFactory,
+			'selectSwitch',
+			toolGroup
+		);
+
+		return toolbar;
+	}
+
 	ProcessDialog.prototype.initialize = function () {
 		ProcessDialog.super.prototype.initialize.apply( this, arguments );
-
 		var toolbar = createToolbarB();
+
+		if ( HelpUrl ) {
+			var actionToolbar = createActionToolbar();
+			toolbar.$actions.append( actionToolbar.$element );
+		}
 
 		panelLayout = new PanelLayout( {
 			expanded: false,
@@ -1241,15 +1288,16 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 		return window.innerHeight - 100;
 	};
 
-	function openDialog( callback, inputName, propertyType ) {
+	function openDialog( callback, inputName, helpUrl, customInputConfig ) {
 		Model = {};
 		Callback = callback;
 		SelectedItems = callback.getValue();
+		HelpUrl = helpUrl;
 
 		// @TODO update once a form key -> value is used
 		// for the options widget of available inputs dropdown
 		InputName = inputName.split( / / )[ 0 ];
-		PropertyType = propertyType;
+		CustomInputConfig = customInputConfig;
 
 		var processDialog = new ProcessDialog( {
 			size: 'large'
@@ -1267,7 +1315,6 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 	}
 
 	return {
-		openDialog,
-		getInputConfig
+		openDialog
 	};
 };

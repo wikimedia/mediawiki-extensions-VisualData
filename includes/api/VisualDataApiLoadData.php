@@ -22,7 +22,7 @@
  * @copyright Copyright ©2021-2023, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
+// use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
 
 class VisualDataApiLoadData extends ApiBase {
 

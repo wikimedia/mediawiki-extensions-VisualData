@@ -484,6 +484,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			onSelectAvailableInputs();
 		} );
 
+		// eslint-disable-next-line no-unused-vars
 		selectOptionsFrom.on( 'change', function ( value ) {
 			onSelectAvailableInputs();
 		} );
@@ -871,7 +872,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			VisualDataInputConfigInst.openDialog(
 				Model[ 'input-config' ],
 				availableInputsInput.getValue(),
-				dataType
+				VisualDataFunctions.getInputHelpUrl( availableInputsInput.getValue() ),
+				null
 			);
 		} );
 

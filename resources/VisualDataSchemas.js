@@ -22,6 +22,7 @@
 /* eslint-disable no-tabs */
 /* eslint-disable no-underscore-dangle */
 
+// eslint-disable-next-line no-implicit-globals
 VisualDataSchemas = ( function () {
 	var Models = [];
 	var SelectedItems = [];
@@ -30,9 +31,12 @@ VisualDataSchemas = ( function () {
 	var Config;
 	var WindowManager;
 	var Schemas = [];
+
+	/* eslint-disable-next-line no-unused-vars */
 	var VisualDataForms;
 	var VisualDataFormFieldInst;
 	var VisualDataContentBlockInst;
+	var VisualDataGeolocationInst;
 
 	function getModel() {
 		return Models[ Models.length - 1 ];
@@ -184,6 +188,9 @@ VisualDataSchemas = ( function () {
 					break;
 				case 'content-block':
 					ret = mw.msg( 'visualdata-jsmodule-schemas-content-block' );
+					break;
+				case 'geolocation':
+					ret = mw.msg( 'visualdata-jsmodule-schemas-geolocation' );
 					break;
 			}
 			return ret;
@@ -345,6 +352,14 @@ VisualDataSchemas = ( function () {
 						);
 						break;
 
+					case 'geolocation':
+						VisualDataGeolocationInst.openDialog(
+							callback,
+							targetItem,
+							key
+						);
+						break;
+
 					case 'schema':
 						// pass the child schema, we don't pass the target
 						// item since the dialog must handle the parent schema
@@ -362,7 +377,7 @@ VisualDataSchemas = ( function () {
 			buttonWidgetDelete.on( 'click', function () {
 				VisualDataFunctions.OOUIAlert(
 					new OO.ui.HtmlSnippet(
-						mw.msg( 'visualdata-jsmodule-forms-delete-confirm' )
+						mw.msg( 'visualdata-jsmodule-schemas-delete-confirm' )
 					),
 					{ size: 'medium' },
 					function () {
@@ -536,7 +551,7 @@ VisualDataSchemas = ( function () {
 			!action ||
 			( action === 'delete' &&
 				// eslint-disable-next-line no-alert
-				!confirm( mw.msg( 'visualdata-jsmodule-schemas-delete-confirm' ) ) )
+				!confirm( mw.msg( 'visualdata-jsmodule-schemas-delete-schema-confirm' ) ) )
 		) {
 			return ProcessDialog.super.prototype.getActionProcess.call( this, action );
 		}
@@ -859,7 +874,7 @@ VisualDataSchemas = ( function () {
 			!action ||
 			( action === 'delete' &&
 				// eslint-disable-next-line no-alert
-				!confirm( mw.msg( 'visualdata-jsmodule-schemas-delete-confirm' ) ) )
+				!confirm( mw.msg( 'visualdata-jsmodule-schemas-delete-schema-confirm' ) ) )
 		) {
 			//	return ProcessDialogNested.super.prototype.getActionProcess.call( this, action );
 		}
@@ -1512,6 +1527,14 @@ VisualDataSchemas = ( function () {
 				initializeNestedDataTable( panelName );
 			};
 			switch ( toolName ) {
+				case 'add-geolocation':
+					VisualDataGeolocationInst.openDialog(
+						callback,
+						currentItem.type !== 'array' ?
+							currentItem[ propName ] :
+							currentItem.items[ propName ]
+					);
+					break;
 				case 'add-block-content':
 					VisualDataContentBlockInst.openDialog(
 						callback,
@@ -1555,6 +1578,12 @@ VisualDataSchemas = ( function () {
 				name: 'add-subitem',
 				icon: 'add',
 				title: mw.msg( 'visualdata-jsmodule-schemas-add-subitem' ),
+				onSelect: onSelect
+			},
+			{
+				name: 'add-geolocation',
+				icon: 'add',
+				title: mw.msg( 'visualdata-jsmodule-schemas-add-geolocation' ),
 				onSelect: onSelect
 			}
 		];
@@ -1643,7 +1672,7 @@ VisualDataSchemas = ( function () {
 
 		initializeDataTable();
 	}
-	
+
 	function setVars( config, windowManager, schemas, visualDataForms ) {
 		Config = config;
 		WindowManager = windowManager;
@@ -1656,6 +1685,10 @@ VisualDataSchemas = ( function () {
 			Schemas
 		);
 		VisualDataContentBlockInst = new VisualDataContentBlock(
+			config,
+			windowManager
+		);
+		VisualDataGeolocationInst = new VisualDataGeolocation(
 			config,
 			windowManager
 		);
@@ -1694,7 +1727,7 @@ $( function () {
 			schemas,
 			instances
 		);
-		
+
 		VisualDataSchemas.initialize();
 	}
 

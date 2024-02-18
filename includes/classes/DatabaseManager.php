@@ -24,6 +24,11 @@
 
 namespace MediaWiki\Extension\VisualData;
 
+if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
+	include_once __DIR__ . '/../../vendor/autoload.php';
+}
+
+// use Swaggest\JsonDiff\JsonDiff;
 use Title;
 
 class DatabaseManager {
@@ -280,33 +285,70 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param string $schema
+	 * @param string $schemaName
 	 * @param bool $evaluate
 	 * @return int
 	 */
-	public function deleteSchema( $schema, $evaluate ) {
-		// @TODO delete all props and data related to this schema ?
+	public function deleteSchema( $schemaName, $evaluate ) {
+		// @TODO delete all props and data related to this schema
 		$tableName = 'visualdata_props';
 
 		// @TODO return jobCount
+		return 0;
 	}
 
 	/**
-	 * @param string $schema
+	 * @param string $previousLabel
+	 * @param string $label
 	 * @param bool $evaluate
 	 * @return int
 	 */
-	public function renameSchema( $schema, $evaluate ) {
+	public function renameSchema( $previousLabel, $label, $evaluate ) {
 		// @TODO return jobCount
+		return 0;
 	}
 
 	/**
-	 * @param string $schema
-	 * @param array $renamedProperties
+	 * @param array $storedSchema
+	 * @param array $updatedSchema
+	 * @param bool $evaluate
 	 * @return int
 	 */
-	public function renameProperties( $schema, $renamedProperties ) {
+	public function diffSchema( $storedSchema, $updatedSchema, $evaluate ) {
+		// @TODO
+		// $r = new JsonDiff(
+		// 	(object)$storedSchema,
+		// 	(object)$updatedSchema,
+		// 	JsonDiff::REARRANGE_ARRAYS
+		// );
+
+		// $patch = $r->getPatch();
+		// @see https://github.com/swaggest/json-diff?tab=readme-ov-file#jsonpatch
+		// $patches = $patch->jsonSerialize();
+
+		// foreach ( $patches as $patch ) {
+		// 	$patch = (array)$patch;
+		// 	switch ( $patch['op'] ) {
+		// 		case 'remove':
+
+		// 			break;
+		// 		case 'add':
+
+		// 			break;
+		// 		case 'replace':
+					// get test
+		// 			break;
+		// 		case 'move':
+		// 			break;
+		// 		case 'copy':
+		// 			break;
+		// 	}
+
+		// 	print_r((array)$patch);
+		// }
+
 		// @TODO return jobCount
+		return 0;
 	}
 
 	/**
@@ -780,7 +822,7 @@ class DatabaseManager {
 			$tables = [];
 			foreach ( $values as $path => $val ) {
 				$path_no_index = $val['pathNoIndex'];
-				
+
 				if ( !array_key_exists( $path_no_index, $mapPathNoIndexPropType ) ) {
 					$this->errors[] = 'ERROR no printout ' . $path_no_index;
 					continue;

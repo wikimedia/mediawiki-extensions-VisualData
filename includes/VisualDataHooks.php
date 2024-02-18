@@ -23,7 +23,6 @@
  */
 
 use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
-use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\RevisionRecord;
 use MediaWiki\Revision\SlotRecord;
@@ -113,7 +112,7 @@ class VisualDataHooks {
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
-			
+
 			if ( array_key_exists( $slot, $slots ) ) {
 				$slot_content = $slots[ $slot ]->getContent();
 				$contentHandler = $slot_content->getContentHandler();

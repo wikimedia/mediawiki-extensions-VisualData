@@ -21,6 +21,10 @@
  * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
+if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
+	include_once __DIR__ . '/../vendor/autoload.php';
+}
+
 use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
 use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
 use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
@@ -28,10 +32,6 @@ use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
 use MediaWiki\Logger\LoggerFactory;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
-
-if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
-	include_once __DIR__ . '/../vendor/autoload.php';
-}
 
 class VisualData {
 	/** @var array */
@@ -182,6 +182,14 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-form-preload-example'
 		],
+		'preload-data' => [
+			'label' => 'visualdata-parserfunction-form-preload-data-label',
+			'description' => 'visualdata-parserfunction-form-preload-data-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-form-preload-data-example'
+		],
 		'return-page' => [
 			'label' => 'visualdata-parserfunction-form-return-page-label',
 			'description' => 'visualdata-parserfunction-form-return-page-description',
@@ -245,6 +253,14 @@ class VisualData {
 			'required' => false,
 			'default' => 'jsondata',
 			'example' => 'visualdata-parserfunction-form-target-slot-example'
+		],
+		'edit-target-slot' => [
+			'label' => 'visualdata-parserfunction-form-edit-target-slot-label',
+			'description' => 'visualdata-parserfunction-form-edit-target-slot-description',
+			'type' => 'boolean',
+			'required' => false,
+			'default' => '0',
+			'example' => 'visualdata-parserfunction-form-edit-target-slot-example'
 		],
 		'default-categories' => [
 			'label' => 'visualdata-parserfunction-form-default-categories-label',
@@ -543,6 +559,16 @@ class VisualData {
 
 		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
 
+		$spinner = Html::rawElement(
+			'div',
+			[ 'class' => 'mw-rcfilters-spinner mw-rcfilters-spinner-inline', 'style' => 'display:none' ],
+			Html::element(
+				'div',
+				[ 'class' => 'mw-rcfilters-spinner-bounce' ]
+			)
+		);
+
+		// $spinner .
 		return [
 			'<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
 				. wfMessage( 'visualdata-parserfunction-button-placeholder' )->text() . '</div>',
@@ -614,6 +640,16 @@ class VisualData {
 
 		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
 
+		$spinner = Html::rawElement(
+			'div',
+			[ 'class' => 'mw-rcfilters-spinner mw-rcfilters-spinner-inline', 'style' => 'display:none' ],
+			Html::element(
+				'div',
+				[ 'class' => 'mw-rcfilters-spinner-bounce' ]
+			)
+		);
+
+		// . $spinner
 		return [
 			'<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
 				. wfMessage( 'visualdata-parserfunction-form-placeholder' )->text() . '</div>',
@@ -823,7 +859,7 @@ class VisualData {
 	 * @param array $templates
 	 * @param array $printouts
 	 * @param array $params
-	 * @return bool|ResultPrinter;
+	 * @return bool|ResultPrinter
 	 */
 	public static function getResults(
 		$parser,
@@ -953,10 +989,11 @@ class VisualData {
 
 		$content = null;
 		foreach ( $slots as $role => $slot ) {
-			$content = $slots[$role]->getContent();
-			$modelId = $content->getContentHandler()->getModelID();
+			$content_ = $slots[$role]->getContent();
+			$modelId = $content_->getContentHandler()->getModelID();
 			if ( $role === SLOT_ROLE_VISUALDATA_JSONDATA
 				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+				$content = $content_;
 				break;
 			}
 		}
@@ -1103,12 +1140,38 @@ class VisualData {
 
 		$obj = [];
 		foreach ( $slotsData as $slotName => $value ) {
-			if ( $value['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+			if ( $value['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA
+				&& is_array( $value['content'] ) ) {
 				$keys = [ 'schemas', 'schemas-data', 'categories' ];
 				foreach ( $keys as $key ) {
 					if ( empty( $value['content'][$key] ) ) {
 						unset( $value['content'][$key] );
 					}
+				}
+
+				if ( empty( $value['content']['schemas'] ) ) {
+					unset( $value['content']['schemas-data'] );
+				}
+
+				if ( is_array( $value['content']['schemas-data'] ) ) {
+					if ( is_array( $value['content']['schemas-data']['untransformed'] ) ) {
+						foreach ( $value['content']['schemas-data']['untransformed'] as $k => $v ) {
+							// @FIXME save untrasformed values for each schema
+							$schemaName = substr( $k, 0, strrpos( $k, '/' ) );
+							if ( is_array( $value['content']['schemas'] )
+								&& !array_key_exists( $schemaName, $value['content']['schemas'] ) ) {
+								unset( $value['content']['schemas-data']['untransformed'][$k] );
+							}
+						}
+					}
+					if ( array_key_exists( 'untransformed', $value['content']['schemas-data'] )
+						&& empty( $value['content']['schemas-data']['untransformed'] ) ) {
+						unset( $value['content']['schemas-data']['untransformed'] );
+					}
+				}
+
+				if ( $slotName === SlotRecord::MAIN ) {
+					unset( $value['content']['categories'] );
 				}
 
 				if ( empty( $value['content'] ) ) {
@@ -1146,6 +1209,8 @@ class VisualData {
 		$contentModels = $contentHandlerFactory->getContentModels();
 		// $knownRoles = $slotRoleRegistry->getKnownRoles();
 
+		$pageUpdater = $wikiPage->newPageUpdater( $user );
+
 		// delete article if the current slots are empty
 		// and there aren't more slots on the page
 		if ( $oldRevisionRecord ) {
@@ -1164,9 +1229,17 @@ class VisualData {
 				self::deletePage( $wikiPage, $user, $reason );
 				return;
 			}
-		}
 
-		$pageUpdater = $wikiPage->newPageUpdater( $user );
+			// remove SLOT_ROLE_VISUALDATA_JSONDATA if
+			// jsondata have been moved to main
+			if ( $slotsData[SlotRecord::MAIN]['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+				foreach ( $existingSlots as $slotName => $value ) {
+					if ( $slotName === SLOT_ROLE_VISUALDATA_JSONDATA ) {
+						$pageUpdater->removeSlot( $slotName );
+					}
+				}
+			}
+		}
 
 		// The 'main' content slot MUST be set when creating a new page
 		if ( $oldRevisionRecord === null && !array_key_exists( MediaWiki\Revision\SlotRecord::MAIN, $slotsData ) ) {
@@ -1237,7 +1310,7 @@ class VisualData {
 		if ( !$title || !$title->isKnown() ) {
 			return $targetSlot;
 		}
-		$slots = self::getSlots( $title );
+		$slots = array_reverse( self::getSlots( $title ) );
 
 		if ( !$slots ) {
 			return $targetSlot;
@@ -1353,7 +1426,14 @@ class VisualData {
 			$editTitle = null;
 
 			if ( !empty( $value['options']['preload'] ) ) {
-				$jsonData = self::getPreloadData( $value['options']['preload'] );
+				$title_ = self::getTitleIfKnown( $value['options']['preload'] );
+				if ( $title_ ) {
+					$freetext = self::getWikipageContent( $value['options']['preload'] );
+				}
+			}
+
+			if ( !empty( $value['options']['preload-data'] ) ) {
+				$jsonData = self::getPreloadData( $value['options']['preload-data'] );
 			}
 
 			if ( $value['options']['action'] === 'edit' ) {
@@ -1484,7 +1564,7 @@ class VisualData {
 		}
 
 		$VEForAll = false;
-		if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) 
+		if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' )
 			&& self::VEenabledForUser( $user ) ) {
 			$userOptionsManager = MediaWikiServices::getInstance()->getUserOptionsManager();
 			$userOptionsManager->setOption( $user, 'visualeditor-enable', true );
@@ -1512,7 +1592,8 @@ class VisualData {
 				// 'canmanageforms' => self::$User->isAllowed( 'visualdata-canmanageforms' ),
 				'contentModels' => array_flip( self::getContentModels() ),
 				'contentModel' => $title->getContentModel(),
-				'SMW' => false,	// self::$SMW,
+				// self::$SMW,
+				'SMW' => false,
 				'VEForAll' => $VEForAll
 			],
 		];
@@ -1536,7 +1617,8 @@ class VisualData {
 			'visualdata-schemas' => json_encode( $obj['schemas'], true ),
 			'visualdata-pageforms' => json_encode( $obj['pageForms'], true ),
 			'visualdata-config' => json_encode( $obj['config'], true ),
-			'visualdata-show-notice-outdated-version' => $showOutdatedVersion
+			'visualdata-show-notice-outdated-version' => $showOutdatedVersion,
+			'visualdata-maptiler-apikey' => $GLOBALS['wgVisualDataMaptilerApiKey']
 		] );
 	}
 
@@ -1554,7 +1636,7 @@ class VisualData {
 		return ( $isBeta ?
 			$userOptionsLookup->getOption( $user, 'visualeditor-enable' ) :
 			!$userOptionsLookup->getOption( $user, 'visualeditor-betatempdisable' ) ) &&
-			!$userOptionsLookup->getOption( $user, 'visualeditor-autodisable' );		
+			!$userOptionsLookup->getOption( $user, 'visualeditor-autodisable' );
 	}
 
 	/**
@@ -1597,7 +1679,11 @@ class VisualData {
 			self::initialize();
 		}
 
-		if ( !$output->getTitle() ) {
+		$context = $output->getContext();
+		$method = ( method_exists( $context, 'hasTitle' ) ? 'hasTitle' : 'getTitle' );
+
+		// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
+		if ( !@$context->$method() ) {
 			$output->setTitle( Title::newMainPage() );
 		}
 

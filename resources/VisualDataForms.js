@@ -22,6 +22,8 @@
 /* eslint-disable no-tabs */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-underscore-dangle */
+/* eslint-disable es-x/no-async-functions */
+/* eslint-disable compat/compat */
 
 const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager ) {
 	var Model = {};
@@ -36,7 +38,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var SubmitButton;
 	var ValidateButton;
 	var GoBackButton;
-	var DeleteButton;
+	// var DeleteButton;
 	// shallow copy
 	var RecordedSchemas = Form.schemas.slice();
 	var Fields;
@@ -49,6 +51,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var InputWidgets;
 	var SchemasLayout;
 	var Initialized = false;
+	var PendingRecursive;
+	var QueuedWidgets = [];
+	var Maps = [];
+	var TargetSlotField;
 
 	function inArray( val, arr ) {
 		return arr.indexOf( val ) !== -1;
@@ -58,6 +64,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return str.replace( /~/g, '~0' ).replace( /\//g, '~1' );
 	}
 
+	// @FIXME destroy/reinitialize on tab change
 	function showVisualEditor() {
 		function timeOut( i ) {
 			setTimeout( function () {
@@ -67,7 +74,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				) {
 					InputWidgets[ i ].initialize();
 				}
-			}, 50 );
+			}, 100 );
 		}
 
 		// @IMPORTANT use "let" with timeout !!
@@ -82,8 +89,55 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
+	function loadMaps() {
+		function timeOut( obj ) {
+			// setTimeout( function () {
+			// @FIXME find a better way
+			var schemaName = obj.data.path.split( '/' )[ 0 ];
+			// if ( obj.element.is( ':visible' ) ) {
+			if ( schemaName === SelectedSchema ) {
+				if ( obj.data.schema.wiki.coordinates === false ) {
+					var latFieldId = makeElementId( `${ obj.data.path }/latitude` );
+					var lonFieldId = makeElementId( `${ obj.data.path }/longitude` );
+					var escapeSelector = jQuery.escapeSelector;
+
+					for ( let fieldId of [ latFieldId, lonFieldId ] ) {
+						let callbackCond = function () {
+							return $( '#' + escapeSelector( fieldId ) ).length;
+						};
+						let callback = function ( resolve, reject ) {
+							$( '#' + escapeSelector( fieldId ) ).hide();
+							resolve();
+						};
+						let callbackMaxAttempts = function ( resolve, reject ) {
+							$( '#' + escapeSelector( fieldId ) ).hide();
+						};
+						VisualDataFunctions.waitUntil(
+							callbackCond,
+							callback,
+							callbackMaxAttempts,
+							5
+						);
+					}
+				}
+
+				mw.loader.using( 'ext.VisualData.Maptiler', function () {
+					var visualDataMaptiler = new VisualDataMaptiler();
+					visualDataMaptiler.initialize( obj.element, obj.data );
+				} );
+			}
+			// }, 0 );
+		}
+
+		// @IMPORTANT use "let" with timeout !!
+		for ( let obj of Maps ) {
+			timeOut( obj );
+		}
+	}
+
 	function onSetPropertiesStack( item ) {
 		showVisualEditor();
+		// loadMaps();
 	}
 
 	function onChangePropertiesStack( items ) {}
@@ -91,6 +145,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	function onTabSelect( selectedSchema ) {
 		SelectedSchema = selectedSchema;
 		showVisualEditor();
+		loadMaps();
+	}
+
+	function makeElementId( path ) {
+		return `VisualDataGroupWidgetPanel-${ FormID }-${ path }`.replace(
+			/ /g,
+			'_'
+		);
 	}
 
 	function callbackShowError( schemaName, errorMessage, errors ) {
@@ -131,12 +193,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}
 		}
 
-		var el = window.document.querySelector(
-			`#VisualDataGroupWidgetPanel-${ FormID }-${ schemaName }`.replace(
-				/ /g,
-				'_'
-			)
-		);
+		var el = window.document.querySelector( '#' + makeElementId( schemaName ) );
 
 		if ( el ) {
 			if ( 'setTabPanel' in SchemasLayout ) {
@@ -145,11 +202,27 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				SchemasLayout.setPage( schemaName );
 			}
 
-			setTimeout( function () {
+			let callbackCond = function () {
+				$( el ).is( ':visible' );
+			};
+			let callback = function ( resolve, reject ) {
 				el.scrollIntoView( {
 					behavior: 'smooth'
 				} );
-			}, 250 );
+				resolve();
+			};
+			let callbackMaxAttempts = function ( resolve, reject ) {
+				el.scrollIntoView( {
+					behavior: 'smooth'
+				} );
+			};
+
+			VisualDataFunctions.waitUntil(
+				callbackCond,
+				callback,
+				callbackMaxAttempts,
+				5
+			);
 		}
 	}
 
@@ -279,7 +352,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	async function performQuery( data, value ) {
 		var field = data.schema.wiki;
 		var askQuery = field[ 'options-askquery' ];
-		let matches = [];
+		var matches = [];
 
 		var re = /<([^<>]+)>/g;
 		while ( true ) {
@@ -769,13 +842,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		if ( action === 'save' ) {
 			var values = processDialogSearch.selectedItems;
 			// ProcessModel.getModel("fetch").then(function (res) {
-			//	Form.jsonData.schemas = res;
+			// Form.jsonData.schemas = res;
 
 			switch ( dialog.data.toolName ) {
 				case 'addremoveschemas':
 					for ( var i in ModelSchemas ) {
 						if ( !inArray( i, values ) ) {
-							delete Form.jsonData.schemas[ i ];
+							// delete Form.jsonData.schemas[ i ];
 							delete ModelSchemas[ i ];
 							delete Fields[ i ];
 						}
@@ -1073,6 +1146,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			this,
 			$.extend( { $group: this.$element }, config )
 		);
+		// OO.EventEmitter.call( this );
 
 		this.data = data;
 
@@ -1107,32 +1181,54 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			classes: [
 				'VisualDataGroupWidgetPanel' + ( !showBorderValue ? '-border' : '' )
 			],
-			id: `VisualDataGroupWidgetPanel-${ FormID }-${ data.path }`.replace(
-				/ /g,
-				'_'
-			)
+			id: makeElementId( data.path )
 		} );
 
-		if ( data.root && Config.canmanageschemas ) {
-			var editButton = new OO.ui.ButtonWidget( {
-				icon: 'edit',
-				framed: false
-				// flags: ["destructive"],
-				// classes: ["VisualDataOptionsListDeleteButton"],
-			} );
+		this.layout = layout;
 
-			editButton.on( 'click', function () {
-				VisualDataSchemas.openSchemaDialog(
-					[ data.schema.wiki.name ],
-					'properties'
-				);
-			} );
+		if ( data.root ) {
+			var $containerRight = $( '<div class="visualdata-form-container-right">' );
+			layout.$element.append( $containerRight );
 
-			layout.$element.append(
-				$( '<div class="visualdata-form-container-edit-button">' ).append(
-					editButton.$element
-				)
-			);
+			if ( Config.context === 'EditData' ) {
+				var deleteButton = new OO.ui.ButtonWidget( {
+					icon: 'trash',
+					framed: false,
+					label: mw.msg( 'visualdata-jsmodule-forms-delete-schema' ),
+					invisibleLabel: true,
+					flags: [ 'destructive' ]
+				} );
+
+				deleteButton.on( 'click', function () {
+					Form.schemas.splice( Form.schemas.indexOf( data.schema.wiki.name ), 1 );
+					// delete Form.jsonData.schemas[ data.schema.wiki.name ];
+					delete ModelSchemas[ data.schema.wiki.name ];
+					delete Fields[ data.schema.wiki.name ];
+					updatePanels();
+				} );
+
+				$containerRight.append( deleteButton.$element );
+			}
+
+			if ( Config.canmanageschemas ) {
+				var editButton = new OO.ui.ButtonWidget( {
+					// 'settings'
+					icon: 'edit',
+					framed: false,
+					label: mw.msg( 'visualdata-jsmodule-forms-edit-schema' ),
+					invisibleLabel: true
+					// classes: ["VisualDataOptionsListDeleteButton"],
+				} );
+
+				editButton.on( 'click', function () {
+					VisualDataSchemas.openSchemaDialog(
+						[ data.schema.wiki.name ],
+						'properties'
+					);
+				} );
+
+				$containerRight.append( editButton.$element );
+			}
 		}
 
 		var messageWidget = new OO.ui.MessageWidget( {
@@ -1170,7 +1266,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						)
 					] )
 				);
-
 				break;
 
 			default:
@@ -1216,6 +1311,17 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				} else {
 					layout.$element.append( this.fieldset.$element );
 				}
+
+				if ( data.schema.wiki.type === 'geolocation' && data.schema.wiki.map === true ) {
+					if ( !Maps.length ) {
+						( new VisualDataMaptiler() ).load();
+					}
+					Maps.push( { data, element: layout.$element } );
+				}
+
+				this.connect( this, {
+					formLoaded: 'formLoaded'
+				} );
 		}
 
 		/*
@@ -1254,6 +1360,23 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	OO.inheritClass( GroupWidget, OO.ui.Widget );
 	OO.mixinClass( GroupWidget, OO.ui.mixin.GroupWidget );
+	// OO.mixinClass( GroupWidget, OO.EventEmitter );
+
+	GroupWidget.prototype.formLoaded = function () {
+		if ( this.data.root === true ) {
+			setTimeout( function () {
+				VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
+			}, 30 );
+
+			setTimeout( function () {
+				VisualDataFunctions.removeNbspFromLayoutHeader(
+					'#visualdataform-wrapper-dialog-' + FormID
+				);
+			}, 30 );
+
+			loadMaps();
+		}
+	};
 
 	GroupWidget.prototype.addItems = function ( items ) {
 		if ( this.data.schema.wiki.layout === 'horizontal' ) {
@@ -1306,6 +1429,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			Form.options.layout = 'tabs';
 		}
 
+		PendingRecursive = 0;
+		QueuedWidgets = [];
+		Maps = [];
 		function getWidgets() {
 			var ret = {};
 
@@ -1328,9 +1454,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 				var path = `${ escapeJsonPtr( thisSchemaName ) }`;
 				var pathNoIndex = '';
+				var model = ( ModelSchemas[ thisSchemaName ] = {
+					parent: ModelSchemas,
+					childIndex: thisSchemaName,
+					parentSchema: null
+				} );
 				var widget = new GroupWidget(
 					{},
-					{ root: true, schema: schema, path: path }
+					{ root: true, schema, path, model }
 				);
 
 				processSchema(
@@ -1338,10 +1469,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					schema,
 					previousSchema,
 					thisSchemaName,
-					( ModelSchemas[ thisSchemaName ] = {
-						parent: ModelSchemas,
-						childIndex: thisSchemaName
-					} ),
+					model,
 					Form.jsonData.schemas[ thisSchemaName ],
 					path,
 					pathNoIndex,
@@ -1354,7 +1482,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return ret;
 		}
 
-		function getEditFreeTextInput( VEForAll, thisConfig ) {
+		function getFreeTextInput( wikitext, thisConfig ) {
 			var thisInputWidget;
 
 			thisConfig = $.extend(
@@ -1365,7 +1493,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				thisConfig
 			);
 
-			if ( !VEForAll ) {
+			if ( !wikitext || !Config.VEForAll ) {
 				thisInputWidget = new OO.ui.MultilineTextInputWidget(
 					$.extend(
 						{
@@ -1389,15 +1517,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					Form.jsonData.schemas = {};
 				}
 
+				var validSchemas = Form.schemas.filter( ( x ) => x in Schemas );
+				SelectedSchema = ( validSchemas.length ? validSchemas[ 0 ] : null );
+
 				var layout = Form.options.layout;
 				var widgets = getWidgets();
 
-				var selectedSchema = null;
-				if ( Object.keys( widgets ).length ) {
-					selectedSchema = Object.keys( widgets )[ 0 ];
-				}
-
-				if ( !selectedSchema ) {
+				if ( !SelectedSchema ) {
 					this.isEmpty = true;
 					return false;
 				}
@@ -1420,11 +1546,34 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				OO.inheritClass( ThisTabPanelLayout, OO.ui.TabPanelLayout );
 				ThisTabPanelLayout.prototype.setupTabItem = function () {
 					this.tabItem.setLabel( this.name );
+
+					this.deleteButton = new OO.ui.ButtonWidget( {
+						icon: 'close',
+						framed: false,
+						label: mw.msg( 'visualdata-jsmodule-forms-delete-schema' ),
+						invisibleLabel: true,
+						classes: [ 'VisualDataTabPanelLayoutTabItemDeleteButton' ]
+					} );
+
+					this.deleteButton.on( 'click', function () {
+						Form.schemas.splice( Form.schemas.indexOf( this.name ), 1, 0 );
+						// delete Form.jsonData.schemas[ data.schema.wiki.name ];
+						delete ModelSchemas[ this.name ];
+						delete Fields[ this.name ];
+						updatePanels();
+					} );
+
+					this.deleteButton.toggle( this.name === SelectedSchema );
+					// @TODO
+					// this.tabItem.$label.append( this.deleteButton.$element );
+				};
+
+				ThisTabPanelLayout.prototype.toggleCloseButton = function () {
 				};
 
 				switch ( layout ) {
 					case 'single':
-						content = widgets[ selectedSchema ];
+						content = widgets[ SelectedSchema ];
 						this.$element.addClass( 'PanelPropertiesStackPanelSingle' );
 
 						break;
@@ -1435,12 +1584,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 							padded: false
 						} );
 
-						if (
-							SelectedSchema &&
-							Object.keys( widgets ).indexOf( SelectedSchema ) !== -1
-						) {
-							selectedSchema = SelectedSchema;
-						}
+						// if (
+						// 	SelectedSchema &&
+						// 	Object.keys( widgets ).indexOf( SelectedSchema ) !== -1
+						// ) {
+						// 	selectedSchema = SelectedSchema;
+						// }
 
 						booklet.on( 'set', function () {
 							onTabSelect( booklet.getCurrentPageName() );
@@ -1459,7 +1608,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						booklet.addPages( items );
 						content = booklet;
 
-						booklet.setPage( selectedSchema );
+						booklet.setPage( SelectedSchema );
 
 						this.$element.addClass( 'PanelPropertiesStackPanelBooklet' );
 
@@ -1476,12 +1625,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 						SchemasLayout = indexLayout;
 
-						if (
-							SelectedSchema &&
-							Object.keys( widgets ).indexOf( SelectedSchema ) !== -1
-						) {
-							selectedSchema = SelectedSchema;
-						}
+						// if (
+						// 	SelectedSchema &&
+						// 	Object.keys( widgets ).indexOf( SelectedSchema ) !== -1
+						// ) {
+						// 	selectedSchema = SelectedSchema;
+						// }
 
 						indexLayout.on( 'set', function () {
 							onTabSelect( indexLayout.getCurrentTabPanelName() );
@@ -1495,7 +1644,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						}
 
 						indexLayout.addTabPanels( items );
-						indexLayout.setTabPanel( selectedSchema );
+						indexLayout.setTabPanel( SelectedSchema );
 						content = indexLayout;
 
 						this.$element.addClass( 'PanelPropertiesStackPanelTabs' );
@@ -1506,9 +1655,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			case 'article':
 				var items = [];
-
 				var userDefinedInput;
 				var userDefinedField;
+				var freeTextField;
+				var categoriesField;
+				var contentModelField;
+
 				if ( data.userDefined ) {
 					var inputName = 'mw.widgets.TitleInputWidget';
 
@@ -1530,19 +1682,52 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					items.push( userDefinedField );
 				}
 
+				if ( data.editTargetSlot ) {
+					var targetSlotInput = new OO.ui.DropdownInputWidget( {
+						name: `${ FormID }-model-target-slot`,
+						options: VisualDataFunctions.createDropDownOptions( {
+							jsondata: mw.msg( 'visualdata-jsmodule-forms-target-slot-option-jsondata' ),
+							main: mw.msg( 'visualdata-jsmodule-forms-target-slot-option-main' )
+						} ),
+						value: Form.options[ 'target-slot' ]
+					} );
+
+					Model[ 'target-slot' ] = targetSlotInput;
+
+					targetSlotInput.on( 'change', function ( value ) {
+						freeTextField.toggle( value !== 'main' );
+						categoriesField.toggle( value !== 'main' );
+						contentModelField.toggle( value !== 'main' );
+					} );
+
+					TargetSlotField = new OO.ui.FieldLayout( targetSlotInput, {
+						label: mw.msg( 'visualdata-jsmodule-forms-target-slot' ),
+						help: mw.msg( 'visualdata-jsmodule-forms-target-slot-help' ),
+						helpInline: true,
+						align: data.fieldAlign
+					} );
+
+					// TargetSlotField.toggle( false );
+
+					items.push( TargetSlotField );
+				}
+
 				if ( data.editFreeText ) {
-					var inputWidget = getEditFreeTextInput( Config.VEForAll, {
+					var inputWidget = getFreeTextInput( Config.contentModel === 'wikitext', {
 						value: Form.freetext,
 						contentModel: Config.contentModel
 					} );
 
-					items.push(
-						new OO.ui.FieldLayout( inputWidget, {
-							label: mw.msg( 'visualdata-jsmodule-forms-freetext' ),
-							align: data.fieldAlign
-						} )
-					);
+					freeTextField = new OO.ui.FieldLayout( inputWidget, {
+						label: mw.msg( 'visualdata-jsmodule-forms-freetext' ),
+						align: data.fieldAlign
+					} );
+
+					freeTextField.toggle( Form.options[ 'target-slot' ] !== 'main' );
+
+					items.push( freeTextField );
 				}
+
 				if ( data.editCategories ) {
 					var categories = data.categories;
 
@@ -1557,13 +1742,16 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					for ( var category of categories ) {
 						categoriesInput.addTag( category );
 					}
-					items.push(
-						new OO.ui.FieldLayout( categoriesInput, {
-							label: mw.msg( 'visualdata-jsmodule-forms-categories' ),
-							align: data.fieldAlign,
-							classes: [ 'VisualDataItemWidget' ]
-						} )
-					);
+
+					categoriesField = new OO.ui.FieldLayout( categoriesInput, {
+						label: mw.msg( 'visualdata-jsmodule-forms-categories' ),
+						align: data.fieldAlign,
+						classes: [ 'VisualDataItemWidget' ]
+					} );
+
+					categoriesField.toggle( Form.options[ 'target-slot' ] !== 'main' );
+
+					items.push( categoriesField );
 				}
 
 				if ( data.editContentModel ) {
@@ -1589,13 +1777,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						// @TODO convert from/to html and wikitext
 						// value === "html" ||
 						if ( value === 'wikitext' ) {
-							thisInputWidget = getEditFreeTextInput( true, {
+							thisInputWidget = getFreeTextInput( true, {
 								contentModel: value,
 								value: freetextValue
 							} );
 							// // @TODO use TinyMCE for html
 						} else {
-							thisInputWidget = getEditFreeTextInput( false, {
+							thisInputWidget = getFreeTextInput( false, {
 								value: freetextValue
 							} );
 						}
@@ -1604,13 +1792,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 					Model[ 'content-model' ] = contentModelInput;
 
-					items.push(
-						new OO.ui.FieldLayout( contentModelInput, {
-							label: mw.msg( 'visualdata-jsmodule-forms-content-models' ),
-							align: data.fieldAlign,
-							classes: [ 'VisualDataItemWidget' ]
-						} )
-					);
+					contentModelField = new OO.ui.FieldLayout( contentModelInput, {
+						label: mw.msg( 'visualdata-jsmodule-forms-content-models' ),
+						align: data.fieldAlign,
+						classes: [ 'VisualDataItemWidget' ]
+					} );
+
+					contentModelField.toggle( Form.options[ 'target-slot' ] !== 'main' );
+
+					items.push( contentModelField );
 				}
 
 				if ( !items.length ) {
@@ -1762,6 +1952,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return this;
 	};
 
+	// @FIXME store for each separate schema
 	function applyUntransformed( data, i, path ) {
 		if (
 			!( 'schemas-data' in Form.jsonData ) ||
@@ -1799,7 +1990,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			'preferred-input' in item.wiki &&
 			VisualDataFunctions.isMultiselect( item.wiki[ 'preferred-input' ] )
 		) {
-			let widget_ = new GroupWidget( {}, { schema: item, path: path } );
+			var widget_ = new GroupWidget( {}, { schema: item, path, model } );
 			processSchema(
 				widget_,
 				item,
@@ -1849,14 +2040,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}
 			var path_ = `${ path }/${ i }`;
 			applyUntransformed( data, i, path );
-
-			let widget_ = new GroupWidget( {}, { schema: item, path: path_ } );
+			var thisModel = ( model[ i ] = {
+				parent: model,
+				childIndex: i,
+				parentSchema: schema
+			} );
+			var widget_ = new GroupWidget( {}, { schema: item, path: path_, model: thisModel } );
 			processSchema(
 				widget_,
 				item,
 				previousItem,
 				schemaName,
-				( model[ i ] = { parent: model, childIndex: i } ),
+				thisModel,
 				data[ i ],
 				path_,
 				pathNoIndex,
@@ -1877,25 +2072,30 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				!( 'maxItems' in schema ) ||
 				self.optionsList.items.length < schema.maxItems
 			) {
-				let widget_ = new GroupWidget( {}, { schema: item, path: path } );
 				var ii = self.optionsList.items.length ?
 					self.optionsList.items[ self.optionsList.items.length - 1 ].data
 						.index + 1 :
 					0;
+				var modelAddOption = ( model[ ii ] = {
+					parent: model,
+					childIndex: ii,
+					parentSchema: schema
+				} );
+				var widgetAddOption = new GroupWidget( {}, { schema: item, path, model: modelAddOption } );
 
 				var thisPath_ = `${ path }/${ ii }`;
 				processSchema(
-					widget_,
+					widgetAddOption,
 					item,
 					previousItem,
 					schemaName,
-					( model[ ii ] = { parent: model, childIndex: ii } ),
+					modelAddOption,
 					( data[ ii ] = {} ),
 					thisPath_,
 					pathNoIndex,
 					true
 				);
-				self.optionsList.addItem( widget_, ii );
+				self.optionsList.addItem( widgetAddOption, ii );
 			}
 		} );
 
@@ -1977,6 +2177,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		pathNoIndex,
 		newItem
 	) {
+		PendingRecursive++;
 		if ( !( 'type' in schema ) ) {
 			schema.type = 'default' in schema ? 'string' : 'object';
 		}
@@ -2011,16 +2212,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 							'properties' in previousSchema && i in previousSchema.properties ?
 								previousSchema.properties[ i ] :
 								{};
-						var widget_ = new GroupWidget( {}, { schema: item, path: path_ } );
+						var thisModel = ( model.properties[ i ] = {
+							parent: model.properties,
+							childIndex: i,
+							parentSchema: schema
+						} );
+						var widget_ = new GroupWidget( {}, { schema: item, path: path_, model: thisModel } );
 						processSchema(
 							widget_,
 							item,
 							previousItem,
 							schemaName,
-							( model.properties[ i ] = {
-								parent: model.properties,
-								childIndex: i
-							} ),
+							thisModel,
 							data[ i ],
 							path_,
 							pathNoIndex_,
@@ -2078,33 +2281,33 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					Form.options.action !== 'create'
 				) {
 					delete model.parent[ model.childIndex ];
-					return;
-				}
 
-				var inputValue = determineInputValue(
-					schema,
-					previousSchema,
-					schemaName,
-					model,
-					data,
-					newItem
-				);
-
-				if ( Array.isArray( inputValue ) ) {
-					inputValue = inputValue.filter(
-						( x ) => !VisualDataFunctions.isObject( x )
+				} else {
+					var inputValue = determineInputValue(
+						schema,
+						previousSchema,
+						schemaName,
+						model,
+						data,
+						newItem
 					);
+
+					if ( Array.isArray( inputValue ) ) {
+						inputValue = inputValue.filter(
+							( x ) => !VisualDataFunctions.isObject( x )
+						);
+					}
+
+					// used by getFieldAlign
+					model.schema.wiki.schema = schemaName;
+					var item = new ItemWidget( {
+						classes: [ 'VisualDataItemWidget' ],
+						model: model,
+						data: inputValue
+					} );
+
+					widget.addItems( [ item ] );
 				}
-
-				// used by getFieldAlign
-				model.schema.wiki.schema = schemaName;
-				var item = new ItemWidget( {
-					classes: [ 'VisualDataItemWidget' ],
-					model: model,
-					data: inputValue
-				} );
-
-				widget.addItems( [ item ] );
 		}
 
 		// @TODO implement anyOf, oneOf, allOf
@@ -2126,9 +2329,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// 		}
 		// 	}
 		// }
+
+		QueuedWidgets.push( widget );
+		// inform queued widgets that the rendering of the form is complete
+		if ( --PendingRecursive === 0 ) {
+			for ( widget_ of QueuedWidgets ) {
+				// @see https://www.mediawiki.org/wiki/OOjs/Events
+				widget_.emit( 'formLoaded' );
+			}
+		}
 	}
 
-	function getSchemasPanel() {
+	function getSchemasPanelLayout() {
 		Fields = {};
 		ModelSchemas = {};
 		ModelFlatten = [];
@@ -2157,12 +2369,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		} );
 	}
 
-	function getArticlePanel() {
+	function getArticlePanelLayout() {
 		var userDefined = Config.isNewPage && Form.options[ 'edit-page' ] === '';
 
 		var editFreeText = Config.isNewPage && Config.context === 'EditData';
 		var editContentModel = Config.context === 'EditData';
 		var editCategories = Config.context === 'EditData';
+		var editTargetSlot = Config.context === 'EditData';
 
 		var categories = [];
 
@@ -2178,7 +2391,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			editFreeText = Form.options[ 'edit-freetext' ];
 		}
 
-		if (
+		if ( 'edit-target-slot' in Form.options ) {
+			editTargetSlot = Form.options[ 'edit-target-slot' ];
+		}
+
+		if ( editTargetSlot === false &&
 			'target-slot' in Form.options &&
 			Form.options[ 'target-slot' ] === 'main'
 		) {
@@ -2230,34 +2447,39 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			data: {
 				name: 'article',
 				label: mw.msg( 'visualdata-jsmodule-forms-wiki' ),
-				userDefined: userDefined,
-				editFreeText: editFreeText,
-				editCategories: editCategories,
-				editContentModel: editContentModel,
-				categories: categories,
-				fieldAlign: fieldAlign
+				userDefined,
+				editFreeText,
+				editCategories,
+				editContentModel,
+				editTargetSlot,
+				categories,
+				fieldAlign
 			}
 		} );
 	}
 
+	function removeSchemasPanel() {
+		var panels = PropertiesStack.getItems();
+		for ( var panel of panels ) {
+			if ( panel.getData().name === 'schemas' ) {
+				PropertiesStack.removeItems( [ panel ] );
+				return;
+			}
+		}
+	}
+
 	function updatePanels() {
 		ProcessModel.getModel( 'fetch' ).then( function ( res ) {
-			Form.jsonData.schemas = res;
+			Form.jsonData.schemas = $.extend( Form.jsonData.schemas, res );
+
+			removeSchemasPanel();
+
+			var schemasPanelLayout = getSchemasPanelLayout();
+			if ( !schemasPanelLayout.isEmpty ) {
+				PropertiesStack.addItems( [ schemasPanelLayout ], 0 );
+			}
 
 			var panels = PropertiesStack.getItems();
-			for ( var panel of panels ) {
-				if ( panel.getData().name === 'schemas' ) {
-					PropertiesStack.removeItems( [ panel ] );
-					break;
-				}
-			}
-
-			var schemasPanel = getSchemasPanel();
-			if ( !schemasPanel.isEmpty ) {
-				PropertiesStack.addItems( [ schemasPanel ], 0 );
-			}
-
-			panels = PropertiesStack.getItems();
 
 			PropertiesStack.setItem( panels[ 0 ] );
 
@@ -2275,25 +2497,25 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}
 
 			updateButtons( panels );
-
-			setTimeout( function () {
-				VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
-			}, 30 );
 		} );
 	}
 
 	function updateButtons( panels ) {
+		if ( TargetSlotField ) {
+			TargetSlotField.toggle( hasMultiplePanels() );
+		}
+
 		if ( Form.options.view === 'popup' ) {
 			return;
 		}
 		if ( hasMultiplePanels() ) {
 			ValidateButton.toggle( panels.length !== 0 );
-			DeleteButton.toggle( hasStoredJsonData() );
+			// DeleteButton.toggle( hasStoredJsonData() );
 			GoBackButton.toggle( false );
 			SubmitButton.toggle( false );
 		} else {
 			SubmitButton.toggle( panels.length !== 0 );
-			DeleteButton.toggle( hasStoredJsonData() );
+			// DeleteButton.toggle( hasStoredJsonData() );
 			GoBackButton.toggle( false );
 			ValidateButton.toggle( false );
 		}
@@ -2323,6 +2545,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		ProcessModel.getModel( action ).then( async function ( res ) {
 			if ( typeof res === 'boolean' && res === false ) {
+				return;
+			}
+
+			if ( res.form[ 'target-slot' ] === 'main' && !res.schemas.length ) {
+				// eslint-disable-next-line no-alert
+				alert( mw.msg( 'visualdata-jsmodule-forms-submit-no-schemas' ) );
 				return;
 			}
 
@@ -2403,7 +2631,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			.next( function () {
 				// @see resources/lib/ooui/oojs-ui-windows.js
 				this.actions.setMode(
-					( PropertiesStack.getItems().length > 1 ?
+					( hasMultiplePanels() ?
 						'validate' :
 						'submit-single' ) + ( !hasStoredJsonData() ? '' : '-delete' )
 				);
@@ -2414,16 +2642,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	ProcessDialog.prototype.initialize = function () {
 		ProcessDialog.super.prototype.initialize.apply( this, arguments );
-
 		// this.$body.append(this.data.OuterStack.$element);
-
 		// showVisualEditor();
-
-		setTimeout( function () {
-			VisualDataFunctions.removeNbspFromLayoutHeader(
-				'#visualdataform-wrapper-dialog-' + FormID
-			);
-		}, 30 );
 	};
 
 	ProcessDialog.prototype.getActionProcess = function ( action ) {
@@ -2482,7 +2702,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 								action: 'visualdata-submit-form'
 							};
 
-							return new Promise( ( resolve, reject ) => {								
+							return new Promise( ( resolve, reject ) => {
 								new mw.Api()
 									.postWithToken( 'csrf', payload )
 									.done( function ( thisRes ) {
@@ -2513,7 +2733,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 										console.error( 'visualdata-submit-form', res );
 										reject( thisRes );
 									} );
-								
+
 							} );
 						} ).catch( ( err ) => {
 							VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
@@ -2558,7 +2778,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function initializePropertiesStack() {
-		var panels = [ getSchemasPanel(), getArticlePanel() ].filter(
+		var panels = [ getSchemasPanelLayout(), getArticlePanelLayout() ].filter(
 			( x ) => !x.isEmpty
 		);
 
@@ -2589,7 +2809,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function hasMultiplePanels() {
-		return PropertiesStack.getItems().length > 1;
+		return PropertiesStack && PropertiesStack.getItems().length > 1;
 	}
 
 	function hasStoredJsonData() {
@@ -2638,11 +2858,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				label: Form.options.label
 			} );
 			var widget;
-	
+
 			if ( Form.options.schema !== '' ) {
 				var editButton = new OO.ui.ButtonWidget( {
 					icon: 'edit',
-					flags: [ 'primary', 'progressive' ],
+					flags: [ 'primary', 'progressive' ]
 				} );
 
 				editButton.on( 'click', function () {
@@ -2675,7 +2895,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				widget = new OO.ui.ActionFieldLayout( button, editButton, {
 					label: '',
 					align: 'top',
-					classes: [ 'VisualDataPageButtonsActionField' ],
+					classes: [ 'VisualDataPageButtonsActionField' ]
 				} );
 
 			} else {
@@ -2794,7 +3014,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				ValidateButton.toggle( false );
 				SubmitButton.toggle( true );
 				GoBackButton.toggle( true );
-				DeleteButton.toggle( false );
+				// DeleteButton.toggle( false );
 				$( '#visualdataform-wrapper-' + FormID )
 					.get( 0 )
 					.scrollIntoView( { behavior: 'smooth' } );
@@ -2803,16 +3023,16 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		formContent.push( ValidateButton.$element );
 
-		var printDeleteButton = hasStoredJsonData();
+		// var printDeleteButton = hasStoredJsonData();
 
-		DeleteButton = new OO.ui.ButtonInputWidget( {
-			label: mw.msg( 'visualdata-jsmodule-forms-delete' ),
-			classes: [ 'VisualDataFormSubmitButton' ],
-			flags: [ 'destructive' ],
-			type: 'submit'
-		} );
+		// DeleteButton = new OO.ui.ButtonInputWidget( {
+		// 	label: mw.msg( 'visualdata-jsmodule-forms-delete' ),
+		// 	classes: [ 'VisualDataFormSubmitButton' ],
+		// 	flags: [ 'destructive' ],
+		// 	type: 'submit'
+		// } );
 
-		formContent.push( DeleteButton.$element );
+		// formContent.push( DeleteButton.$element );
 
 		GoBackButton = new OO.ui.ButtonInputWidget( {
 			label: mw.msg( 'visualdata-jsmodule-forms-goback' ),
@@ -2828,7 +3048,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			ValidateButton.toggle( true );
 			SubmitButton.toggle( false );
 			GoBackButton.toggle( false );
-			DeleteButton.toggle( hasStoredJsonData() );
+			// DeleteButton.toggle( hasStoredJsonData() );
 
 			$( '#visualdataform-wrapper-' + FormID )
 				.get( 0 )
@@ -2858,28 +3078,28 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			data: { name: 'visualdata' }
 		} );
 
-		DeleteButton.on( 'click', function () {
-			if (
-				// eslint-disable-next-line no-alert
-				confirm(
-					mw.msg( 'visualdata-jsmodule-forms-delete-data-confirm' )
-				)
-			) {
-				form.$element.data( { delete: true } );
-				form.$element.trigger( 'submit' );
-			}
+		// DeleteButton.on( 'click', function () {
+		// 	if (
+		// 		// eslint-disable-next-line no-alert
+		// 		confirm(
+		// 			mw.msg( 'visualdata-jsmodule-forms-delete-data-confirm' )
+		// 		)
+		// 	) {
+		// 		form.$element.data( { delete: true } );
+		// 		form.$element.trigger( 'submit' );
+		// 	}
 
-			// VisualDataFunctions.OOUIAlert(
-			// 	new OO.ui.HtmlSnippet(
-			// 		mw.msg("visualdata-jsmodule-visualdata-delete-data-confirm")
-			// 	),
-			// 	{ size: "medium" },
-			// 	function () {
-			// 		form.$element.data({ delete: true });
-			// 		form.$element.submit();
-			// 	}
-			// );
-		} );
+		// VisualDataFunctions.OOUIAlert(
+		// 	new OO.ui.HtmlSnippet(
+		// 		mw.msg("visualdata-jsmodule-visualdata-delete-data-confirm")
+		// 	),
+		// 	{ size: "medium" },
+		// 	function () {
+		// 		form.$element.data({ delete: true });
+		// 		form.$element.submit();
+		// 	}
+		// );
+		// } );
 
 		form.$element.on( 'submit', onSubmit );
 
@@ -2890,12 +3110,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			// eslint-disable-next-line no-jquery/no-global-selector
 			$( '#mw-rcfilters-spinner-wrapper' ).remove();
-
 			// showVisualEditor();
-
-			setTimeout( function () {
-				VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
-			}, 30 );
 
 			return true;
 		}
@@ -2994,10 +3209,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		$( '#mw-rcfilters-spinner-wrapper' ).remove();
 
 		// showVisualEditor();
-
-		setTimeout( function () {
-			VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
-		}, 30 );
 
 		return true;
 	}

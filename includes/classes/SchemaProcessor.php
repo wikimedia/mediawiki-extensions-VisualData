@@ -654,6 +654,42 @@ class SchemaProcessor {
 				$ret['wiki'] = $schema['wiki'];
 				$ret['description'] = $this->parseWikitext( $schema['wiki']['content'] );
 				break;
+			case 'geolocation':
+				// @see https://json-schema.org/learn/miscellaneous-examples.html
+				$ret = [
+					'wiki' => $schema['wiki'],
+					'$id' => 'https://example.com/geographical-location.schema.json',
+					'$schema' => 'https://json-schema.org/draft/2020-12/schema',
+					'title' => isset( $schema['wiki']['label'] ) ? $this->parseWikitext( $schema['wiki']['label'] ) : '',
+					'description' => isset( $schema['wiki']['help-message'] ) ? $this->parseWikitext( $schema['wiki']['help-message'] ) : '',
+					'required' => [ 'latitude', 'longitude' ],
+					'type' => 'object',
+					'properties' => [
+						'latitude' => [
+							'title' => isset( $schema['wiki']['latitude-input-label'] ) ? $this->parseWikitext( $schema['wiki']['latitude-input-label'] ) : '',
+							'description' => isset( $schema['wiki']['latitude-input-help'] ) ? $this->parseWikitext( $schema['wiki']['latitude-input-help'] ) : '',
+							'type' => 'number',
+							'minimum' => -90,
+							'maximum' => 90
+						],
+						'longitude' => [
+							'title' => isset( $schema['wiki']['longitude-input-label'] ) ? $this->parseWikitext( $schema['wiki']['longitude-input-label'] ) : '',
+							'description' => isset( $schema['wiki']['longitude-input-help'] ) ? $this->parseWikitext( $schema['wiki']['longitude-input-help'] ) : '',
+							'type' => 'number',
+							'minimum' => -180,
+							'maximum' => 180
+						],
+						'zoom' => [
+							'type' => 'number',
+							'minimum' => 0,
+							'maximum' => 24,
+							'wiki' => [
+								'visibility' => 'hidden'
+							]
+						]
+					]
+				];
+				break;
 		}
 	}
 
@@ -1154,7 +1190,7 @@ class SchemaProcessor {
 			$printouts,
 			$params
 		);
-		
+
 		if ( $results ) {
 			return [];
 		}

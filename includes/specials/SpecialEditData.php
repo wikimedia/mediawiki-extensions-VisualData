@@ -117,7 +117,11 @@ class SpecialEditData extends SpecialPage {
 		$options = [
 			'action' => ( $this->title ? 'edit' : 'create' ),
 			'target-slot' => $targetSlot,
-			'edit-freetext' => ( !$this->title || !$this->title->isKnown() ),
+			// ( !$this->title || !$this->title->isKnown() ),
+			'edit-freetext' => true,
+			'edit-content-model' => true,
+			'edit-categories' => true,
+			'edit-target-slot' => true,
 		];
 
 		$defaultParameters = \VisualData::$FormDefaultParameters;
@@ -129,7 +133,11 @@ class SpecialEditData extends SpecialPage {
 
 		// "hardcode" more parameters
 		$params['return-url'] = ( $this->title ? $this->title->getLocalURL() : '' );
-		$params['origin-url'] = 'http' . ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ? 's' : '' ) . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+
+		// PHPUnit only
+		if ( isset( $_SERVER['HTTP_HOST'] ) ) {
+			$params['origin-url'] = 'http' . ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ? 's' : '' ) . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+		}
 
 		// if ( !$this->title && ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) ) {
 		// 	$out->addModules( 'ext.veforall.main' );

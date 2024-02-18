@@ -19,7 +19,8 @@ module.exports = function ( grunt ) {
 				'!resources/intl-tel-input/**',
 				'!resources/papaparse/**',
 				'!resources/promise-polyfill/**',
-				'!resources/ajv-validator/**'
+				'!resources/ajv-validator/**',
+				'!resources/Maptiler/**'
 			]
 		},
 		stylelint: {
@@ -31,7 +32,8 @@ module.exports = function ( grunt ) {
 				'!resources/intl-tel-input/**',
 				'!resources/papaparse/**',
 				'!resources/promise-polyfill/**',
-				'!resources/ajv-validator/**'
+				'!resources/ajv-validator/**',
+				'!resources/Maptiler/**'
 			]
 		},
 		banana: conf.MessagesDirs

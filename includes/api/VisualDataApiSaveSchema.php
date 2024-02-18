@@ -54,7 +54,8 @@ class VisualDataApiSaveSchema extends ApiBase {
 		\VisualData::initialize();
 
 		$result = $this->getResult();
-
+		$context = new RequestContext();
+		$output = $context->getOutput();
 		$params = $this->extractRequestParams();
 		$schema = json_decode( $params['schema'], true );
 		$dialogAction = $params['dialog-action'];
@@ -65,32 +66,28 @@ class VisualDataApiSaveSchema extends ApiBase {
 		}
 
 		$errors = [];
-		$update_items = [];
 		$databaseManager = new DatabaseManager();
+		$evaluateJobs = empty( $params['confirm-job-execution'] );
 
 		if ( $dialogAction === 'delete' ) {
-			$update_items[$previousLabel] = null;
-
-			// if ( empty( $params['confirm-job-execution'] ) ) {
-			// 	$jobsCount = $this->createJobs( $update_items, true );
-			//
-			// 	if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
-			// 		$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
-			// 		return true;
-			// 	}
-			// }
+			if ( $evaluateJobs ) {
+				$jobsCount = $this->deleteSchema( $previousLabel, $evaluateJobs );
+				if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
+					$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
+					return true;
+				}
+			}
 
 			$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
 			$wikiPage_ = \VisualData::getWikiPage( $title_ );
 			$reason = '';
 			\VisualData::deletePage( $wikiPage_, $user, $reason );
 
-			// @FIXME
-			$jobsCount = $databaseManager->deleteSchema( $update_items, $previousLabel );
+			$jobsCount = $databaseManager->deleteSchema( $previousLabel, false );
 
 			$result->addValue( [ $this->getModuleName() ], 'result-action', 'delete' );
 			$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
-			$result->addValue( [ $this->getModuleName() ], 'deleted-items', array_keys( $update_items ) );
+			$result->addValue( [ $this->getModuleName() ], 'deleted-schema', $previousLabel );
 			return true;
 		}
 
@@ -101,18 +98,23 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		$resultAction = ( !empty( $previousLabel ) ? 'update' : 'create' );
 
+		if ( $resultAction === 'update' ) {
+			$schemas = \VisualData::getSchemas( $output, [ $label ] );
+			$storedSchema = $schemas[$label];
+		} else {
+			$storedSchema = null;
+		}
+
 		// rename
 		if ( $resultAction === 'update' && $previousLabel !== $label ) {
-			$update_items[$previousLabel] = $label;
-			$jobsCount = 0;
-			// if ( empty( $params['confirm-job-execution'] ) ) {
-			// 	$jobsCount = $this->createJobs( $update_items, true );
+			$jobsCount = $databaseManager->renameSchema( $previousLabel, $label, $evaluateJobs );
 
-			// 	if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
-			// 		$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
-			// 		return true;
-			// 	}
-			// }
+			if ( empty( $params['confirm-job-execution'] ) ) {
+				if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
+					$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
+					return true;
+				}
+			}
 
 			$title_from = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
 			$title_to = $pageTitle;
@@ -131,37 +133,34 @@ class VisualDataApiSaveSchema extends ApiBase {
 				return true;
 			}
 
-			// @TODO
-			$jobsCount = $databaseManager->renameSchema( $update_items, $previousLabel, $label );
-
+			$jobsCount = $databaseManager->renameSchema( $previousLabel, $label, false );
 			$result->addValue( [ $this->getModuleName() ], 'label', $label );
 			$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
 			$result->addValue( [ $this->getModuleName() ], 'previous-label', $previousLabel );
 			$resultAction = 'rename';
 		}
 
-		$context = new RequestContext();
 		$context->setTitle( !empty( $params['target-page'] ) ? Title::newFromText( $params['target-page'] ) :
-			SpecialPage::getTitleFor( 'EditData' ) );
-
-		$output = $context->getOutput();
+			Title::newMainPage() );
 
 		$schemaProcessor = new SchemaProcessor();
 		$schemaProcessor->setOutput( $output );
 
 		$recordedObj = $schemaProcessor->convertToSchema( $schema );
 
-		// @TODO
-		// retrieve renamed properties
-		// $jobsCount = $databaseManager->renameProperties( $schema );
+		$jobsCount = $databaseManager->diffSchema( $storedSchema, $recordedObj, $evaluateJobs );
+
+		if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
+			$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
+			return true;
+		}
 
 		\VisualData::saveRevision( $user, $pageTitle, json_encode( $recordedObj ) );
 
+		$jobsCount = $databaseManager->diffSchema( $storedSchema, $recordedObj, $evaluateJobs );
+
 		$result->addValue( [ $this->getModuleName() ], 'result-action', $resultAction );
-		$result->addValue( [ $this->getModuleName() ], 'result', $ret );
-
 		$processedSchema = $schemaProcessor->processSchema( $recordedObj, $label );
-
 		$result->addValue( [ $this->getModuleName() ], 'schemas', json_encode( [ $label => $processedSchema ] ) );
 	}
 

@@ -21,6 +21,7 @@
  */
 
 /* stylelint-disable block-no-empty */
+/* stylelint-disable declaration-no-important */
 
 .visualdata-datatable tr td {
 	cursor: pointer;
@@ -141,8 +142,8 @@
 
 .VisualDataGroupWidgetMessageWidget {
 	margin-bottom: 12px;
-	/* to avoid overlapping edit button */
-	margin-right: 20px;
+	/* to avoid overlapping edit and delete button */
+	margin-right: 60px;
 }
 
 .PanelPropertiesStackPanelSingle,
@@ -186,7 +187,7 @@
 	text-align: left;
 }
 
-.visualdata-form-container-edit-button {
+.visualdata-form-container-right {
 	float: right;
 	top: -16px;
 	left: 16px;
@@ -220,3 +221,17 @@ body > .oo-ui-windowManager,
 	font-size: 0.875em;
 }
 
+.mw-rcfilters-spinner.mw-rcfilters-spinner-inline {
+	margin: auto;
+	margin-top: auto !important;
+	position: static;
+	padding: 12px;
+	display: block !important;
+}
+
+.VisualDataTabPanelLayoutTabItemDeleteButton {
+}
+
+.VisualDataGroupWidgetPanel .oo-ui-messageWidget.oo-ui-messageWidget-block div {
+	margin-left: 32px;
+}

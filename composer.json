@@ -18,5 +18,6 @@
 		"phpcs": "phpcs -sp --cache"
 	},
 	"require": {
+		"swaggest/json-diff": "^3.10"
 	}
 }

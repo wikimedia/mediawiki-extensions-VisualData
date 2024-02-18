@@ -121,8 +121,12 @@
 	"visualdata-parserfunction-form-edit-page-example": "",
 
 	"visualdata-parserfunction-form-preload-label": "preload",
-	"visualdata-parserfunction-form-preload-description": "page name with preload json data",
+	"visualdata-parserfunction-form-preload-description": "page name with preload wikitext",
 	"visualdata-parserfunction-form-preload-example": "",
+
+	"visualdata-parserfunction-form-preload-data-label": "preload data",
+	"visualdata-parserfunction-form-preload-data-description": "page name with preload json data",
+	"visualdata-parserfunction-form-preload-data-example": "",
 
 	"visualdata-parserfunction-form-return-page-label": "return-page",
 	"visualdata-parserfunction-form-return-page-description": "return page",
@@ -155,6 +159,18 @@
 	"visualdata-parserfunction-form-target-slot-label": "target-slot",
 	"visualdata-parserfunction-form-target-slot-description": "target slot for article metadata, could be jsondata or main",
 	"visualdata-parserfunction-form-target-slot-example": "",
+
+	"visualdata-parserfunction-form-edit-target-slot-label": "edit target-slot",
+	"visualdata-parserfunction-form-edit-target-slot-description": "edit target slot",
+	"visualdata-parserfunction-form-edit-target-slot-example": "",
+
+	"visualdata-jsmodule-forms-submit-no-schemas": "Please add at least one schema",
+
+	"visualdata-jsmodule-forms-target-slot": "Target slot",
+	"visualdata-jsmodule-forms-target-slot-help": "Target slot for json-data, if \"main\" only json-data will be accessible to users",
+
+	"visualdata-jsmodule-forms-target-slot-option-jsondata": "separate slot (jsondata)",
+	"visualdata-jsmodule-forms-target-slot-option-main": "main",
 
 	"visualdata-parserfunction-form-default-categories-label": "default-categories",
 	"visualdata-parserfunction-form-default-categories-description": "default categories (comma separated)",
@@ -264,6 +280,28 @@
 	"visualdata-jsmodule-schemas-description-help": "will be parsed as wikitext",
 	"visualdata-jsmodule-schemas-add-field": "add field",
 	"visualdata-jsmodule-schemas-add-block-content": "Add content block",
+	"visualdata-jsmodule-schemas-add-geolocation": "Add geolocation",
+
+	"visualdata-jsmodule-formfield-define-geolocation": "Define geolocation",
+	"visualdata-jsmodule-geolocation-name": "name",
+	"visualdata-jsmodule-geolocation-message": "To enable a beautiful interactive map with reverse geocoding and draggable markers register an ApiKey at <a target=\"blank\" href=\"https://www.maptiler.com/\">maptiler.com</a>",
+
+	"visualdata-jsmodule-geolocation-newlabel": "geolocation",
+	"visualdata-jsmodule-geolocation-map": "map",
+	"visualdata-jsmodule-geolocation-reverse-geocoding": "reverse geocoding",
+	"visualdata-jsmodule-geolocation-maptiler-map-button": "maptiler map",
+	"visualdata-jsmodule-geolocation-maptiler-map": "maptiler map settings",
+	"visualdata-jsmodule-geolocation-maptiler-map-help": "<a target=\"blank\" href=\"https://docs.maptiler.com/sdk-js/api/map\">open docs</a>",
+	"visualdata-jsmodule-geolocation-maptiler-geocoding-button": "maptiler geocoding",
+	"visualdata-jsmodule-geolocation-maptiler-geocoding": "maptiler geoconding settings",
+	"visualdata-jsmodule-geolocation-maptiler-geocoding-help": "<a target=\"blank\" href=\"https://docs.maptiler.com/sdk-js/modules/geocoding/api/api-reference/\">open docs</a>",
+	"visualdata-jsmodule-geolocation-coordinates": "coordinates",
+	"visualdata-jsmodule-geolocation-layout": "layout elements",
+	"visualdata-jsmodule-geolocation-latitude-input-label": "latitude field label",
+	"visualdata-jsmodule-geolocation-latitude-input-label-help": "latitude field help",
+	"visualdata-jsmodule-geolocation-longitude-input-label": "longitude field label",
+	"visualdata-jsmodule-geolocation-longitude-input-label-help": "longitude field help",
+	"visualdata-jsmodule-schemas-geolocation": "geolocation",
 	"visualdata-jsmodule-schemas-properties-columns": "name, type, multiple, required,",
 	"visualdata-jsmodule-schemas-add-subitem": "add subitem",
 	"visualdata-jsmodule-schemas-subitem": "subitem",
@@ -306,21 +344,18 @@
 	"visualdata-jsmodule-schemas-unique-items": "unique items",
 	"visualdata-jsmodule-schemas-unique-items-help": "",
 	"visualdata-jsmodule-formfield-options-from": "Options from",
-	
-	"visualdata-jsmodule-formfield-optionsfrom-optionsvalues": "as defined",
-	"visualdata-jsmodule-formfield-optionsfrom-optionswikilist": "wiki list",
-	
-	"visualdata-jsmodule-formfield-options-from": "Options from",
+
 	"visualdata-jsmodule-formfield-optionsfrom-values": "as defined",
 	"visualdata-jsmodule-formfield-optionsfrom-wikilist": "wiki list",
 	"visualdata-jsmodule-formfield-optionsfrom-askquery": "ask query",
-	
+
 	"visualdata-jsmodule-formfield-options-values": "enter one or more values",
 	"visualdata-jsmodule-formfield-options-label-formula": "options label formula",
 	"visualdata-jsmodule-formfield-options-label-formula-help": "This will adjust how options are shown to the user without affecting their saved value. <value> will be replaced with the value of the current option. You can use parser functions and wikitext.",
 	"visualdata-jsmodule-formfield-wikilist": "enter a page containing a wiki list (only the first-level items of the list in the article will be retrieved)",
 
 	"visualdata-jsmodule-inputconfig-selectfield": "Select properties",
+	"visualdata-jsmodule-forms-searchdialog-save": "done",
 	"visualdata-jsmodule-formfield-newlabel": "New property",
 
 	"visualdata-jsmodule-forms-submit": "Submit",
@@ -330,11 +365,10 @@
 
 	"visualdata-jsmodule-schemas-alert-noname": "no name",
 	"visualdata-jsmodule-schemas-alert-no-properties": "no properties",
-	"visualdata-jsmodule-forms-searchdialog-save": "done",
 	"visualdata-jsmodule-forms-dialogsearch-selectschemas": "select schemas",
 
-	"visualdata-jsmodule-schemas-delete-confirm": "Are you sure you want to delete this schema ?",
-	"visualdata-jsmodule-forms-delete-confirm": "Are you sure you want to delete this item ?",
+	"visualdata-jsmodule-schemas-delete-schema-confirm": "Are you sure you want to delete this schema ?",
+	"visualdata-jsmodule-schemas-delete-confirm": "Are you sure you want to delete this item ?",
 
 	"visualdata-jsmodule-forms-upload": "upload",
 	"visualdata-jsmodule-forms-content-models": "Set content-model",
@@ -377,6 +411,9 @@
 
 	"visualdata-jsmodule-forms-delete": "delete",
 	"visualdata-jsmodule-forms-delete-data-confirm": "Are you sure you want to delete this form's data ?",
+
+	"visualdata-jsmodule-forms-delete-schema": "discard schema",
+	"visualdata-jsmodule-forms-edit-schema": "edit schema",
 
 	"visualdata-special-submit-notitle": "title not set or invalid",
 	"visualdata-jsmodule-formfield-message-more-inputs": "Available input widgets depend on the data-type and the multiple toggle",

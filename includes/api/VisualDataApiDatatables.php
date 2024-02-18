@@ -22,9 +22,6 @@
  * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
-use MediaWiki\Extension\VisualData\ResultPrinters\QueryResultPrinter as QueryResultPrinter;
-
 class VisualDataApiDatatables extends ApiBase {
 
 	/**

@@ -190,7 +190,7 @@ class RebuildData extends Maintenance {
 	}
 
 	/**
-	 * @param WikiPage
+	 * @param WikiPage $wikiPage
 	 * @param RevisionRecord &$revisionRecord
 	 */
 	private function handlePagePropertiesSlot( $wikiPage, &$revisionRecord ) {

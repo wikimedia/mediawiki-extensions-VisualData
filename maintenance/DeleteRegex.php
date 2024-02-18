@@ -49,6 +49,7 @@ class DeleteRegex extends Maintenance {
 		//	$this->addOption( 'format', 'import format (csv or json)', true, true );
 
 		$this->addOption( 'regex', 'regex', true, true );
+		$this->addOption( 'delete', 'delete', false, false );
 		$this->addOption( 'namespace', 'namespace', false, true );
 		$this->addOption( 'limit', 'limit pages to be imported', false, true );
 	}
@@ -68,6 +69,7 @@ class DeleteRegex extends Maintenance {
 		$limit = $this->getOption( 'limit' ) ?? false;
 		$regex = $this->getOption( 'regex' ) ?? '';
 		$namespace = $this->getOption( 'namespace' ) ?? '';
+		$delete = $this->getOption( 'delete' ) ?? false;
 
 		if ( empty( $regex ) ) {
 			return 'no regex';
@@ -118,6 +120,10 @@ class DeleteRegex extends Maintenance {
 		$ret = [];
 		foreach ( $res as $row ) {
 			$title = Title::newFromRow( $row );
+			if ( !$delete ) {
+				echo 'matching ' . $title->getFullText() . PHP_EOL;
+				continue;
+			}
 			echo 'deleting ' . $title->getFullText() . PHP_EOL;
 			$ret = $this->deletePageJob( $title );
 			if ( $ret ) {

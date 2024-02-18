@@ -21,6 +21,7 @@
 
 /* eslint-disable no-tabs */
 
+// eslint-disable-next-line no-implicit-globals
 VisualDataFunctions = ( function () {
 	/*
 		AVAILABLE INPUTS ...
@@ -233,6 +234,15 @@ VisualDataFunctions = ( function () {
 		return ret;
 	}
 
+	function getInputHelpUrl( inputName ) {
+		// @TODO redirect to the extension page for docs on specific inputs
+		if ( inputName.indexOf( 'OO.' ) === -1 && inputName.indexOf( 'mw.' ) === -1 ) {
+			return null;
+		}
+		// or `https://doc.wikimedia.org/oojs-ui/master/js/${inputName}.html`
+		return `https://doc.wikimedia.org/mediawiki-core/1.39.5/js/#!/api/${ inputName }`;
+	}
+
 	function isMultiselect( inputName ) {
 		// return inArray(inputName, ManageProperties.multiselectInputs))
 		return inputName.indexOf( 'Multiselect' ) !== -1;
@@ -335,7 +345,6 @@ VisualDataFunctions = ( function () {
 					switch ( arr[ 2 ] ) {
 						case 'TitleInputWidget':
 						case 'TitlesMultiselectWidget':
-							// titleNamespace( value );
 							config.namespace = parseInt(
 								VisualDataFunctions.getKeyByValue(
 									mw.config.get( 'wgFormattedNamespaces' ),
@@ -369,7 +378,11 @@ VisualDataFunctions = ( function () {
 
 		if ( inputName === 'OO.ui.HiddenInputWidget' ) {
 			constructor.prototype.getValue = function () {
-				return config.value;
+				// @see https://doc.wikimedia.org/mediawiki-core/1.39.5/js/source/oojs-ui-core.html#OO-ui-HiddenInputWidget
+				return this.$element.val();
+			};
+			constructor.prototype.setValue = function ( thisValue ) {
+				this.$element.attr( 'value', thisValue );
 			};
 		}
 		// var widget = new constructor( config );
@@ -675,12 +688,12 @@ VisualDataFunctions = ( function () {
 		};
 	}
 
-	function createDropDownOptions( array, config ) {
+	function createDropDownOptions( obj, config ) {
 		var config = jQuery.extend( { key: 'key', value: 'value' }, config || {} );
 		var ret = [];
-		for ( var i in array ) {
-			var label = config.value === 'value' ? array[ i ] : i;
-			var key = config.key === 'key' ? i : array[ i ];
+		for ( var i in obj ) {
+			var label = config.value === 'value' ? obj[ i ] : i;
+			var key = config.key === 'key' ? i : obj[ i ];
 			if ( key === '' ) {
 				// zero width space
 				label = '​';
@@ -725,6 +738,28 @@ VisualDataFunctions = ( function () {
 		return context[ func ].apply( context, args );
 	}
 
+	function loadScripts( scripts, onload ) {
+		function loadScript( src, load ) {
+			let script = document.createElement( 'script' );
+			// eslint-disable-next-line no-unused-vars
+			script.onload = load ? onload : function ( e ) {
+				// console.log( e.target.src + ' loaded' );
+			};
+			script.src = src;
+			script.async = false;
+			document.head.appendChild( script );
+		}
+
+		for ( var i in scripts ) {
+			loadScript( scripts[ i ], parseInt( i ) === scripts.length - 1 );
+		}
+	}
+
+	function isNaN( value ) {
+		// eslint-disable-next-line no-self-compare
+		return value === 'number' && value !== value;
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -756,6 +791,9 @@ VisualDataFunctions = ( function () {
 		isPromise,
 		waitUntil,
 		executeFunctionByName,
-		inArray
+		inArray,
+		getInputHelpUrl,
+		loadScripts,
+		isNaN
 	};
 }() );

@@ -42,13 +42,16 @@ const VisualDataProcessModel = function (
 		// use required native validation
 		// or "minLength": 1
 
-		if (
-			model.schema.wiki.required &&
-			model.schema.type === 'string' &&
-			// value can be undefined for OO.ui.SelectFileWidget
-			( !value || ( typeof value === 'string' && value.trim() === '' ) )
-		) {
-			return null;
+		if ( model.schema.wiki.required ) {
+			switch ( model.schema.type ) {
+				case 'number':
+				case 'string':
+					// value can be undefined for OO.ui.SelectFileWidget
+					if ( !value || ( typeof value === 'string' && value.trim() === '' ) ) {
+						return null;
+					}
+					break;
+			}
 		}
 
 		return VisualDataFunctions.castType( value, model.schema.type );
@@ -254,6 +257,7 @@ const VisualDataProcessModel = function (
 
 			case 'validate&submit':
 				Action = 'validate';
+
 				if ( !( await getModel( 'validate' ) ) ) {
 					return false;
 				}

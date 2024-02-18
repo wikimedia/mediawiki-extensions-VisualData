@@ -1,7 +1,7 @@
 {
 	"name": "VisualData",
 	"author": "thomas-topway-it",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"url": "https://www.mediawiki.org/wiki/Extension:VisualData",
 	"descriptionmsg": "visualdata-extension-desc",
 	"license-name": "GPL-2.0-or-later",
@@ -129,6 +129,19 @@
 			"id": 2229,
 			"constant": "NS_VISUALDATASCHEMA_TALK",
 			"name": "VisualDataSchemaTalk"
+		},
+		{
+			"id": 2230,
+			"constant": "NS_VISUALDATAQUERY",
+			"name": "VisualDataQuery",
+			"defaultcontentmodel": "json",
+			"content": true,
+			"subpages": false
+		},
+		{
+			"id": 2231,
+			"constant": "NS_VISUALDATAQUERY_TALK",
+			"name": "VisualDataQUERYTalk"
 		}
 	],
 	"TrackingCategories": [
@@ -235,13 +248,14 @@
 				"Widgets/VisualDataRatingWidget.js",
 				"Widgets/VisualDataDropdownWidget.js",
 				"Widgets/VisualDataVisualEditor.js",
+				"Widgets/VisualDataMaptiler.js",
 				"VisualDataUpload.js",
 				"VisualDataProcessModel.js",
 				"VisualDataForms.js"
 			],
 			"styles": [
 				"intl-tel-input/css/intlTelInput.min.css",
-				"style-rating.css"
+				"Widgets/style-rating.css"
 			],
 			"dependencies": [
 				"mediawiki.widgets",
@@ -261,7 +275,6 @@
 				"visualdata-jsmodule-forms-delete-data-confirm",
 				"visualdata-jsmodule-forms-validate",
 				"visualdata-jsmodule-forms-goback",
-				"visualdata-jsmodule-forms-delete-confirm",
 				"visualdata-jsmodule-forms-upload",
 				"visualdata-jsmodule-forms-dialogsearch-selectschemas",
 				"visualdata-jsmodule-forms-submit",
@@ -271,7 +284,14 @@
 				"visualdata-jsmodule-forms-categories",
 				"visualdata-jsmodule-forms-content-models",
 				"visualdata-jsmodule-forms-pagename",
-				"visualdata-menutagmultiselect-placeholder"
+				"visualdata-menutagmultiselect-placeholder",
+				"visualdata-jsmodule-forms-delete-schema",
+				"visualdata-jsmodule-forms-edit-schema",
+				"visualdata-jsmodule-forms-target-slot-help",
+				"visualdata-jsmodule-forms-target-slot",
+				"visualdata-jsmodule-forms-target-slot-option-jsondata",
+				"visualdata-jsmodule-forms-target-slot-option-main",
+				"visualdata-jsmodule-forms-submit-no-schemas"
 			]
 		},
 		"ext.VisualData.ManageSchemas": {
@@ -280,6 +300,7 @@
 				"datatables/datatables.min.js",
 				"VisualDataInputConfig.js",
 				"VisualDataContentBlock.js",
+				"VisualDataGeolocation.js",
 				"VisualDataFormField.js",
 				"VisualDataSchemas.js"
 			],
@@ -303,6 +324,27 @@
 				"visualdata-jsmodule-schemas-description-help",
 				"visualdata-jsmodule-schemas-add-field",
 				"visualdata-jsmodule-schemas-add-block-content",
+				"visualdata-jsmodule-schemas-add-geolocation",
+				"visualdata-jsmodule-formfield-define-geolocation",
+				"visualdata-jsmodule-geolocation-message",
+				"visualdata-jsmodule-geolocation-name",
+				"visualdata-jsmodule-geolocation-newlabel",
+				"visualdata-jsmodule-geolocation-map",
+				"visualdata-jsmodule-geolocation-reverse-geocoding",
+				"visualdata-jsmodule-geolocation-maptiler-map-button",
+				"visualdata-jsmodule-geolocation-maptiler-map",
+				"visualdata-jsmodule-geolocation-maptiler-map-help",
+				"visualdata-jsmodule-geolocation-maptiler-geocoding",
+				"visualdata-jsmodule-geolocation-maptiler-geocoding-button",
+				"visualdata-jsmodule-geolocation-maptiler-geocoding-help",
+				"visualdata-jsmodule-geolocation-coordinates",
+				"visualdata-jsmodule-geolocation-layout",
+				"visualdata-jsmodule-geolocation-latitude-input-label",
+				"visualdata-jsmodule-geolocation-latitude-input-label-help",
+				"visualdata-jsmodule-geolocation-longitude-input-label",
+				"visualdata-jsmodule-geolocation-longitude-input-label-help",
+				"visualdata-jsmodule-schemas-geolocation",
+
 				"visualdata-jsmodule-schemas-properties-columns",
 				"visualdata-jsmodule-schemas-add-subitem",
 				"visualdata-jsmodule-schemas-subitem",
@@ -323,6 +365,7 @@
 				"visualdata-jsmodule-schemas-alert-noname",
 				"visualdata-jsmodule-schemas-alert-no-properties",
 				"visualdata-jsmodule-schemas-delete-confirm",
+				"visualdata-jsmodule-schemas-delete-schema-confirm",
 				"visualdata-jsmodule-schemas-container-schema",
 				"visualdata-jsmodule-schemas-message-container-info",
 				"visualdata-jsmodule-schemas-alert-existing-item",
@@ -393,6 +436,16 @@
 			"dependencies": [
 				"mediawiki.content.json"
 			]
+		},
+		"ext.VisualData.Maptiler": {
+			"position": "top",
+			"scripts": [
+			],
+			"styles": [
+				"Maptiler/maptiler-sdk.css",
+				"Maptiler/style.css"
+			],
+			"dependencies": []
 		}
 	},
 	"config": {
@@ -400,8 +453,9 @@
 		"VisualDataDisableSlotsNavigation": false,
 		"VisualDataDisableVersionCheck": false,
 		"VisualDataCreateJobsWarningLimit": 0,
-		"VisualDataEditDataNamespaces": [ 0, 4 ],
-		"VisualDataJsonDataTrackingCategory": true
+		"VisualDataEditDataNamespaces": [ 0, 4, 2226, 2230 ],
+		"VisualDataJsonDataTrackingCategory": true,
+		"VisualDataMaptilerApiKey": null
 	},
 	"manifest_version": 1
 }

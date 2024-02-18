@@ -21,6 +21,7 @@
 
 /* eslint-disable no-tabs */
 
+// eslint-disable-next-line no-implicit-globals
 VisualData = ( function () {
 	var VisualDataForms = [];
 	var Schemas = {};
@@ -100,10 +101,6 @@ VisualData = ( function () {
 		VisualDataForms = instances;
 	}
 
-	function getSchemas() {
-		return Schemas;
-	}
-
 	function updateSchemas( data, action ) {
 		switch ( action ) {
 			case 'update':
@@ -111,8 +108,8 @@ VisualData = ( function () {
 				break;
 
 			case 'delete':
-				for ( var schemaName of data[ 'deleted-items' ] ) {
-					delete Schemas[ schemaName ];
+				if ( data[ 'deleted-schema' ] in Schemas ) {
+					delete Schemas[ data[ 'deleted-schema' ] ];
 				}
 				break;
 

@@ -233,24 +233,19 @@ class SubmitForm {
 	 */
 	public function changeContentModel( $page, $model ) {
 		// $page = $this->wikiPageFactory->newFromTitle( $title );
-
 		// ***edited
 		$performer = ( method_exists( RequestContext::class, 'getAuthority' ) ? $this->context->getAuthority()
 			: $this->user );
-
 		// ***edited
 		$services = MediaWikiServices::getInstance();
 		$contentModelChangeFactory = $services->getContentModelChangeFactory();
-
 		$changer = $contentModelChangeFactory->newContentModelChange(
 			// ***edited
 			$performer,
 			$page,
-
 			// ***edited
 			$model
 		);
-
 		// MW 1.36+
 		if ( method_exists( ContentModelChange::class, 'authorizeChange' ) ) {
 			$permissionStatus = $changer->authorizeChange();
@@ -261,7 +256,6 @@ class SubmitForm {
 				// Hack to get our wikitext parsed
 				return Status::newFatal( new RawMessage( '$1', [ $wikitext ] ) );
 			}
-
 		} else {
 			$errors = $changer->checkPermissions();
 			if ( $errors ) {
@@ -272,7 +266,6 @@ class SubmitForm {
 				return Status::newFatal( new RawMessage( '$1', [ $wikitext ] ) );
 			}
 		}
-
 		// Can also throw a ThrottledError, don't catch it
 		$status = $changer->doContentModelChange(
 			// ***edited
@@ -281,9 +274,9 @@ class SubmitForm {
 			'',
 			true
 		);
-
 		return $status;
 	}
+
 	/**
 	 * @param \Title $targetTitle
 	 * @param \WikiPage $wikiPage
@@ -295,7 +288,6 @@ class SubmitForm {
 		if ( !$contentModel || $contentModel === $targetTitle->getContentModel() ) {
 			return false;
 		}
-
 		$status = $this->changeContentModel( $wikiPage, $contentModel );
 		if ( !$status->isOK() ) {
 			$errors_ = $status->getErrorsByType( 'error' );
@@ -348,7 +340,7 @@ class SubmitForm {
 			}
 		}
 
-		$targetSlot = \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
+		$targetSlot = $data['form']['target-slot'] ?? \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
 
 		if ( array_key_exists( 'categories', $data['form'] ) ) {
 			$jsonData['categories'] = $data['form']['categories'];
