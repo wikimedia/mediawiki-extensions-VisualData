@@ -1428,7 +1428,7 @@ class VisualData {
 			if ( !empty( $value['options']['preload'] ) ) {
 				$title_ = self::getTitleIfKnown( $value['options']['preload'] );
 				if ( $title_ ) {
-					$freetext = self::getWikipageContent( $value['options']['preload'] );
+					$freetext = self::getWikipageContent( $title_ );
 				}
 			}
 
