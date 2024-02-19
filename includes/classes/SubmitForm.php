@@ -382,8 +382,8 @@ class SubmitForm {
 		// user-defined title
 		$userDefinedTitle = null;
 		if (
-			// !empty( $data['option']['action'] )
-			// && $data['option']['action'] === 'create'
+			// !empty( $data['options']['action'] )
+			// && $data['options']['action'] === 'create'
 			!empty( $data['form']['target-title'] ) ) {
 			$userDefinedTitle = Title::newFromText( $data['form']['target-title'] );
 		}
@@ -540,6 +540,15 @@ class SubmitForm {
 
 		$freetext = array_key_exists( 'freetext', $data['form'] ) ? $data['form']['freetext']
 			: null;
+
+		if ( $data['options']['action'] === 'create'
+			&& !array_key_exists( 'freetext', $data['form'] )
+			&& isset( $data['options']['preload'] ) ) {
+			$title_ = \VisualData::getTitleIfKnown( $data['options']['preload'] );
+			if ( $title_ ) {
+				$freetext = \VisualData::getWikipageContent( $title_ );
+			}
+		}
 
 		// @FIXME once this will be managed by the api
 		// this check can be omitted

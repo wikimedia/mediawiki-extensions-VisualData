@@ -1396,7 +1396,7 @@ class VisualData {
 	 * @param string $titletText
 	 * @return Title|null
 	 */
-	private static function getTitleIfKnown( $titletText ) {
+	public static function getTitleIfKnown( $titletText ) {
 		$title = Title::newFromText( $titletText );
 		if ( $title && $title->isKnown() ) {
 			return $title;
@@ -1425,12 +1425,12 @@ class VisualData {
 			$categories = [];
 			$editTitle = null;
 
-			if ( !empty( $value['options']['preload'] ) ) {
-				$title_ = self::getTitleIfKnown( $value['options']['preload'] );
-				if ( $title_ ) {
-					$freetext = self::getWikipageContent( $title_ );
-				}
-			}
+			// if ( !empty( $value['options']['preload'] ) ) {
+			// 	$title_ = self::getTitleIfKnown( $value['options']['preload'] );
+			// 	if ( $title_ ) {
+			// 		$freetext = self::getWikipageContent( $title_ );
+			// 	}
+			// }
 
 			if ( !empty( $value['options']['preload-data'] ) ) {
 				$jsonData = self::getPreloadData( $value['options']['preload-data'] );

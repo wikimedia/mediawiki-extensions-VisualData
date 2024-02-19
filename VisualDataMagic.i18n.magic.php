@@ -29,12 +29,8 @@ $magicWords = [];
 // '0' stands for 'case insensitive'
 
 $magicWords['en'] = [
-	'visualdataprint' => [ 0, 'visualdataprint' ],
-	'visualdataquery' => [ 0, 'visualdataquery' ],
-	'visualdataform' => [ 0, 'visualdataform' ],
-	'visualdatabutton' => [ 0, 'visualdatabutton' ],
-	'vdataprint' => [ 0, 'visualdataprint' ],
-	'vdataquery' => [ 0, 'visualdataquery' ],
-	'vdataform' => [ 0, 'visualdataform' ],
-	'vdatabutton' => [ 0, 'visualdatabutton' ]
+	'visualdataprint' => [ 0, 'vdataprint', 'visualdataprint' ],
+	'visualdataquery' => [ 0, 'visualdataquery', 'vdataquery' ],
+	'visualdataform' => [ 0, 'visualdataform', 'vdataform' ],
+	'visualdatabutton' => [ 0, 'visualdatabutton', 'vdatabutton' ]
 ];
