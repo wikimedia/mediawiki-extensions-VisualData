@@ -76,7 +76,7 @@ class Importer {
 	 * @param string $pagenameFormula
 	 * @param array $data
 	 * @param function $showMsg
-	 * @return bool
+	 * @return bool|void
 	 */
 	public function importData( $pagenameFormula, $data, $showMsg ) {
 		if ( empty( $pagenameFormula ) ) {
@@ -103,6 +103,11 @@ class Importer {
 		$databaseManager = new DatabaseManager();
 		$submitForm = new SubmitForm( $this->user, $this->context );
 		$this->importer = \VisualData::getImporter();
+
+		// @TODO MW 1.42
+		if ( !$this->importer ) {
+			return;
+		}
 
 		$n = 0;
 		foreach ( $data as $key => $value ) {

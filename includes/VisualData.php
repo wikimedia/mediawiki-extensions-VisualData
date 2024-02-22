@@ -1850,12 +1850,16 @@ class VisualData {
 	}
 
 	/**
-	 * @return Importer|Importer1_35
+	 * @return Importer|Importer1_35|null
 	 */
 	public static function getImporter() {
 		$services = MediaWikiServices::getInstance();
 
-		if ( version_compare( MW_VERSION, '1.36', '>' ) ) {
+		if ( version_compare( MW_VERSION, '1.41', '>' ) ) {
+			// @TODO MW 1.42
+			return null;
+
+		} elseif ( version_compare( MW_VERSION, '1.36', '>' ) ) {
 			include_once __DIR__ . '/importer/VisualDataImporter.php';
 
 			// @see ServiceWiring.php -> WikiImporterFactory

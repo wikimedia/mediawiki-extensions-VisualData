@@ -308,6 +308,7 @@
 				"datatables/datatables.min.css"
 			],
 			"dependencies": [
+				"mediawiki.widgets",
 				"ext.VisualData.Common"
 			],
 			"messages": [

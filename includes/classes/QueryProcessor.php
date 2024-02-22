@@ -452,6 +452,10 @@ class QueryProcessor {
 				// if ( $bPos === false ) {
 				// 	$bPos =INF;
 				// }
+
+				$a = preg_quote( $a, '/' );
+				$b = preg_quote( $b, '/' );
+
 				preg_match( "/\"name\"\s*:\s*\"$a\"/", $schemaStr, $matches, PREG_OFFSET_CAPTURE );
 				$aPos = ( !empty( $matches[0][1] ) ? $matches[0][1] : INF );
 

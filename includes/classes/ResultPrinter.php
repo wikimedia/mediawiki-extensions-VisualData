@@ -223,6 +223,7 @@ class ResultPrinter {
 			$arr = array_values( $arr );
 		}
 		$ret = [];
+		$retPaths = [];
 		foreach ( $arr as $key => $value ) {
 			$currentPath = $path ? "$path/$key" : $key;
 
@@ -247,7 +248,9 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				$ret[$key] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex );
+				[ $ret[$key], $retPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex );
+				$ret = array_merge( $ret, $retPaths );
+
 			} else {
 				$ret[$key] = $this->processChild(
 					$subschema,
@@ -256,10 +259,17 @@ class ResultPrinter {
 					$currentPathNoIndex,
 					$path === ''
 				);
+
+				$retPaths[$currentPath] = $ret[$key];
 			}
 		}
 
-		return $this->processParent( $schema, $this->getTemplateParams( $title, $ret ), $pathNoIndex );
+		$res = [
+			$this->processParent( $schema, $this->getTemplateParams( $title, $ret ), $pathNoIndex ),
+			$retPaths
+		];
+
+		return $pathNoIndex === '' ? $res[0] : $res;
 	}
 
 	/**
@@ -321,6 +331,8 @@ class ResultPrinter {
 	 */
 	public function processParent( $schema, $value, $path ) {
 		$isArray = ( $schema['type'] === 'array' );
+		$isRoot = ( $path === '' );
+
 		if ( $isArray ) {
 			unset( $value[$this->params['pagetitle-name']] );
 			unset( $value[$this->params['articleid-name']] );
@@ -338,7 +350,6 @@ class ResultPrinter {
 			$ret = implode( $this->separator ?? '', $value );
 		}
 
-		$isRoot = ( $path === '' );
 		if ( $this->isHtml() && $isRoot ) {
 			return $this->parser->recursiveTagParseFully( $ret );
 		}

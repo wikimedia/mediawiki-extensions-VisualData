@@ -239,6 +239,12 @@ class VisualDataHooks {
 		}
 
 		$importer = \VisualData::getImporter();
+
+		// @TODO MW 1.42
+		if ( !$importer ) {
+			return;
+		}
+
 		$error_messages = [];
 
 		// https://www.mediawiki.org/wiki/Help:TemplateData
