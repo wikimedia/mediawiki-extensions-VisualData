@@ -71,7 +71,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		if ( $dialogAction === 'delete' ) {
 			if ( $evaluateJobs ) {
-				$jobsCount = $this->deleteSchema( $previousLabel, $evaluateJobs );
+				$jobsCount = $databaseManager->deleteSchema( $previousLabel, $evaluateJobs );
 				if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
 					$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
 					return true;
