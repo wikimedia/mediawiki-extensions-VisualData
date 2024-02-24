@@ -1191,7 +1191,7 @@ class SchemaProcessor {
 			$params
 		);
 
-		if ( $results ) {
+		if ( !$resultPrinter ) {
 			return [];
 		}
 
