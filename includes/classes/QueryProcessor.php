@@ -437,6 +437,8 @@ class QueryProcessor {
 			$mapPathNoIndexTable[$row['path_no_index']] = $tablename;
 		}
 
+		$this->printouts = array_intersect_key( $this->printouts, $mapPathNoIndexTable );
+
 		// retrieve all, but order according to the schema
 		// descriptor
 		if ( empty( $this->printouts ) ) {

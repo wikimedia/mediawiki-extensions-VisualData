@@ -347,6 +347,7 @@ class ResultPrinter {
 		} else {
 			unset( $value[$this->params['pagetitle-name']] );
 			unset( $value[$this->params['articleid-name']] );
+			$value = array_intersect_key( $value, array_fill_keys( $this->printouts, '' ) );
 			$ret = implode( $this->separator ?? '', $value );
 		}
 
