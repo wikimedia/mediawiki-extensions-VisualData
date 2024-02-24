@@ -1157,7 +1157,7 @@ class VisualData {
 					if ( is_array( $value['content']['schemas-data']['untransformed'] ) ) {
 						foreach ( $value['content']['schemas-data']['untransformed'] as $k => $v ) {
 							// @FIXME save untrasformed values for each schema
-							$schemaName = substr( $k, 0, strrpos( $k, '/' ) );
+							$schemaName = substr( $k, 0, strpos( $k, '/' ) );
 							if ( is_array( $value['content']['schemas'] )
 								&& !array_key_exists( $schemaName, $value['content']['schemas'] ) ) {
 								unset( $value['content']['schemas-data']['untransformed'][$k] );
