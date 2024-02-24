@@ -262,11 +262,6 @@ class QueryProcessor {
 	 */
 	private function castValAndQuote( $dataType, &$val ) {
 		switch ( $dataType ) {
-			case 'text':
-			case 'textarea':
-				settype( $val, "string" );
-				$val = $this->dbr->addQuotes( $val );
-				break;
 			case 'integer':
 				settype( $val, "integer" );
 				break;
@@ -288,6 +283,11 @@ class QueryProcessor {
 			case 'boolean':
 				settype( $val, "boolean" );
 				break;
+			case 'text':
+			case 'textarea':
+			default:
+				settype( $val, "string" );
+				$val = $this->dbr->addQuotes( $val );
 		}
 	}
 

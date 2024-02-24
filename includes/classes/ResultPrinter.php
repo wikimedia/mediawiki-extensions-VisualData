@@ -223,7 +223,7 @@ class ResultPrinter {
 			$arr = array_values( $arr );
 		}
 		$ret = [];
-		$retPaths = [];
+		$recPaths = [];
 		foreach ( $arr as $key => $value ) {
 			$currentPath = $path ? "$path/$key" : $key;
 
@@ -248,8 +248,7 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				[ $ret[$key], $retPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex );
-				$ret = array_merge( $ret, $retPaths );
+				[ $ret[$key], $recPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex );
 
 			} else {
 				$ret[$key] = $this->processChild(
@@ -260,13 +259,13 @@ class ResultPrinter {
 					$path === ''
 				);
 
-				$retPaths[$currentPath] = $ret[$key];
+				$recPaths[$currentPath] = $ret[$key];
 			}
 		}
 
 		$res = [
-			$this->processParent( $schema, $this->getTemplateParams( $title, $ret ), $pathNoIndex ),
-			$retPaths
+			$this->processParent( $schema, $this->getTemplateParams( $title, $ret ), $pathNoIndex, $recPaths ),
+			$recPaths
 		];
 
 		return $pathNoIndex === '' ? $res[0] : $res;
@@ -327,26 +326,26 @@ class ResultPrinter {
 	 * @param array $schema
 	 * @param array $value
 	 * @param string $path
+	 * @param array $recPaths []
 	 * @return string
 	 */
-	public function processParent( $schema, $value, $path ) {
+	public function processParent( $schema, $value, $path, $recPaths = [] ) {
 		$isArray = ( $schema['type'] === 'array' );
 		$isRoot = ( $path === '' );
 
 		if ( $isArray ) {
 			unset( $value[$this->params['pagetitle-name']] );
 			unset( $value[$this->params['articleid-name']] );
-			return implode( $this->valuesSeparator ?? '', $value );
+			return implode( !$this->hasTemplate( $path ) ?
+				$this->valuesSeparator : '', $value );
 		}
 
+		$value = array_merge( $value, $recPaths );
 		$ret = '';
-		if ( array_key_exists( $path, $this->templates )
-			&& !empty( $this->templates[$path] ) ) {
+		if ( $this->hasTemplate( $path ) ) {
 			$ret = $this->processTemplate( $this->templates[$path], $value );
 
 		} else {
-			unset( $value[$this->params['pagetitle-name']] );
-			unset( $value[$this->params['articleid-name']] );
 			$value = array_intersect_key( $value, array_fill_keys( $this->printouts, '' ) );
 			$ret = implode( $this->separator ?? '', $value );
 		}
@@ -359,6 +358,15 @@ class ResultPrinter {
 	}
 
 	/**
+	 * @param string $path
+	 * @return bool
+	 */
+	private function hasTemplate( $path ) {
+		return array_key_exists( $path, $this->templates )
+			&& !empty( $this->templates[$path] );
+	}
+
+	/**
 	 * @param array|null $schema
 	 * @param string $key
 	 * @param array $properties
@@ -368,8 +376,7 @@ class ResultPrinter {
 	public function processChild( $schema, $key, $properties, $path ) {
 		$value = $properties[$key];
 		// apply template
-		if ( array_key_exists( $path, $this->templates )
-			&& !empty( $this->templates[$path] ) ) {
+		if ( $this->hasTemplate( $path ) ) {
 			$value = $this->processTemplate( $this->templates[$path], $properties, false );
 		}
 
