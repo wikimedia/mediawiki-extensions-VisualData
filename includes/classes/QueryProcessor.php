@@ -437,8 +437,19 @@ class QueryProcessor {
 			$mapPathNoIndexTable[$row['path_no_index']] = $tablename;
 		}
 
-		$this->printouts = array_intersect( $this->printouts,
-			array_keys( $mapPathNoIndexTable ) );
+		// remove non existing printouts, allow retrieving all
+		// printouts of subitems, e.g. authors/first_name, authors/last_name
+		// from |?authors
+		foreach ( $this->printouts as $key => $value ) {
+			if ( !array_key_exists( $value, $mapPathNoIndexTable ) ) {
+				unset( $this->printouts[$key] );
+				foreach ( $mapPathNoIndexTable as $k => $v ) {
+					if ( strpos( $k, "$value/" ) === 0 ) {
+						$this->printouts[] = $k;
+					}
+				}
+			}
+		}
 
 		// retrieve all, but order according to the schema
 		// descriptor
