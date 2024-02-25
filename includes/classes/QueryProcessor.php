@@ -53,6 +53,9 @@ class QueryProcessor {
 	private $printouts = [];
 
 	/** @var array */
+	private $printoutsOriginal = [];
+
+	/** @var array */
 	private $params = [];
 
 	/** @var dbr */
@@ -104,6 +107,7 @@ class QueryProcessor {
 		$this->schema = $schema;
 		$this->query = $query;
 		$this->printouts = $printouts;
+		$this->printoutsOriginal = $printouts;
 		$this->params = $params;
 		$this->dbr = wfGetDB( DB_REPLICA );
 		$this->formattedNamespaces = MediaWikiServices::getInstance()
@@ -718,7 +722,7 @@ class QueryProcessor {
 			if ( !$this->treeFormat ) {
 				// important, this ensures rows have same
 				// number of fields
-				$row_ = array_fill_keys( $this->printouts, '' );
+				$row_ = array_fill_keys( $this->printoutsOriginal, '' );
 
 				$fields = [];
 				foreach ( $row as $k => $v ) {
