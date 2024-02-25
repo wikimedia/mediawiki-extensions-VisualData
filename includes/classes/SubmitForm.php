@@ -350,7 +350,7 @@ class SubmitForm {
 		} elseif ( !empty( $data['options']['target-slot'] ) ) {
 			$targetSlot = $data['options']['target-slot'];
 		} else {
-			$targetSlot = \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
+			$targetSlot = \VisualData::getTargetSlot( $editTitle, 'jsondata' );
 		}
 
 		if ( array_key_exists( 'categories', $data['form'] ) ) {
