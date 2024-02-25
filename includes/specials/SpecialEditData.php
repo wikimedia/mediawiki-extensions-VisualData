@@ -117,8 +117,7 @@ class SpecialEditData extends SpecialPage {
 		$options = [
 			'action' => ( $this->title ? 'edit' : 'create' ),
 			'target-slot' => $targetSlot,
-			// ( !$this->title || !$this->title->isKnown() ),
-			'edit-freetext' => true,
+			'edit-freetext' => ( !$this->title || !$this->title->isKnown() ),
 			'edit-content-model' => true,
 			'edit-categories' => true,
 			'edit-target-slot' => true,

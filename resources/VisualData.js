@@ -127,7 +127,7 @@ VisualData = ( function () {
 
 		if ( Config.context !== 'ManageSchemas' ) {
 			for ( var instance of VisualDataForms ) {
-				instance.updateSchemas( Schemas );
+				instance.updateSchemas( Schemas, data );
 			}
 		}
 

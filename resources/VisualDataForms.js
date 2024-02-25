@@ -61,7 +61,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function escapeJsonPtr( str ) {
-		return str.replace( /~/g, '~0' ).replace( /\//g, '~1' );
+		return VisualDataFunctions.escapeJsonPtr( str );
 	}
 
 	// @FIXME destroy/reinitialize on tab change
@@ -156,6 +156,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function callbackShowError( schemaName, errorMessage, errors ) {
+
 		// remove error messages
 		if ( !errorMessage && ( !errors || !Object.keys( errors ).length ) ) {
 			for ( var i in Fields ) {
@@ -168,13 +169,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return;
 		}
 
-		Fields[ schemaName ].toggle( true );
-		Fields[ schemaName ].setType( 'error' );
+		var escapedSchemaName = escapeJsonPtr( schemaName );
+
+		Fields[ escapedSchemaName ].toggle( true );
+		Fields[ escapedSchemaName ].setType( 'error' );
 
 		// @TODO
 		// add: "please report the issue in the talk page
 		// of the extension"
-		Fields[ schemaName ].setLabel(
+		Fields[ escapedSchemaName ].setLabel(
 			errorMessage || mw.msg( 'visualdata-jsmodule-forms-form-error' )
 		);
 
@@ -193,15 +196,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}
 		}
 
-		var el = window.document.querySelector( '#' + makeElementId( schemaName ) );
+		selectSchema( schemaName );
+
+		var el = window.document.querySelector( '#' +
+			jQuery.escapeSelector( makeElementId( escapedSchemaName ) ) );
 
 		if ( el ) {
-			if ( 'setTabPanel' in SchemasLayout ) {
-				SchemasLayout.setTabPanel( schemaName );
-			} else if ( 'setPage' in SchemasLayout ) {
-				SchemasLayout.setPage( schemaName );
-			}
-
 			let callbackCond = function () {
 				$( el ).is( ':visible' );
 			};
@@ -223,6 +223,42 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				callbackMaxAttempts,
 				5
 			);
+		}
+	}
+
+	function selectSchema( schemaName, init ) {
+		if ( !schemaName ) {
+			return;
+		}
+
+		var escapedSchemaName = escapeJsonPtr( schemaName );
+
+		var el = window.document.querySelector( '#' +
+			jQuery.escapeSelector( makeElementId( escapedSchemaName ) ) );
+
+		if ( !el ) {
+			return;
+		}
+
+		// indexLayout
+		if ( 'setTabPanel' in SchemasLayout ) {
+			SchemasLayout.setTabPanel( schemaName );
+
+			if ( init ) {
+				SchemasLayout.on( 'set', function () {
+					onTabSelect( SchemasLayout.getCurrentTabPanelName() );
+				} );
+			}
+
+		// booklet
+		} else if ( 'setPage' in SchemasLayout ) {
+			SchemasLayout.setPage( schemaName );
+
+			if ( init ) {
+				SchemasLayout.on( 'set', function () {
+					onTabSelect( SchemasLayout.getCurrentPageName() );
+				} );
+			}
 		}
 	}
 
@@ -861,6 +897,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						}
 					}
 
+					// select first schema of new selection
+					for ( var i of values ) {
+						if ( !( i in ModelSchemas ) ) {
+							SelectedSchema = i;
+							break;
+						}
+					}
+
 					if ( missingSchemas.length ) {
 						VisualData.loadSchemas( missingSchemas );
 					} else {
@@ -1435,28 +1479,23 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		function getWidgets() {
 			var ret = {};
 
-			for ( var thisSchemaName of Form.schemas ) {
-				if ( !( thisSchemaName in Schemas ) ) {
-					// eslint-disable-next-line no-console
-					console.error( "required schema doesn't exist", thisSchemaName );
-					continue;
-				}
+			for ( var schemaName_ of Form.schemas ) {
 
-				var schema = Schemas[ thisSchemaName ];
+				var schema = Schemas[ schemaName_ ];
 				var previousSchema =
-					thisSchemaName in PreviousSchemas ?
-						PreviousSchemas[ thisSchemaName ] :
+					schemaName_ in PreviousSchemas ?
+						PreviousSchemas[ schemaName_ ] :
 						{};
 
-				if ( !( thisSchemaName in Form.jsonData.schemas ) ) {
-					Form.jsonData.schemas[ thisSchemaName ] = {};
+				if ( !( schemaName_ in Form.jsonData.schemas ) ) {
+					Form.jsonData.schemas[ schemaName_ ] = {};
 				}
 
-				var path = `${ escapeJsonPtr( thisSchemaName ) }`;
+				var path = `${ escapeJsonPtr( schemaName_ ) }`;
 				var pathNoIndex = '';
-				var model = ( ModelSchemas[ thisSchemaName ] = {
+				var model = ( ModelSchemas[ schemaName_ ] = {
 					parent: ModelSchemas,
-					childIndex: thisSchemaName,
+					childIndex: schemaName_,
 					parentSchema: null
 				} );
 				var widget = new GroupWidget(
@@ -1468,15 +1507,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					widget,
 					schema,
 					previousSchema,
-					thisSchemaName,
+					schemaName_,
 					model,
-					Form.jsonData.schemas[ thisSchemaName ],
+					Form.jsonData.schemas[ schemaName_ ],
 					path,
 					pathNoIndex,
 					false
 				);
 
-				ret[ thisSchemaName ] = widget;
+				ret[ schemaName_ ] = widget;
 			}
 
 			return ret;
@@ -1517,8 +1556,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					Form.jsonData.schemas = {};
 				}
 
-				var validSchemas = Form.schemas.filter( ( x ) => x in Schemas );
-				SelectedSchema = ( validSchemas.length ? validSchemas[ 0 ] : null );
+				for ( var thisSchemaName of Form.schemas ) {
+					if ( !( thisSchemaName in Schemas ) ) {
+						// eslint-disable-next-line no-console
+						console.error( "required schema doesn't exist", thisSchemaName );
+					}
+				}
+
+				Form.schemas = Form.schemas.filter( ( x ) => x in Schemas );
+
+				if ( !SelectedSchema || Form.schemas.indexOf( SelectedSchema ) === -1 ) {
+					SelectedSchema = ( Form.schemas.length ? Form.schemas[ 0 ] : null );
+				}
 
 				var layout = Form.options.layout;
 				var widgets = getWidgets();
@@ -1556,7 +1605,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					} );
 
 					this.deleteButton.on( 'click', function () {
-						Form.schemas.splice( Form.schemas.indexOf( this.name ), 1, 0 );
+						Form.schemas.splice( Form.schemas.indexOf( this.name ), 1 );
 						// delete Form.jsonData.schemas[ data.schema.wiki.name ];
 						delete ModelSchemas[ this.name ];
 						delete Fields[ this.name ];
@@ -1584,16 +1633,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 							padded: false
 						} );
 
-						// if (
-						// 	SelectedSchema &&
-						// 	Object.keys( widgets ).indexOf( SelectedSchema ) !== -1
-						// ) {
-						// 	selectedSchema = SelectedSchema;
-						// }
-
-						booklet.on( 'set', function () {
-							onTabSelect( booklet.getCurrentPageName() );
-						} );
+						// booklet.on( 'set', function () {
+						// 	onTabSelect( booklet.getCurrentPageName() );
+						// } );
 
 						SchemasLayout = booklet;
 
@@ -1608,7 +1650,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						booklet.addPages( items );
 						content = booklet;
 
-						booklet.setPage( SelectedSchema );
+						// booklet.setPage( SelectedSchema );
 
 						this.$element.addClass( 'PanelPropertiesStackPanelBooklet' );
 
@@ -1625,16 +1667,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 						SchemasLayout = indexLayout;
 
-						// if (
-						// 	SelectedSchema &&
-						// 	Object.keys( widgets ).indexOf( SelectedSchema ) !== -1
-						// ) {
-						// 	selectedSchema = SelectedSchema;
-						// }
-
-						indexLayout.on( 'set', function () {
-							onTabSelect( indexLayout.getCurrentTabPanelName() );
-						} );
+						// indexLayout.on( 'set', function () {
+						// 	onTabSelect( indexLayout.getCurrentTabPanelName() );
+						// } );
 
 						var items = [];
 						for ( var schemaName in widgets ) {
@@ -1644,7 +1679,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						}
 
 						indexLayout.addTabPanels( items );
-						indexLayout.setTabPanel( SelectedSchema );
+						// indexLayout.setTabPanel( SelectedSchema );
 						content = indexLayout;
 
 						this.$element.addClass( 'PanelPropertiesStackPanelTabs' );
@@ -2483,6 +2518,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			PropertiesStack.setItem( panels[ 0 ] );
 
+			selectSchema( SelectedSchema, true );
+
 			PropertiesStack.$element.removeClass( [
 				'PanelPropertiesStack',
 				'PanelPropertiesStack-empty'
@@ -2521,9 +2558,34 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
-	function updateSchemas( schemas ) {
+	function updateSchemas( schemas, data ) {
 		PreviousSchemas = Schemas;
 		Schemas = VisualDataFunctions.deepCopy( schemas );
+
+		if ( data && data[ 'result-action' ] === 'rename' ) {
+			// *** do not compare Schemas with Form.schemas,
+			// since a rename could match an existing entry
+			// in Schemas
+			// for ( var schemaName in Schemas ) {
+			// 	if ( Form.schemas.indexOf( schemaName ) === -1 ) {
+			// 		SelectedSchema = schemaName;
+			// 		break;
+			// 	}
+			// }
+			SelectedSchema = data.label;
+
+			for ( var i in Form.schemas ) {
+				var schemaName = Form.schemas[ i ];
+				if ( !( schemaName in Schemas ) ) {
+					Form.schemas.splice( i, 1, SelectedSchema );
+					if ( !( SelectedSchema in Form.jsonData.schemas ) ) {
+						Form.jsonData.schemas[ SelectedSchema ] = Form.jsonData.schemas[ schemaName ];
+					}
+					delete Form.jsonData.schemas[ schemaName ];
+					break;
+				}
+			}
+		}
 		// uninitialized
 		if ( !( 'getModel' in ProcessModel ) ) {
 			return;

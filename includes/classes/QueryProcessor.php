@@ -441,6 +441,7 @@ class QueryProcessor {
 		// printouts of subitems, e.g. authors/first_name, authors/last_name
 		// from |?authors
 		foreach ( $this->printouts as $key => $value ) {
+			$value = $this->databaseManager->escapeJsonPtr( $value );
 			if ( !array_key_exists( $value, $mapPathNoIndexTable ) ) {
 				unset( $this->printouts[$key] );
 				foreach ( $mapPathNoIndexTable as $k => $v ) {
@@ -448,6 +449,8 @@ class QueryProcessor {
 						$this->printouts[] = $k;
 					}
 				}
+			} else {
+				$this->printouts[$key] = $value;
 			}
 		}
 
@@ -737,7 +740,7 @@ class QueryProcessor {
 
 			$this->results[] = [
 				$titles[$pageId],
-				\VisualData::plainToNested( $row_ )
+				\VisualData::plainToNested( $row_, true )
 			];
 		}
 	}

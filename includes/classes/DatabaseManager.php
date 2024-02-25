@@ -94,7 +94,7 @@ class DatabaseManager {
 	 */
 	public function prepareData( $schema, $data ) {
 		$ret = [];
-		$path = $schema['wiki']['name'];
+		$path = $this->escapeJsonPtr( $schema['wiki']['name'] );
 		$pathNoIndex = '';
 		$this->flattenData( $ret, $schema, $data, $path, $pathNoIndex );
 		return $ret;
@@ -657,7 +657,7 @@ class DatabaseManager {
 			// remove root slash
 			// $pathNoIndex = substr( $value['pathNoIndex'], 1 );
 			$pathNoIndex = $value['pathNoIndex'];
-			$path = implode( '/', $pathArr );
+			$path = substr( $path, strpos( $path, '/' ) + 1 );
 			$props[$schemaName][$path]['schema'] = $value['schema'];
 			$props[$schemaName][$path]['pathNoIndex'] = $pathNoIndex;
 
@@ -870,6 +870,15 @@ class DatabaseManager {
 	}
 
 	/**
+	 * @param string $str
+	 * @return string
+	 */
+	public function escapeJsonPtr( $str ) {
+		$ret = str_replace( '~', '~0', $str );
+		return str_replace( '/', '~1', $ret );
+	}
+
+	/**
 	 * @param array &$ret
 	 * @param array $schema
 	 * @param array $data
@@ -878,21 +887,21 @@ class DatabaseManager {
 	 */
 	private function flattenData( &$ret, $schema, $data, $path, $pathNoIndex ) {
 		foreach ( $data as $key => $value ) {
-			$currentPath = $path ? "$path/$key" : $key;
+			$keyEscaped = $this->escapeJsonPtr( $key );
+			$currentPath = $path ? "$path/$keyEscaped" : $keyEscaped;
 
 			switch ( $schema['type'] ) {
 				case 'object':
 					if ( !array_key_exists( $key, $schema['properties'] ) ) {
 						continue 2;
 					}
-					$currentPathNoIndex = $pathNoIndex ? "$pathNoIndex/$key" : $key;
+					$currentPathNoIndex = $pathNoIndex ? "$pathNoIndex/$keyEscaped" : $keyEscaped;
 					$subschema = $schema['properties'][$key];
 					break;
 				case 'array':
 					$currentPathNoIndex = $pathNoIndex;
 					// @FIXME handle tuple
 					$subschema = $schema['items'];
-
 					break;
 				default:
 					if ( !array_key_exists( $key, $schema ) ) {

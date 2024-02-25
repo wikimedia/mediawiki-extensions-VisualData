@@ -760,6 +760,10 @@ VisualDataFunctions = ( function () {
 		return typeof value === 'number' && value !== value;
 	}
 
+	function escapeJsonPtr( str ) {
+		return str.replace( /~/g, '~0' ).replace( /\//g, '~1' );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -794,6 +798,7 @@ VisualDataFunctions = ( function () {
 		inArray,
 		getInputHelpUrl,
 		loadScripts,
-		isNaN
+		isNaN,
+		escapeJsonPtr
 	};
 }() );

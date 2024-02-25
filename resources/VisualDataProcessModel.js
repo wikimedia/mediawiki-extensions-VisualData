@@ -116,7 +116,7 @@ const VisualDataProcessModel = function (
 
 		if ( 'errors' in validateAjv && Array.isArray( validateAjv.errors ) ) {
 			loopA: for ( var error of validateAjv.errors ) {
-				var path = `${ schemaName }${ error.instancePath }`;
+				var path = `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }`;
 				for ( var path_ of Removed ) {
 					if ( path.indexOf( path_ ) === 0 ) {
 						continue loopA;
@@ -176,7 +176,7 @@ const VisualDataProcessModel = function (
 			case 'object':
 				var items = {};
 				for ( var ii in model.properties ) {
-					var path_ = `${ path }/${ ii }`;
+					var path_ = `${ path }/${ VisualDataFunctions.escapeJsonPtr( ii ) }`;
 					items[ ii ] = await getValuesRec( path_, model.properties[ ii ] );
 				}
 				return items;
@@ -207,12 +207,15 @@ const VisualDataProcessModel = function (
 		var ret = {};
 		switch ( action ) {
 			case 'validate':
-				callbackShowError( schemaName, null, [] );
+				callbackShowError( null, null, [] );
 
 				try {
 					for ( var schemaName in ModelSchemas ) {
+						if ( Form.schemas.indexOf( schemaName ) === -1 ) {
+							continue;
+						}
 						ret[ schemaName ] = await getValuesRec(
-							schemaName,
+							VisualDataFunctions.escapeJsonPtr( schemaName ),
 							ModelSchemas[ schemaName ]
 						);
 						// removeNulls(ret);
@@ -231,7 +234,7 @@ const VisualDataProcessModel = function (
 			case 'fetch':
 				for ( var schemaName in ModelSchemas ) {
 					ret[ schemaName ] = await getValuesRec(
-						schemaName,
+						VisualDataFunctions.escapeJsonPtr( schemaName ),
 						ModelSchemas[ schemaName ]
 					);
 				}
@@ -239,8 +242,11 @@ const VisualDataProcessModel = function (
 
 			case 'submit':
 				for ( var schemaName in ModelSchemas ) {
+					if ( Form.schemas.indexOf( schemaName ) === -1 ) {
+						continue;
+					}
 					ret[ schemaName ] = await getValuesRec(
-						schemaName,
+						VisualDataFunctions.escapeJsonPtr( schemaName ),
 						ModelSchemas[ schemaName ]
 					);
 				}
@@ -250,7 +256,7 @@ const VisualDataProcessModel = function (
 					data: ret,
 					flatten: Flatten,
 					form: formModel,
-					schemas: Object.keys( ModelSchemas ),
+					schemas: Form.schemas,
 					// @FIXME or retrieve it server side
 					options: Form.options
 				};
@@ -278,7 +284,10 @@ const VisualDataProcessModel = function (
 					return false;
 				}
 
-				var ret = await getValuesRec( schemaName, ModelSchemas[ schemaName ] );
+				var ret = await getValuesRec(
+					VisualDataFunctions.escapeJsonPtr( schemaName ),
+					ModelSchemas[ schemaName ]
+				);
 				return {
 					data: ret,
 					flatten: Flatten

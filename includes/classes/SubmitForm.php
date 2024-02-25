@@ -340,7 +340,18 @@ class SubmitForm {
 			}
 		}
 
-		$targetSlot = $data['form']['target-slot'] ?? \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
+		// $targetSlot = isset( $data['form']['target-slot'] ) ? $data['form']['target-slot']
+		// 	: \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
+
+		if ( isset( $data['form']['target-slot'] ) ) {
+			$targetSlot = $data['form']['target-slot'];
+
+		// *** this should be always true
+		} elseif ( !empty( $data['options']['target-slot'] ) ) {
+			$targetSlot = $data['options']['target-slot'];
+		} else {
+			$targetSlot = \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
+		}
 
 		if ( array_key_exists( 'categories', $data['form'] ) ) {
 			$jsonData['categories'] = $data['form']['categories'];
@@ -496,7 +507,7 @@ class SubmitForm {
 		}
 
 		// merge transformedValues to json data
-		$transformedValues = \VisualData::plainToNested( $transformedValues );
+		$transformedValues = \VisualData::plainToNested( $transformedValues, false );
 
 		// move files if needed
 		$walkRec = function ( $arr1, $arr2, $path ) use( &$walkRec, $data, &$errors ) {

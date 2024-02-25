@@ -106,6 +106,14 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-form-edit-page-example'
 		],
+		'target-slot' => [
+			'label' => 'visualdata-parserfunction-form-target-slot-label',
+			'description' => 'visualdata-parserfunction-form-target-slot-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-form-target-slot-example'
+		],
 		'icon' => [
 			'label' => 'visualdata-parserfunction-button-icon-label',
 			'description' => 'visualdata-parserfunction-button-icon-description',
@@ -251,7 +259,7 @@ class VisualData {
 			'description' => 'visualdata-parserfunction-form-target-slot-description',
 			'type' => 'string',
 			'required' => false,
-			'default' => 'jsondata',
+			'default' => '',
 			'example' => 'visualdata-parserfunction-form-target-slot-example'
 		],
 		'edit-target-slot' => [
@@ -525,7 +533,6 @@ class VisualData {
 /*
 {{#visualdatabutton: Get folders
 |callback = ContactManager.formAction
-|preload = Data:ContactManager/MailboxInfo/Preload
 }}
 */
 		$defaultParameters = array_merge( self::$FormDefaultParameters,
@@ -1153,7 +1160,7 @@ class VisualData {
 					unset( $value['content']['schemas-data'] );
 				}
 
-				if ( is_array( $value['content']['schemas-data'] ) ) {
+				if ( isset( $value['content']['schemas-data'] ) && is_array( $value['content']['schemas-data'] ) ) {
 					if ( is_array( $value['content']['schemas-data']['untransformed'] ) ) {
 						foreach ( $value['content']['schemas-data']['untransformed'] as $k => $v ) {
 							// @FIXME save untrasformed values for each schema
@@ -1232,7 +1239,8 @@ class VisualData {
 
 			// remove SLOT_ROLE_VISUALDATA_JSONDATA if
 			// jsondata have been moved to main
-			if ( $slotsData[SlotRecord::MAIN]['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+			if ( isset( $slotsData[SlotRecord::MAIN] )
+				&& $slotsData[SlotRecord::MAIN]['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
 				foreach ( $existingSlots as $slotName => $value ) {
 					if ( $slotName === SLOT_ROLE_VISUALDATA_JSONDATA ) {
 						$pageUpdater->removeSlot( $slotName );
@@ -1424,6 +1432,7 @@ class VisualData {
 			$freetext = null;
 			$categories = [];
 			$editTitle = null;
+			$targetSlot = $value['options']['target-slot'];
 
 			// if ( !empty( $value['options']['preload'] ) ) {
 			// 	$title_ = self::getTitleIfKnown( $value['options']['preload'] );
@@ -1452,6 +1461,10 @@ class VisualData {
 
 					if ( empty( $jsonData ) ) {
 						$jsonData = self::getJsonData( $editTitle );
+					}
+
+					if ( empty( $targetSlot ) ) {
+						$targetSlot = self::getTargetSlot( $editTitle, 'jsondata' );
 					}
 				}
 			}
@@ -1490,6 +1503,8 @@ class VisualData {
 					$pageForms[$formID]['options']['return-url'] = $title_->getLocalURL();
 				}
 			}
+
+			$pageForms[$formID]['options']['target-slot'] = $targetSlot ?? 'jsondata';
 		}
 
 		return $pageForms;
@@ -1720,17 +1735,34 @@ class VisualData {
 	}
 
 	/**
+	 * @param string $key
+	 * @return string
+	 */
+	public static function unescapeJsonKey( $key ) {
+		$ret = str_replace( '~1', '/', $key );
+		return str_replace( '~0', '~', $ret );
+	}
+
+	/**
 	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php#L695
 	 * @param array $items
+	 * @param bool $unescapeJsonKeys false
 	 * @param string $token
 	 * @return array
 	 */
-	public static function plainToNested( $items, $token = '/' ) {
+	public static function plainToNested( $items, $unescapeJsonKeys = false, $token = '/' ) {
 		$ret = [];
 		// @see https://stackoverflow.com/questions/49563864/how-to-convert-a-string-to-a-multidimensional-recursive-array-in-php
 		foreach ( $items as $key => $value ) {
 			$ref = &$ret;
 			$parts = explode( $token, $key );
+
+			if ( $unescapeJsonKeys ) {
+				foreach ( $parts as $k => $v ) {
+					$parts[$k] = self::unescapeJsonKey( $v );
+				}
+			}
+
 			$last = array_pop( $parts );
 			foreach ( $parts as $part ) {
 				$ref[$part][''] = null;
