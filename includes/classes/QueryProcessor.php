@@ -439,13 +439,17 @@ class QueryProcessor {
 
 		// remove non existing printouts, allow retrieving all
 		// printouts of subitems, e.g. authors/first_name, authors/last_name
-		// from |?authors
+		// from |?authors, taking into account escaping of json pointers
 		foreach ( $this->printouts as $key => $value ) {
-			$value = $this->databaseManager->escapeJsonPtr( $value );
+			// $value = $this->databaseManager->escapeJsonPtr( $value );
+			$pattern = str_replace( '~', '~0', $value );
+			$pattern = str_replace( '/', '(?:~1|\\/)', $pattern );
+
 			if ( !array_key_exists( $value, $mapPathNoIndexTable ) ) {
 				unset( $this->printouts[$key] );
 				foreach ( $mapPathNoIndexTable as $k => $v ) {
-					if ( strpos( $k, "$value/" ) === 0 ) {
+					if ( preg_match( "/^$pattern$/", $k )
+						|| preg_match( "/^$pattern\//", $k ) ) {
 						$this->printouts[] = $k;
 					}
 				}
