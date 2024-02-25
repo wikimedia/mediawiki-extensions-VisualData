@@ -343,12 +343,13 @@ class SubmitForm {
 		// $targetSlot = isset( $data['form']['target-slot'] ) ? $data['form']['target-slot']
 		// 	: \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
 
-		if ( isset( $data['form']['target-slot'] ) ) {
+		if ( !empty( $data['form']['target-slot'] ) ) {
 			$targetSlot = $data['form']['target-slot'];
 
 		// *** this should be always true
 		} elseif ( !empty( $data['options']['target-slot'] ) ) {
 			$targetSlot = $data['options']['target-slot'];
+
 		} else {
 			$targetSlot = \VisualData::getTargetSlot( $editTitle, 'jsondata' );
 		}
@@ -554,7 +555,7 @@ class SubmitForm {
 
 		if ( $data['options']['action'] === 'create'
 			&& !array_key_exists( 'freetext', $data['form'] )
-			&& isset( $data['options']['preload'] ) ) {
+			&& !empty( $data['options']['preload'] ) ) {
 			$title_ = \VisualData::getTitleIfKnown( $data['options']['preload'] );
 			if ( $title_ ) {
 				$freetext = \VisualData::getWikipageContent( $title_ );

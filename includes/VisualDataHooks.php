@@ -83,7 +83,7 @@ class VisualDataHooks {
 	public static function onBeforeInitialize( \Title &$title, $unused, \OutputPage $output, \User $user, \WebRequest $request, $mediaWiki ) {
 		\VisualData::initialize();
 
-		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 
@@ -109,7 +109,7 @@ class VisualDataHooks {
 		$databaseManager = new DatabaseManager();
 		$databaseManager->removeLinks( $title );
 
-		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 
@@ -203,7 +203,7 @@ class VisualDataHooks {
 			return;
 		}
 
-		if ( isset( $GLOBALS['wgVisualDataJsonDataTrackingCategory'] ) ) {
+		if ( !empty( $GLOBALS['wgVisualDataJsonDataTrackingCategory'] ) ) {
 			$jsonData = \VisualData::getJsonData( $title );
 			if ( !empty( $jsonData ) ) {
 				$parser->addTrackingCategory( 'visualdata-jsondata-tracking-category' );
@@ -373,7 +373,7 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function onPageRenderingHash( &$confstr, User $user, &$forOptions ) {
-		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && isset( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
 			$confstr .= '!' . $_GET['slot'];
 		}
 	}
@@ -493,7 +493,7 @@ class VisualDataHooks {
 			if ( $slots ) {
 				$namespaces = $links['namespaces'];
 				$links['namespaces'] = [];
-				$selectedSlot = ( isset( $_GET['slot'] ) ? $_GET['slot'] : null );
+				$selectedSlot = ( !empty( $_GET['slot'] ) ? $_GET['slot'] : null );
 
 				foreach ( $slots as $role => $slot ) {
 					$selected = ( ( !$selectedSlot && $role === SlotRecord::MAIN ) || $role === $selectedSlot );
