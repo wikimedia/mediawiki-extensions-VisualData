@@ -29,7 +29,8 @@ const VisualDataProcessModel = function (
 	Schemas,
 	RecordedSchemas,
 	Model,
-	ModelSchemas
+	ModelSchemas,
+	makeElementId
 ) {
 	var Flatten;
 	var Action;
@@ -97,8 +98,7 @@ const VisualDataProcessModel = function (
 	}
 
 	function validate( schemaName, data, schema ) {
-
-		var ret = Errors;
+		var errors = Errors;
 		// eslint-disable-next-line new-cap
 		const ajv = new window.ajv7( { strict: false, allErrors: true } );
 		var validateAjv;
@@ -108,12 +108,17 @@ const VisualDataProcessModel = function (
 			// eslint-disable-next-line no-console
 			console.error( 'validate', e );
 			callbackShowError( schemaName, e.message );
+
+			// @MAYBETODO
+			// add: "please report the issue in the talk page
+			// of the extension"
 			return false;
 		}
-		if ( validateAjv( data ) && !Object.keys( ret ).length ) {
+		if ( validateAjv( data ) && !Object.keys( errors ).length ) {
 			return true;
 		}
 
+		var hiddenErrors = {};
 		if ( 'errors' in validateAjv && Array.isArray( validateAjv.errors ) ) {
 			loopA: for ( var error of validateAjv.errors ) {
 				var path = `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }`;
@@ -123,17 +128,21 @@ const VisualDataProcessModel = function (
 					}
 				}
 
+				if ( !$( '#' + jQuery.escapeSelector( makeElementId( path ) ) ).is( ':visible' ) ) {
+					hiddenErrors[ path ] = Flatten[ path ].schema.wiki.name + ' ' + error.message;
+				}
+
 				// eslint-disable-next-line no-console
 				console.error( error );
-				ret[ path ] = error.message;
+				errors[ path ] = error.message;
 			}
 		}
 
-		if ( !Object.keys( ret ).length ) {
+		if ( !Object.keys( errors ).length && !Object.keys( hiddenErrors ).length ) {
 			return true;
 		}
 
-		callbackShowError( schemaName, null, ret );
+		callbackShowError( schemaName, null, errors, hiddenErrors );
 		return false;
 	}
 

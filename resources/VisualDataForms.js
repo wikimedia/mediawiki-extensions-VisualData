@@ -155,7 +155,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		);
 	}
 
-	function callbackShowError( schemaName, errorMessage, errors ) {
+	function callbackShowError( schemaName, errorMessage, errors, hiddenErrors ) {
 
 		// remove error messages
 		if ( !errorMessage && ( !errors || !Object.keys( errors ).length ) ) {
@@ -174,11 +174,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		Fields[ escapedSchemaName ].toggle( true );
 		Fields[ escapedSchemaName ].setType( 'error' );
 
-		// @TODO
-		// add: "please report the issue in the talk page
-		// of the extension"
+		var errorMessage = mw.msg( 'visualdata-jsmodule-forms-form-error' );
+		if ( Object.keys( hiddenErrors ).length ) {
+			for ( var path in hiddenErrors ) {
+				errorMessage += '<br />' + hiddenErrors[ path ];
+			}
+		}
+
 		Fields[ escapedSchemaName ].setLabel(
-			errorMessage || mw.msg( 'visualdata-jsmodule-forms-form-error' )
+			new OO.ui.HtmlSnippet( errorMessage )
 		);
 
 		for ( var path in errors ) {
@@ -2389,7 +2393,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			Schemas,
 			RecordedSchemas,
 			Model,
-			ModelSchemas
+			ModelSchemas,
+			makeElementId
 		);
 
 		return new PanelLayout( {

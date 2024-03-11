@@ -91,7 +91,9 @@
 
 				gc.addEventListener( 'select', ( res ) => {
 					// console.log("select:", res );
-					marker.setLngLat( res.detail.center );
+					if ( res.detail ) {
+						marker.setLngLat( res.detail.center );
+					}
 				} );
 
 				gc.addEventListener( 'pick', ( res ) => {
