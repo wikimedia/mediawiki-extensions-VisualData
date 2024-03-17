@@ -32,5 +32,6 @@ $magicWords['en'] = [
 	'visualdataprint' => [ 0, 'vdataprint', 'visualdataprint' ],
 	'visualdataquery' => [ 0, 'visualdataquery', 'vdataquery' ],
 	'visualdataform' => [ 0, 'visualdataform', 'vdataform' ],
-	'visualdatabutton' => [ 0, 'visualdatabutton', 'vdatabutton' ]
+	'visualdatabutton' => [ 0, 'visualdatabutton', 'vdatabutton' ],
+	'visualdataquerylink' => [ 0, 'visualdataquerylink', 'vdataquerylink', 'querylink' ]
 ];

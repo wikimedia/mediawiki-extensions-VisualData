@@ -69,6 +69,7 @@ class VisualDataHooks {
 		$parser->setFunctionHook( 'visualdataquery', [ \VisualData::class, 'parserFunctionQuery' ] );
 		$parser->setFunctionHook( 'visualdataform', [ \VisualData::class, 'parserFunctionForm' ] );
 		$parser->setFunctionHook( 'visualdatabutton', [ \VisualData::class, 'parserFunctionButton' ] );
+		$parser->setFunctionHook( 'visualdataquerylink', [ \VisualData::class, 'parserFunctionQueryLink' ] );
 	}
 
 	/**

@@ -64,6 +64,26 @@ class VisualData {
 	/** @var SchemaProcessor */
 	public static $schemaProcessor;
 
+		/** @var array */
+	public static $QueryLinkDefaultParameters = [
+		// 'class' => [
+		// 	'label' => 'visualdata-parserfunction-querylink-class-label',
+		// 	'description' => 'visualdata-parserfunction-querylink-class-description',
+		// 	'type' => 'string',
+		// 	'required' => false,
+		// 	'default' => '',
+		// 	'example' => 'visualdata-parserfunction-querylink-class-example'
+		// ],
+		'class-attr-name' => [
+			'label' => 'visualdata-parserfunction-querylink-class-attr-name-label',
+			'description' => 'visualdata-parserfunction-querylink-class-attr-name-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => 'class',
+			'example' => 'visualdata-parserfunction-querylink-class-attr-name-example'
+		],
+	];
+
 	/** @var array */
 	public static $ButtonDefaultParameters = [
 		'label' => [
@@ -589,6 +609,69 @@ class VisualData {
 	 * @param mixed ...$argv
 	 * @return array
 	 */
+	public static function parserFunctionQueryLink( Parser $parser, ...$argv ) {
+		$parserOutput = $parser->getOutput();
+
+/*
+{{#querylink: pagename
+|label
+|class=
+|class-attr-name=class
+|a=b
+}}
+*/
+		// unnamed parameters, recognized options,
+		// named parameters
+		[ $values, $options, $query ] = self::parseParameters( $argv, array_keys( self::$QueryLinkDefaultParameters ) );
+
+		$defaultParameters = self::$QueryLinkDefaultParameters;
+
+		array_walk( $defaultParameters, static function ( &$value, $key ) {
+			$value = [ $value['default'], $value['type'] ];
+		} );
+
+		$options = self::applyDefaultParams( $defaultParameters, $options );
+
+		if ( !count( $values ) || empty( $values[0] ) ) {
+			return 'no page name';
+		}
+
+		// assign the indicated name for the "class" attribute
+		// to the known options (from the unknown named parameters)
+		if ( isset( $query[$options['class-attr-name']] ) ) {
+			$options[$options['class-attr-name']] = $query[$options['class-attr-name']];
+		}
+		unset( $query[$options['class-attr-name']] );
+
+		if ( !count( $query ) ) {
+			return 'no query';
+		}
+
+		$title_ = Title::newFromText( $values[0] );
+		$text = ( !empty( $values[1] ) ? $values[1]
+			: $title_->getText() );
+
+		$attr = [];
+		if ( !empty( $options[$options['class-attr-name']] ) ) {
+			$attr['class'] = $options[$options['class-attr-name']];
+		}
+
+		// *** alternatively use $linkRenderer->makePreloadedLink
+		// or $GLOBALS['wgArticlePath'] and wfAppendQuery
+		$ret = Linker::link( $title_, $text, $attr, $query );
+
+		return [
+			$ret,
+			'noparse' => true,
+			'isHTML' => true
+		];
+	}
+
+	/**
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
 	public static function parserFunctionForm( Parser $parser, ...$argv ) {
 		$parserOutput = $parser->getOutput();
 		$parserOutput->setExtensionData( 'visualdataform', true );
@@ -731,9 +814,16 @@ class VisualData {
 |separator=<br>
 }}
 */
-		$title_ = Title::newFromText( array_shift( $argv ) );
+		$text = array_shift( $argv );
+
+		$title_ = Title::newFromText( $text );
 		if ( !$title_ || !$title_->isKnown() ) {
-			$title_ = $title;
+
+			// check if is an article id
+			$title_ = Title::newfromid( $text );
+			if ( !$title_ || !$title_->isKnown() ) {
+				$title_ = $title;
+			}
 		}
 
 		$argv[] = 'function=print';
@@ -781,7 +871,7 @@ class VisualData {
 
 		$defaultParameters['function'] = [ 'query', 'string' ];
 
-		[ $values, $params ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
+		[ $values, $params, $unknownNamed ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
 
 		$params = self::applyDefaultParams( $defaultParameters, $params );
 
@@ -802,15 +892,23 @@ class VisualData {
 		}
 
 		foreach ( $values as $val ) {
+			if ( strpos( $val, '?' ) === 0 ) {
+				$printouts[substr( $val, 1 )] = null;
+			}
+		}
+
+		foreach ( $unknownNamed as $key => $val ) {
 			// $templates
-			if ( preg_match( '/^template(\?(.+))?=(.+)/', $val, $match ) ) {
-				$templates[$match[2]] = $match[3];
+			if ( strpos( $key, 'template?' ) === 0 ) {
+				if ( preg_match( '/^template(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
+					$templates[$match[2]] = $match[3];
+				}
 				continue;
 			}
 
-			if ( strpos( $val, '?' ) === 0 ) {
-				$printouts[substr( $val, 1 )] = null;
-				continue;
+			if ( strpos( $key, '?' ) === 0 ) {
+				// @TODO implement custom column name
+				$printouts[substr( $key, 1 )] = null;
 			}
 		}
 
@@ -899,22 +997,31 @@ class VisualData {
 	 * @return array
 	 */
 	public static function parseParameters( $parameters, $defaultParameters ) {
-		$ret = [];
-		$options = [];
+		// unnamed parameters
+		$a = [];
+
+		// known named parameters
+		$b = [];
+
+		// unknown named parameters
+		$c = [];
 		foreach ( $parameters as $value ) {
 			if ( strpos( $value, '=' ) !== false ) {
 				[ $k, $v ] = explode( '=', $value, 2 );
 				$k = str_replace( ' ', '-', trim( $k ) );
 
 				if ( in_array( $k, $defaultParameters ) ) {
-					$options[$k] = trim( $v );
+					$b[$k] = trim( $v );
+					continue;
+				} else {
+					$c[$k] = trim( $v );
 					continue;
 				}
 			}
-			$ret[] = $value;
+			$a[] = $value;
 		}
 
-		return [ $ret, $options ];
+		return [ $a, $b, $c ];
 	}
 
 	/**
