@@ -28,8 +28,6 @@ if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
 }
 
 use Job;
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
-use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
 use RequestContext;
 use Title;
 use User;
@@ -138,7 +136,7 @@ class UpdateDataJob extends Job {
 					}
 					foreach ( $this->params['removed'] as $value ) {
 						$schemaProcessor->processSchemaRec( $schema, $jsonData['schemas'][$schemaName],
-							[],  $value, '' );
+							[], $value, '' );
 					}
 					// foreach ( $this->params['added'] as $value ) {
 					// 	$schemaProcessor->processSchemaRec( $schema, $jsonData['schemas'][$schemaName],

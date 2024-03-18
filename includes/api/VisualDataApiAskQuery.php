@@ -22,7 +22,7 @@
  * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
+use MediaWiki\Extension\VisualData\SchemaProcessor;
 
 class VisualDataApiAskQuery extends ApiBase {
 

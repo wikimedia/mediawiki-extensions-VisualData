@@ -25,10 +25,9 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
-use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
-use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
-use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
+use MediaWiki\Extension\VisualData\DatabaseManager;
+use MediaWiki\Extension\VisualData\QueryProcessor;
+use MediaWiki\Extension\VisualData\SchemaProcessor;
 use MediaWiki\Logger\LoggerFactory;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;

@@ -24,7 +24,7 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use MediaWiki\Extension\VisualData\ResultPrinter as ResultPrinter;
+use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class JsonResultPrinter extends ResultPrinter {
 

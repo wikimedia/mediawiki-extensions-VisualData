@@ -24,9 +24,6 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
-use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
-use MediaWiki\Extension\VisualData\SubmitForm as SubmitForm;
 use MediaWiki\Revision\SlotRecord;
 use Title;
 

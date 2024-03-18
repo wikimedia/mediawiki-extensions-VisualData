@@ -24,8 +24,7 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine as LuaStandaloneEngine;
-use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
+use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine;
 use MediaWiki\MediaWikiServices;
 
 class ResultPrinter {

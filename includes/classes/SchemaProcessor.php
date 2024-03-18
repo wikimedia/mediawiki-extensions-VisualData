@@ -24,7 +24,6 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
 use MediaWiki\MediaWikiServices;
 use Parser;
 use RequestContext;
@@ -429,20 +428,20 @@ class SchemaProcessor {
 					$ret['format'] = $properties['jsonSchema-format'];
 				}
 				break;
-			case 'smw-property':
-				[ $type, $format ] = SemanticMediawiki::smwTypeToSchema( $properties['smw-property-type'] )
-					+ [ null, null ];
-				if ( !is_array( $type ) ) {
-					$ret['type'] = $type;
-					if ( !empty( $format ) ) {
-						$ret['format'] = $format;
-					}
+			// case 'smw-property':
+			// 	[ $type, $format ] = SemanticMediawiki::smwTypeToSchema( $properties['smw-property-type'] )
+			// 		+ [ null, null ];
+			// 	if ( !is_array( $type ) ) {
+			// 		$ret['type'] = $type;
+			// 		if ( !empty( $format ) ) {
+			// 			$ret['format'] = $format;
+			// 		}
 
-				// @TODO test geographical coordinates
-				} else {
-					$ret = array_merge( $ret, $type );
-				}
-				break;
+			// 	// @TODO test geographical coordinates
+			// 	} else {
+			// 		$ret = array_merge( $ret, $type );
+			// 	}
+			// 	break;
 		}
 
 		// remove all properties in the wiki object

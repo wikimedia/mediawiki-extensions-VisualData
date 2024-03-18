@@ -22,8 +22,8 @@
  * @copyright Copyright ©2021-2023, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
-use MediaWiki\Extension\VisualData\SchemaProcessor as SchemaProcessor;
+use MediaWiki\Extension\VisualData\DatabaseManager;
+use MediaWiki\Extension\VisualData\SchemaProcessor;
 
 class VisualDataApiSaveSchema extends ApiBase {
 

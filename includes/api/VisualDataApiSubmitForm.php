@@ -22,7 +22,7 @@
  * @copyright Copyright ©2023, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\SubmitForm as SubmitForm;
+use MediaWiki\Extension\VisualData\SubmitForm;
 
 class VisualDataApiSubmitForm extends ApiBase {
 

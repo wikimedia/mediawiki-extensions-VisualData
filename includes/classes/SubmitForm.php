@@ -29,8 +29,6 @@ use CommentStoreComment;
 use ContentHandler;
 use ContentModelChange;
 use DerivativeRequest;
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
-use MediaWiki\Extension\VisualData\PublishStashedFile as PublishStashedFile;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
 use Parser;

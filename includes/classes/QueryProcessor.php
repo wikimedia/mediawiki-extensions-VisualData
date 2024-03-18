@@ -28,7 +28,6 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
 use MediaWiki\MediaWikiServices;
 use Title;
 
@@ -170,7 +169,7 @@ class QueryProcessor {
 		preg_replace_callback( '/\[\[([^\[\]]+)\]\]/',
 			function ( $matches ) {
 				if ( strpos( $matches[1], '::' ) !== false ) {
-					[ $prop, $value ] = explode( '::',  $matches[1] );
+					[ $prop, $value ] = explode( '::', $matches[1] );
 					$this->conditionProperties[$prop] = $value;
 				} else {
 					$this->conditionSubjects[] = $matches[1];

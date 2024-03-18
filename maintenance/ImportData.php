@@ -22,7 +22,7 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\Importer as Importer;
+use MediaWiki\Extension\VisualData\Importer;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
 if ( $IP === false ) {

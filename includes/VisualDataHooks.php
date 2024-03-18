@@ -22,7 +22,7 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\DatabaseManager as DatabaseManager;
+use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\RevisionRecord;
 use MediaWiki\Revision\SlotRecord;

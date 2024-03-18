@@ -24,8 +24,6 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use MediaWiki\Extension\VisualData\ResultPrinters\TableResultPrinter as TableResultPrinter;
-
 class DatatableResultPrinter extends TableResultPrinter {
 
 	/**

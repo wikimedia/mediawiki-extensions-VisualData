@@ -21,7 +21,7 @@
  * @copyright Copyright ©2021-2022, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\SubmitForm as SubmitForm;
+use MediaWiki\Extension\VisualData\SubmitForm;
 
 class SpecialVisualDataSubmit extends SpecialPage {
 

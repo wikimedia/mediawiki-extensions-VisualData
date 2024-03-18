@@ -25,8 +25,8 @@
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
 use Linker;
-use MediaWiki\Extension\VisualData\ResultPrinter as ResultPrinter;
-use MediaWiki\Extension\VisualData\Utils\HtmlTable as HtmlTable;
+use MediaWiki\Extension\VisualData\ResultPrinter;
+use MediaWiki\Extension\VisualData\Utils\HtmlTable;
 
 class TableResultPrinter extends ResultPrinter {
 
