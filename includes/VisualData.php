@@ -32,6 +32,7 @@ use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
 use MediaWiki\Logger\LoggerFactory;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
+use Swaggest\JsonDiff\JsonPointer;
 
 class VisualData {
 	/** @var array */
@@ -707,15 +708,27 @@ class VisualData {
 			$value = [ $value['default'], $value['type'] ];
 		} );
 
-		[ $values, $options ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
+		[ $values, $options, $unknownNamed ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
 
 		if ( !count( $values ) || empty( $values[0] ) ) {
 			return 'no schemas';
 		}
 
+		// @see https://wikisphere.org/wiki/User:Filburt/Nested_Schemas_and_Templates_Example
+		// @see https://www.mediawiki.org/wiki/Extension_talk:VisualData
+		$preloadDataOverride = [];
+		foreach ( $unknownNamed as $key => $val ) {
+			if ( strpos( $key, 'preload-data?' ) === 0 ) {
+				if ( preg_match( '/^preload-data(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
+					$preloadDataOverride[$match[2]] = $match[3];
+				}
+			}
+		}
+
 		$schemas = preg_split( '/\s*,\s*/', $values[0], -1, PREG_SPLIT_NO_EMPTY );
 
 		$params = self::applyDefaultParams( $defaultParameters, $options );
+		$params['preload-data-override'] = $preloadDataOverride;
 
 		$databaseManager = new DatabaseManager();
 
@@ -1008,10 +1021,11 @@ class VisualData {
 		foreach ( $parameters as $value ) {
 			if ( strpos( $value, '=' ) !== false ) {
 				[ $k, $v ] = explode( '=', $value, 2 );
-				$k = str_replace( ' ', '-', trim( $k ) );
+				$k = trim( $k );
+				$k_ = str_replace( ' ', '-', $k );
 
-				if ( in_array( $k, $defaultParameters ) ) {
-					$b[$k] = trim( $v );
+				if ( in_array( $k, $defaultParameters ) || in_array( $k_, $defaultParameters ) ) {
+					$b[$k_] = trim( $v );
 					continue;
 				} else {
 					$c[$k] = trim( $v );
@@ -1105,8 +1119,10 @@ class VisualData {
 		foreach ( $slots as $role => $slot ) {
 			$content_ = $slots[$role]->getContent();
 			$modelId = $content_->getContentHandler()->getModelID();
+
 			if ( $role === SLOT_ROLE_VISUALDATA_JSONDATA
-				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA
+				|| $modelId === 'json' ) {
 				$content = $content_;
 				break;
 			}
@@ -1526,6 +1542,9 @@ class VisualData {
 	 * @return array
 	 */
 	private static function processPageForms( $title, $pageForms, $config ) {
+		$services = MediaWikiServices::getInstance();
+		$slotRoleRegistry = $services->getSlotRoleRegistry();
+
 		if ( $config['context'] !== 'EditData' ) {
 			$databaseManager = new DatabaseManager();
 		}
@@ -1550,6 +1569,41 @@ class VisualData {
 
 			if ( !empty( $value['options']['preload-data'] ) ) {
 				$jsonData = self::getPreloadData( $value['options']['preload-data'] );
+				if ( !empty( $jsonData ) ) {
+					$title_ = self::getTitleIfKnown( $value['options']['preload-data'] );
+					$modelId = $slotRoleRegistry->getRoleHandler( SlotRecord::MAIN )->getDefaultModel( $title_ );
+
+					// if jsonData is a simple json, apply the provided
+					// data to the current schema if not defined in the
+					// data themselves
+					if ( $modelId === 'json' && !array_exists( 'schemas', $jsonData ) ) {
+						$jsonData['schemas'] = $jsonData;
+						if ( count( $value['schemas'] ) === 1 && !array_exists( $value['schemas'][0], $jsonData['schemas'] ) ) {
+							$jsonData['schemas'][$value['schemas'][0]] = $jsonData['schemas'];
+						}
+					}
+				}
+			}
+
+			if ( !empty( $value['options']['preload-data-override'] )
+				&& class_exists( 'Swaggest\JsonDiff\JsonPointer' ) ) {
+
+				foreach ( $value['options']['preload-data-override'] as $k => $v ) {
+					// @TODO also try unescaped array keys as in
+					// QueryProcessor -> performQuery
+					$pathItems = explode( '/', $k );
+					if ( count( $value['schemas'] ) === 1 ) {
+						if ( !in_array( $pathItems[0], $value['schemas'] ) ) {
+							array_unshift( $pathItems, $value['schemas'][0] );
+						}
+					} elseif ( !in_array( $pathItems[0], $value['schemas'] ) ) {
+						self::$Logger->error( 'schema must be indicated' );
+						continue;
+					}
+					array_unshift( $pathItems, 'schemas' );
+					JsonPointer::add( $jsonData, $pathItems, $v,
+						JsonPointer::TOLERATE_ASSOCIATIVE_ARRAYS | JsonPointer::RECURSIVE_KEY_CREATION );
+				}
 			}
 
 			if ( $value['options']['action'] === 'edit' ) {
