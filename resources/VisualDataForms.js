@@ -175,7 +175,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		Fields[ escapedSchemaName ].setType( 'error' );
 
 		var errorMessage = mw.msg( 'visualdata-jsmodule-forms-form-error' );
-		if ( Object.keys( hiddenErrors ).length ) {
+		if ( hiddenErrors && Object.keys( hiddenErrors ).length ) {
 			for ( var path in hiddenErrors ) {
 				errorMessage += '<br />' + hiddenErrors[ path ];
 			}
