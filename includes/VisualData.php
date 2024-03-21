@@ -2070,7 +2070,7 @@ class VisualData {
 			);
 		}
 
-		include_once __DIR__ . '/Importer/VisualDataImporter1_35.php';
+		include_once __DIR__ . '/importer/VisualDataImporter1_35.php';
 		return new VisualDataImporter1_35( $services->getMainConfig() );
 	}
 
