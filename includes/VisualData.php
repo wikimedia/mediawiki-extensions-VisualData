@@ -1807,7 +1807,7 @@ class VisualData {
 		$services = MediaWikiServices::getInstance();
 		$veConfig = $services->getConfigFactory()->makeConfig( 'visualeditor' );
 		$userOptionsLookup = $services->getUserOptionsLookup();
-		$isBeta = $veConfig->get( 'VisualEditorEnableBetaFeature' );
+		$isBeta = ( $veConfig->has( 'VisualEditorEnableBetaFeature' ) && $veConfig->get( 'VisualEditorEnableBetaFeature' ) );
 
 		return ( $isBeta ?
 			$userOptionsLookup->getOption( $user, 'visualeditor-enable' ) :
