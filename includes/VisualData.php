@@ -1659,9 +1659,18 @@ class VisualData {
 			if ( !array_key_exists( 'return-url', $value['options'] )
 				&& !empty( $value['options']['return-page'] ) ) {
 				$title_ = self::getTitleIfKnown( $value['options']['return-page'] );
+				$query = '';
+
+				if ( !$title_ ) {
+					$pos_ = strpos( $value['options']['return-page'], '?' );
+					if ( $pos_ !== false ) {
+						$title_ = self::getTitleIfKnown( substr( $value['options']['return-page'], 0, $pos_ ) );
+						$query = substr( $value['options']['return-page'], $pos_ + 1 );
+					}
+				}
 
 				if ( $title_ ) {
-					$pageForms[$formID]['options']['return-url'] = $title_->getLocalURL();
+					$pageForms[$formID]['options']['return-url'] = $title_->getLocalURL( $query );
 				}
 			}
 
