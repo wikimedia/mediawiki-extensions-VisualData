@@ -404,7 +404,7 @@
 	"visualdata-jsmodule-formfield-printouts-help": "Enter the properties to be retrieved by the query (if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items)",
 
 	"visualdata-jsmodule-formfield-optionformula": "option value formula",
-	"visualdata-jsmodule-formfield-optionformula-help": "wikitext and parser functions allowed (use <articleid> to retrieve the pageid of a given result, <pagetitle> to retrieve the article title, and <name> to retrieve the value of the requested properties, where 'name' is the full path separated by slashes if a nested property",
+	"visualdata-jsmodule-formfield-optionformula-help": "wikitext and parser functions allowed. Use <articleid> to retrieve the pageid of a given result, <pagetitle> to retrieve the article title, and <name> to retrieve the value of the requested properties, where 'name' is the full path separated by slashes if a nested property",
 	"visualdata-jsmodule-formfield-nullvalue": "can be empty",
 	"visualdata-jsmodule-forms-form-error": "there are errors",
 
