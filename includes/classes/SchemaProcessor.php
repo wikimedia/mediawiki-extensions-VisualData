@@ -1222,7 +1222,7 @@ class SchemaProcessor {
 			// only available for MenuTagSearchMultiselect
 			if ( !empty( $wiki['options-label-formula'] ) ) {
 				$label = $this->parseWikitext(
-					$this->replaceFormula( $proprties, $wiki['options-label-formula'] ) );
+					$this->replaceFormula( $properties, $wiki['options-label-formula'] ) );
 			}
 			$ret[$value] = $label;
 		}

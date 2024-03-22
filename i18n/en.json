@@ -260,7 +260,6 @@
 	"visualdata-jsmodule-outdated-version": "This version of VisualData is outdated. <a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Special:ExtensionDistributor/VisualData\">Update</a> (<a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Extension:VisualData/Release_notes\">Release notes</a>)",
 
 	"manageschemas": "Manage Schemas",
-
 	"visualdata-jsmodule-forms-addremoveschemas": "add/remove schemas",
 	"visualdata-jsmodule-schemas-create-schema": "create schema",
 	"visualdata-jsmodule-schemas-columns": "name, properties",
@@ -400,12 +399,12 @@
 	"visualdata-jsmodule-formfield-askquery-schema-label": "schema",
 	"visualdata-jsmodule-formfield-askquery-schema-help": "schema to be queried",
 	"visualdata-jsmodule-formfield-askquery-label": "ask query",
-	"visualdata-jsmodule-formfield-askquery-help": "Enter an ask query (wikitext and parser functions allowed). Use <value> to use the current value of the lookup element, or <name> to retrieve the value of other fields in the same form: if a nested property use the complete path separated by slashes and omit array indexes for multiple items",
+	"visualdata-jsmodule-formfield-askquery-help": "Enter an ask query (wikitext and parser functions allowed). Use <name> to retrieve the value of other fields in the same form (if a nested property use the complete path separated by slashes and omit array indexes for multiple items) and <value> to use the current value of the input, if the input is editable",
 	"visualdata-jsmodule-formfield-printouts": "printouts",
-	"visualdata-jsmodule-formfield-printouts-help": "Enter the properties to be retrieved by the query (if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items). Use 'pagetitle' to return the page titles.",
+	"visualdata-jsmodule-formfield-printouts-help": "Enter the properties to be retrieved by the query (if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items)",
 
 	"visualdata-jsmodule-formfield-optionformula": "option value formula",
-	"visualdata-jsmodule-formfield-optionformula-help": "wikitext and parser functions allowed (use <name> to retrieve the value of the requested properties, where 'name' is the full path separated by slashes if a nested property)",
+	"visualdata-jsmodule-formfield-optionformula-help": "wikitext and parser functions allowed (use <articleid> to retrieve the pageid of a given result, <pagetitle> to retrieve the article title, and <name> to retrieve the value of the requested properties, where 'name' is the full path separated by slashes if a nested property",
 	"visualdata-jsmodule-formfield-nullvalue": "can be empty",
 	"visualdata-jsmodule-forms-form-error": "there are errors",
 

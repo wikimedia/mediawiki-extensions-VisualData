@@ -51,7 +51,8 @@ class QueryResultPrinter extends ResultPrinter {
 		}
 
 		if ( !empty( $this->params['pagetitle'] ) ) {
-			$this->fields[$this->params['pagetitle-name']] = $title->getText();
+			$this->fields[$this->params['pagetitle-name']] = $title->getFullText();
+			$this->fields[$this->params['articleid-name']] = $title->getArticleID();
 		}
 
 		$path = '';
