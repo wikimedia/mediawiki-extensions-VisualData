@@ -26,6 +26,7 @@ namespace MediaWiki\Extension\VisualData;
 
 use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine as LuaStandaloneEngine;
 use MediaWiki\Extension\VisualData\QueryProcessor as QueryProcessor;
+use MediaWiki\MediaWikiServices;
 
 class ResultPrinter {
 
@@ -180,16 +181,62 @@ class ResultPrinter {
 			return $text[0];
 		}
 
-		$argv = [];
-		foreach ( $params as $key => $value ) {
-			// escpae pipe character !!
-			$value = str_replace( '|', '&#124;', (string)$value );
-			$argv[] = "$key=$value";
+		// @see Scribunto_LuaEngine
+		$args = $params;
+		return $this->expandTemplate( $titleTemplate, $args );
+
+		// *** this does not seem to work in all cases, specifically
+		// https://wikisphere.org/w/index.php?title=Country_page&pageid=710
+		// $argv = [];
+		// foreach ( $params as $key => $value ) {
+		// 	// escpae pipe character !!
+		// 	$value = str_replace( '|', '&#124;', (string)$value );
+		// 	$argv[] = "$key=$value";
+		// }
+
+		// $text = '{{' . $titleTemplate . '|' . implode( '|', $argv ) . '}}';
+		// return $this->parser->recursiveTagParse( $text );
+	}
+
+	/**
+	 * @see Scribunto_LuaEngine
+	 * @param Title $title
+	 * @param array $args
+	 * @return array
+	 */
+	public function expandTemplate( $title, $args ) {
+		$titleText = $title->getText();
+		$frame = $this->parser->getPreprocessor()->newFrame();
+
+		if ( $frame->depth >= $this->parser->mOptions->getMaxTemplateDepth() ) {
+			throw new MWException( 'expandTemplate: template depth limit exceeded' );
 		}
 
-		$text = '{{' . $titleTemplate . '|' . implode( '|', $argv ) . '}}';
+		if ( MediaWikiServices::getInstance()->getNamespaceInfo()->isNonincludable( $title->getNamespace() ) ) {
+			throw new MWException( 'expandTemplate: template inclusion denied' );
+		}
 
-		return $this->parser->recursiveTagParse( $text );
+		[ $dom, $finalTitle ] = $this->parser->getTemplateDom( $title );
+		if ( $dom === false ) {
+			throw new MWException( "expandTemplate: template \"$titleText\" does not exist" );
+		}
+
+		if ( !$frame->loopCheck( $finalTitle ) ) {
+			throw new MWException( 'expandTemplate: template loop detected' );
+		}
+
+		$fargs = $this->parser->getPreprocessor()->newPartNodeArray( $args );
+		$newFrame = $frame->newChild( $fargs, $finalTitle );
+		// $text = $this->doCachedExpansion( $newFrame, $dom,
+		// 	[
+		// 		'frameId' => $frameId,
+		// 		'frameId' => 'empty',
+		// 		'template' => $finalTitle->getPrefixedDBkey(),
+		// 		'args' => $args
+		// 	]
+		// );
+		$text = $newFrame->expand( $dom );
+		return $text;
 	}
 
 	/**
