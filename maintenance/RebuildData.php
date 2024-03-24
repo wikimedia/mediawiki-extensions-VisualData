@@ -122,7 +122,13 @@ class RebuildData extends Maintenance {
 
 			echo 'rebuilding links of ' . $title->getFullText() . PHP_EOL;
 
-			$parserOutput = $wikiPage->getParserOutput();
+			try {
+				$parserOutput = $wikiPage->getParserOutput();
+			} catch ( Exception $e ) {
+				echo $e->getMessage() . PHP_EOL;
+				continue;
+			}
+
 			\VisualData::handleLinks( $parserOutput, $title, $databaseManager );
 		}
 	}

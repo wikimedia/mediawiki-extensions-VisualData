@@ -996,7 +996,7 @@ class VisualData {
 		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
 			$queryParams = $parserOutput->getExtensionData( 'visualdataquerydata' );
 			$databaseManager->storeLink( $title, 'query', $queryParams['schema'] );
-			$databaseManager->storeLinkTemplates( $title, $queryParams['schema'], $queryParams['templates'] );
+			$databaseManager->storeLinkTemplates( $title, $queryParams['schema'], $queryParams['templates'] ?? [] );
 			$databaseManager->invalidateTransclusionTargets( $title );
 		}
 	}
