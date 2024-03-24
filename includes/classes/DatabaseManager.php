@@ -28,7 +28,8 @@ if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../../vendor/autoload.php';
 }
 
-// use Swaggest\JsonDiff\JsonDiff;
+use Swaggest\JsonDiff\JsonDiff;
+use Swaggest\JsonDiff\JsonPointer;
 use Title;
 
 class DatabaseManager {
@@ -71,6 +72,7 @@ class DatabaseManager {
 		// 'visualdata_printouts',
 		'visualdata_prop_tables',
 		'visualdata_links',
+		'visualdata_links_template',
 		'visualdata_text',
 		'visualdata_textarea',
 		'visualdata_date',
@@ -102,6 +104,92 @@ class DatabaseManager {
 
 	/**
 	 * @param Title $title
+	 */
+	public function invalidateTransclusionTargets( $title ) {
+		$transclusionTargets = \VisualData::getTransclusionTargets( $title );
+		foreach ( $transclusionTargets as $title_ ) {
+			// $title_->invalidateCache();
+			$wikiPage_ = \VisualData::getWikiPage( $title_ );
+			if ( $wikiPage_ ) {
+				$wikiPage_->doPurge();
+			}
+		}
+	}
+
+	/**
+	 * @param Title $title
+	 * @return bool
+	 */
+	public function handleTemplateLinks( $title ) {
+		$tableName = 'visualdata_links_template';
+		$conds = [
+			'page_id' => $title->getArticleID(),
+		];
+		$res = $this->dbr->select(
+			$tableName,
+			[ 'parent_page_id' ],
+			$conds,
+			__METHOD__,
+			[]
+		);
+
+		foreach ( $res as $row ) {
+			$title_ = Title::newFromID( $row->parent_page_id );
+			if ( $title_ && $title_->isKnown() ) {
+				$wikiPage_ = \VisualData::getWikiPage( $title_ );
+				if ( $wikiPage_ ) {
+					$wikiPage_->doPurge();
+				}
+				$this->invalidateTransclusionTargets( $title_ );
+			}
+		}
+	}
+
+	/**
+	 * @param Title $title
+	 * @param string $schema
+	 * @param array $templates
+	 * @return bool
+	 */
+	public function storeLinkTemplates( $title, $schema, $templates ) {
+		if ( !\VisualData::isKnownArticle( $title ) ) {
+			return false;
+		}
+
+		$schemaId = $this->getSchemaId( $schema );
+		if ( !$schemaId ) {
+			return;
+		}
+
+		$tableName = 'visualdata_links_template';
+		$conds = [
+			'parent_page_id' => $title->getArticleID(),
+			'schema_id' => $schemaId,
+			'updated_at' => $this->dateTime,
+			'created_at' => $this->dateTime
+		];
+
+		foreach ( $templates as $titleStr ) {
+			$title_ = \Title::makeTitle( NS_TEMPLATE,
+				\Title::capitalize( $titleStr, NS_TEMPLATE ) );
+
+			if ( !$title_ || !$title_->isKnown() ) {
+				continue;
+			}
+
+			$conds_ = array_merge( $conds, [
+				'page_id' => $title_->getArticleID(),
+			] );
+
+			$res = $this->dbw->insert(
+				$tableName,
+				$conds_
+			);
+		}
+	}
+
+	/**
+	 * @param Title $title
 	 * @param string $type
 	 * @param string|array $schema
 	 * @return bool
@@ -120,7 +208,7 @@ class DatabaseManager {
 
 		$tableName = 'visualdata_links';
 		$conds = [
-			'page_id' => $title->getId(),
+			'page_id' => $title->getID(),
 			'type' => $type
 		];
 		$this->dbw->delete(
@@ -244,13 +332,22 @@ class DatabaseManager {
 			$conds,
 			__METHOD__
 		);
+
+		$tableName = 'visualdata_links_template';
+		$conds = [ 'parent_page_id' => $articleId ];
+		$this->dbw->delete(
+			$tableName,
+			$conds,
+			__METHOD__
+		);
 	}
 
 	/**
 	 * @param array $schemas
 	 */
-	public function invalidatePagesWithQueries( $schemas ) {
+	public function invalidatePagesWithQueries( $schemas = [] ) {
 		$tableName = 'visualdata_links';
+
 		foreach ( $schemas as $v ) {
 			if ( !isset( $v['id'] ) ) {
 				$schemaId = $this->getSchemaId( $v['name'] );
@@ -276,79 +373,255 @@ class DatabaseManager {
 					if ( $wikiPage_ ) {
 						$wikiPage_->doPurge();
 					}
-					// invalidate pages "transcluding"
-					// this page as template
-					\VisualData::invalidateCacheOfPagesWithTemplateLinksTo( $title_ );
+
+					// *** this is not necessary, since
+					// visualdata_links already contain transclusion
+					// targets
+					// $transclusionTargets = \VisualData::getTransclusionTargets( $title_ );
+
+					// foreach ( $transclusionTargets as $title_ ) {
+					// 	// $title_->invalidateCache();
+					// 	$wikiPage_ = self::getWikiPage( $title_ );
+					// 	if ( $wikiPage_ ) {
+					// 		$wikiPage_->doPurge();
+					// 	}
+					// }
 				}
 			}
 		}
 	}
 
 	/**
+	 * @param User $user
 	 * @param string $schemaName
 	 * @param bool $evaluate
 	 * @return int
 	 */
-	public function deleteSchema( $schemaName, $evaluate ) {
-		// @TODO delete all props and data related to this schema
-		$tableName = 'visualdata_props';
+	public function deleteSchema( $user, $schemaName, $evaluate ) {
+		$pages = $this->pagesWithSchema( $schemaName );
 
-		// @TODO return jobCount
-		return 0;
+		if ( $evaluate ) {
+			return count( $pages );
+		}
+
+		$conds = [
+			'page_id' => $articleId
+		];
+
+		$jobs = [];
+		foreach ( $pages as $title_ ) {
+			$jobs[] = new UpdateDataJob( $title_,
+				[
+					'user_id' => $user->getId(),
+					'action' => 'delete-schema',
+					'schema' => $schemaName,
+				]
+			);
+		}
+
+		\VisualData::pushJobs( $jobs );
 	}
 
 	/**
+	 * @param User $user
 	 * @param string $previousLabel
 	 * @param string $label
 	 * @param bool $evaluate
 	 * @return int
 	 */
-	public function renameSchema( $previousLabel, $label, $evaluate ) {
-		// @TODO return jobCount
-		return 0;
+	public function renameSchema( $user, $previousLabel, $label, $evaluate ) {
+		$pages = $this->pagesWithSchema( $previousLabel );
+		if ( $evaluate ) {
+			return count( $pages );
+		}
+
+		// rename schema
+		$tableName = 'visualdata_schemas';
+		$conds_ = [
+			'name' => $previousLabel
+		];
+		$update = [
+			'name' => $label
+		];
+		$res = $this->dbw->update(
+			$tableName,
+			$update,
+			$conds_,
+			__METHOD__
+		);
+
+		// *** because this also involves renaming of schema names
+		// in parser functions, the best way is to create a
+		// form/query builder, and to place in wiki articles using an id,
+		// then replacing the schema of the query as json
+
+		$jobs = [];
+		foreach ( $pages as $title_ ) {
+			$jobs[] = new UpdateDataJob( $title_,
+				[
+					'user_id' => $user->getId(),
+					'action' => 'rename-schema',
+					'previous-label' => $previousLabel,
+					'new-label' => $label,
+				]
+			);
+		}
+
+		\VisualData::pushJobs( $jobs );
 	}
 
 	/**
+	 * @param User $user
+	 * @param string $schemaName
 	 * @param array $storedSchema
 	 * @param array $updatedSchema
 	 * @param bool $evaluate
 	 * @return int
 	 */
-	public function diffSchema( $storedSchema, $updatedSchema, $evaluate ) {
-		// @TODO
-		// $r = new JsonDiff(
-		// 	(object)$storedSchema,
-		// 	(object)$updatedSchema,
-		// 	JsonDiff::REARRANGE_ARRAYS
-		// );
+	public function diffSchema( $user, $schemaName, $storedSchema, $updatedSchema, $evaluate ) {
+		if ( !class_exists( 'Swaggest\JsonDiff\JsonDiff' ) ) {
+			return;
+		}
+		$schemaId = $this->getSchemaId( $schemaName );
+		if ( !$schemaId ) {
+			// no stored properties related to this schema
+			return;
+		}
 
-		// $patch = $r->getPatch();
+		$diff = new JsonDiff(
+			// instead than (object)$storedSchema
+			json_decode( json_encode( $storedSchema ) ),
+			json_decode( json_encode( $updatedSchema ) ),
+			JsonDiff::REARRANGE_ARRAYS
+		);
+
+		$patch = $diff->getPatch();
 		// @see https://github.com/swaggest/json-diff?tab=readme-ov-file#jsonpatch
-		// $patches = $patch->jsonSerialize();
+		$patches = $patch->jsonSerialize();
 
-		// foreach ( $patches as $patch ) {
-		// 	$patch = (array)$patch;
-		// 	switch ( $patch['op'] ) {
-		// 		case 'remove':
+		$added = [];
+		$removed = [];
+		foreach ( $patches as $patch ) {
+			$patch = (array)$patch;
 
-		// 			break;
-		// 		case 'add':
+			switch ( $patch['op'] ) {
+				case 'remove':
+					$removed[] = $patch['path'];
+					break;
+				case 'add':
+					$added[] = $patch['path'];
+					break;
+				case 'replace':
+					break;
+				// @TODO
+				case 'move':
+					break;
+				// @TODO
+				case 'copy':
+					break;
+			}
+			// print_r((array)$patch);
+		}
 
-		// 			break;
-		// 		case 'replace':
-					// get test
-		// 			break;
-		// 		case 'move':
-		// 			break;
-		// 		case 'copy':
-		// 			break;
-		// 	}
+		$renamed = [];
+		foreach ( $added as $key => $path ) {
+			$obj = json_decode( json_encode( JsonPointer::getByPointer( (object)$updatedSchema, $path ) ), true );
+			if ( isset( $obj['wiki']['uuid'] ) ) {
+				foreach ( $removed as $k => $p ) {
+					$o = json_decode( json_encode( JsonPointer::getByPointer( (object)$storedSchema, $p ) ), true );
+					if ( isset( $o['wiki']['uuid'] )
+					&& $o['wiki']['uuid'] === $obj['wiki']['uuid'] ) {
+						$renamed[] = [ $p, $path ];
+						unset( $added[$key] );
+						unset( $removed[$k] );
+					}
+				}
+			}
+		}
 
-		// 	print_r((array)$patch);
-		// }
+		if ( !count( $renamed ) && !count( $removed ) ) {
+			return;
+		}
 
-		// @TODO return jobCount
-		return 0;
+		$pages = $this->pagesWithSchema( $schemaName );
+
+		if ( $evaluate ) {
+			return count( $pages );
+		}
+
+		// *** rename of db entries is performed
+		// by rebuildArticleDataFromSlot from the job itself
+		// that also calls removeUnusedEntries
+
+		// *** as above, if a property name is
+		// changed, this may imply the rename of
+		// property names in parser functions,
+		// therefore the best way is to use
+		// a query builder, to save data as json
+		// and to replace properties in the json
+		// object
+
+		$jobs = [];
+		foreach ( $pages as $title_ ) {
+			$jobs[] = new UpdateDataJob( $title_,
+				[
+					'user_id' => $user->getId(),
+					'action' => 'edit-schema',
+					'schema' => $schemaName,
+					'renamed' => $renamed,
+					'removed' => $removed,
+					'added' => $added,
+				]
+			);
+		}
+
+		\VisualData::pushJobs( $jobs );
+	}
+
+	/**
+	 * @param string $schemaName
+	 * @return array
+	 */
+	public function pagesWithSchema( $schemaName ) {
+		$schemaId = $this->getSchemaId( $schemaName );
+		if ( !$schemaId ) {
+			// no stored properties related to this schema
+			return [];
+		}
+
+		$dbr = $this->dbr;
+
+		// @see MediaWiki\Extension\VisualData\Pagers/DataPager
+		$join_conds = [];
+		$join_conds[$dbr->tableName( 'page' ) . ' as page'] = [ 'LEFT JOIN', 'schema_pages.page_id=page.page_id' ];
+		$options = [];
+
+		$tables = [ $dbr->tableName( 'page' ) . ' as page', $dbr->tableName( 'visualdata_schema_pages' ) . ' as schema_pages' ];
+		$fields = [ 'page_title', 'page.page_id' ];
+		$conds[] = 'schema_pages.page_id != 0';
+		$conds[ 'schema_id' ] = $schemaId;
+
+		$res = $this->dbr->select(
+			$tables,
+			// fields
+			$fields,
+			// where
+			$conds,
+			__METHOD__,
+			$options,
+			// join conds
+			$join_conds
+		);
+
+		$ret = [];
+		foreach ( $res as $row ) {
+			$title_ = Title::newFromID( $row->page_id );
+			if ( $title_ && $title_->isKnown() ) {
+				$ret[] = $title_;
+			}
+		}
+
+		return $ret;
 	}
 
 	/**
@@ -398,7 +671,6 @@ class DatabaseManager {
 		$conds = [
 			'page_id' => $articleId
 		];
-
 		$tableName = 'visualdata_links';
 		$this->dbw->delete(
 			$tableName,
@@ -406,13 +678,40 @@ class DatabaseManager {
 			__METHOD__
 		);
 
-		// @TODO remove unused entries
-		// from visualdata_props and visualdata_schemas
-		// if visualdata_schema_page does not contain a given schema
+		$conds = [
+			'parent_page_id' => $articleId
+		];
+		$tableName = 'visualdata_links_template';
+		$this->dbw->delete(
+			$tableName,
+			$conds,
+			__METHOD__
+		);
+
+		// remove unused entries
+		$this->removeUnusedEntries();
 
 		// invalidateCacheOfPagesWithTemplateLinksTo
 		// on pages with queries involving delete schemas
 		$this->invalidatePagesWithQueries( $schemas );
+	}
+
+	public function removeUnusedEntries() {
+		// remove unused entries from visualdata_props
+		$tableNameProps = $this->dbr->tableName( 'visualdata_props' );
+		foreach ( self::$propTypes as $propType ) {
+			$tableName = $this->dbr->tableName( "visualdata_$propType" );
+			$tableId = $this->tableTypeToId( $propType );
+			$sql = "DELETE FROM $tableNameProps WHERE table_id = $tableId AND id NOT IN (SELECT prop_id FROM $tableName)";
+			$res = $this->dbw->query( $sql, __METHOD__ );
+		}
+
+		// remove unused entries from visualdata_schemas
+		// if visualdata_schema_pages does not contain a given schema
+		$tableNameSchemas = $this->dbr->tableName( 'visualdata_schemas' );
+		$tableNameSchemaPages = $this->dbr->tableName( 'visualdata_schema_pages' );
+		$sql = "DELETE FROM $tableNameSchemas WHERE id NOT IN (SELECT schema_id FROM $tableNameSchemaPages)";
+		$res = $this->dbw->query( $sql, __METHOD__ );
 	}
 
 	/**
@@ -440,6 +739,17 @@ class DatabaseManager {
 			if ( !$schemaId ) {
 				continue;
 			}
+
+			$tableName = 'visualdata_schema_pages';
+			$conds_ = [
+				'schema_id' => $schemaId,
+				'page_id' => $articleId
+			];
+			$this->dbw->delete(
+				$tableName,
+				$conds_,
+				__METHOD__
+			);
 
 			$schemas[] = [ 'id' => $schemaId ];
 
@@ -471,9 +781,20 @@ class DatabaseManager {
 				$conds,
 				__METHOD__
 			);
-
-			$this->invalidatePagesWithQueries( $schemas );
+			$conds = [
+				'parent_page_id' => $articleId,
+				'schema_id' => $schemaId
+			];
+			$tableName = 'visualdata_links_template';
+			$this->dbw->delete(
+				$tableName,
+				$conds,
+				__METHOD__
+			);
 		}
+
+		$this->removeUnusedEntries();
+		$this->invalidatePagesWithQueries( $schemas );
 	}
 
 	/**
@@ -608,33 +929,34 @@ class DatabaseManager {
 				$propType = 'integer';
 		}
 
-		$table_id = 0;
-		switch ( $propType ) {
+		return [ $this->tableTypeToId( $propType ), $propType ];
+	}
+
+	/**
+	 * @param string $type
+	 * @return int
+	 */
+	public function tableTypeToId( $type ) {
+		switch ( $type ) {
 			case 'text':
-				$table_id = 1;
-				break;
+				return 1;
 			case 'textarea':
-				$table_id = 2;
-				break;
+				return 2;
 			case 'date':
-				$table_id = 3;
-				break;
+				return 3;
 			case 'datetime':
-				$table_id = 4;
-				break;
+				return 4;
 			case 'time':
-				$table_id = 5;
-				break;
+				return 5;
 			case 'integer':
-				$table_id = 6;
-				break;
+				return 6;
 			case 'numeric':
-				$table_id = 7;
-				break;
+				return 7;
 			case 'boolean':
-				$table_id = 8;
+				return 8;
 		}
-		return [ $table_id, $propType ];
+
+		return 0;
 	}
 
 	/**

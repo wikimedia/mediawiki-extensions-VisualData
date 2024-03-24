@@ -98,6 +98,7 @@ class QueryProcessor {
 			'offset' => [ 0, 'integer' ],
 			'order' => [ '', 'string' ],
 			'pagetitle-name' => [ 'pagetitle', 'string' ],
+			'articleid-name' => [ 'articleid', 'string' ],
 			'hierarchical-conditions' => [ true, 'bool' ],
 		];
 

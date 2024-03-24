@@ -235,3 +235,8 @@ body > .oo-ui-windowManager,
 .VisualDataGroupWidgetPanel .oo-ui-messageWidget.oo-ui-messageWidget-block div {
 	margin-left: 32px;
 }
+
+/* :has(.mw-rcfilters-spinner:not(.mw-rcfilters-spinner::before)) */
+.mw-rcfilters-head + .VisualDataFormWrapperPlaceholder {
+	display: none;
+}

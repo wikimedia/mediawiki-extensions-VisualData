@@ -82,7 +82,8 @@
 		"BeforePageDisplay": "VisualDataHooks::onBeforePageDisplay",
 		"SkinBuildSidebar": "VisualDataHooks::onSkinBuildSidebar",
 		"SidebarBeforeOutput": "VisualDataHooks::onSidebarBeforeOutput",
-		"SkinTemplateNavigation::Universal": "VisualDataHooks::onSkinTemplateNavigation"
+		"SkinTemplateNavigation::Universal": "VisualDataHooks::onSkinTemplateNavigation",
+		"ParserPreSaveTransformComplete": "VisualDataHooks::onParserPreSaveTransformComplete"
 	},
 	"SpecialPages": {
 		"VisualDataSubmit": "SpecialVisualDataSubmit",
@@ -185,6 +186,9 @@
 		"visualdata-caneditdata",
 		"visualdata-canmanageschemas"
 	],
+	"JobClasses": {
+		"VisualDataUpdateDataJob": "MediaWiki\\Extension\\VisualData\\UpdateDataJob"
+	},
 	"ResourceFileModulePaths": {
 		"localBasePath": "resources",
 		"remoteExtPath": "VisualData/resources"
@@ -233,7 +237,9 @@
 				"visualdata-jsmodule-dialog-goback",
 				"visualdata-jsmodule-dialog-submit",
 				"visualdata-jsmodule-dialog-close",
-				"visualdata-jsmodule-dialog-done"
+				"visualdata-jsmodule-dialog-done",
+				"visualdata-jsmodule-created-jobs",
+				"visualdata-jsmodule-create-jobs-alert"
 			]
 		},
 		"ext.VisualData.Forms": {

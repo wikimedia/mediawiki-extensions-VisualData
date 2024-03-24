@@ -670,14 +670,16 @@ class SchemaProcessor {
 							'description' => !empty( $schema['wiki']['latitude-input-help'] ) ? $this->parseWikitext( $schema['wiki']['latitude-input-help'] ) : '',
 							'type' => 'number',
 							'minimum' => -90,
-							'maximum' => 90
+							'maximum' => 90,
+							'wiki' => []
 						],
 						'longitude' => [
 							'title' => !empty( $schema['wiki']['longitude-input-label'] ) ? $this->parseWikitext( $schema['wiki']['longitude-input-label'] ) : '',
 							'description' => !empty( $schema['wiki']['longitude-input-help'] ) ? $this->parseWikitext( $schema['wiki']['longitude-input-help'] ) : '',
 							'type' => 'number',
 							'minimum' => -180,
-							'maximum' => 180
+							'maximum' => 180,
+							'wiki' => []
 						],
 						'zoom' => [
 							'type' => 'number',
@@ -689,6 +691,11 @@ class SchemaProcessor {
 						]
 					]
 				];
+				if ( !empty( $schema['wiki']['uuid'] ) ) {
+					$ret['properties']['latitude']['wiki']['uuid'] = $schema['wiki']['uuid'];
+					$ret['properties']['longitude']['wiki']['uuid'] = $schema['wiki']['uuid'];
+					$ret['properties']['zoom']['wiki']['uuid'] = $schema['wiki']['uuid'];
+				}
 				break;
 		}
 	}
@@ -1348,6 +1355,53 @@ class SchemaProcessor {
 				return 'number';
 			default:
 				return $type;
+		}
+	}
+
+	/**
+	 * @see resources/VisualDataForms.js -> processSchema
+	 * @param array $schema
+	 * @param array &$data
+	 * @param array $renamed
+	 * @param array $removed
+	 * @param string $path
+	 */
+	public function processSchemaRec( $schema, &$data, $renamed, $removed, $path ) {
+		if ( !$renamed && !$removed ) {
+			return;
+		}
+
+		switch ( $schema['type'] ) {
+			case 'object':
+				if ( isset( $schema['properties'] ) ) {
+					foreach ( $schema['properties'] as $key => $value ) {
+						$currentPath = "$path/properties/$key";
+						if ( $renamed && $currentPath === $renamed[1] ) {
+							$pathItemsOld = explode( '/', $renamed[0] );
+							$keyOld = array_pop( $pathItemsOld );
+							$data[$key] = $data[$keyOld];
+							unset( $data[$keyOld] );
+						}
+						if ( $removed && $currentPath === $removed ) {
+							unset( $data[$key] );
+						}
+						$subSchema = $schema['properties'][$key];
+						$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
+					}
+				}
+				break;
+			case 'array':
+				// @TODO support tuple
+				if ( isset( $schema['items'] ) ) {
+					$subSchema = $schema['items'];
+					if ( is_array( $data ) ) {
+						foreach ( $data as $key => $value ) {
+							$currentPath = "$path/$key";
+							$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
+						}
+					}
+				}
+				break;
 		}
 	}
 

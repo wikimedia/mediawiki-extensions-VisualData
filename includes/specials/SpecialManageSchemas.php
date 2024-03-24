@@ -95,9 +95,15 @@ class SpecialManageSchemas extends SpecialPage {
 			)
 		);
 
+		$loadingPlaceholder = Html::rawElement(
+			'div',
+			[ 'class' => 'VisualDataFormWrapperPlaceholder' ],
+			$this->msg( 'visualdata-loading-placeholder' )->text()
+		);
+
 		$out->addHTML( Html::rawElement( 'div', [
 				'id' => 'schemas-wrapper',
-			], $loadingContainer )
+			], $loadingContainer . $loadingPlaceholder )
 		);
 	}
 

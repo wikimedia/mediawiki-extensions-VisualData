@@ -2064,16 +2064,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			minItems = data.length;
 		}
 
+		// data is not an object if the type of schema
+		// changed from non object to object, e.g.
+		// an array of text fields vs an array
+		// of subitems, and the name/key was the same
+		if ( typeof data !== 'object' ) {
+			data = {};
+		}
+
 		var i = 0;
 		while ( this.optionsList.items.length < minItems ) {
 			var newItem = false;
-
-			// data is not an object if the type of schema
-			// changed from non object to object, e.g.
-			// an array of text fields vs an array
-			// of subitems, and the name/key was the same
-
-			if ( typeof data !== 'object' || !( i in data ) ) {
+			if ( !( i in data ) ) {
 				data[ i ] = {};
 				newItem = true;
 			}
@@ -2232,13 +2234,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			case 'object':
 				model.properties = {};
 				if ( 'properties' in schema ) {
+
+					// data is not an object if the type of schema
+					// changed from non object to object, e.g.
+					// an array of text fields vs an array
+					// of subitems, and the name/key was the same
+					if ( !VisualDataFunctions.isObject( data ) ) {
+						data = {};
+					}
+
 					var items_ = [];
 					for ( var i in schema.properties ) {
-						// data is not an object if the type of schema
-						// changed from non object to object, e.g.
-						// an array of text fields vs an array
-						// of subitems, and the name/key was the same
-						if ( typeof data !== 'object' || !( i in data ) ) {
+						if ( !( i in data ) ) {
 							data[ i ] = {};
 						}
 						var path_ = `${ path }/${ escapeJsonPtr( i ) }`;
@@ -2544,7 +2551,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	function updateButtons( panels ) {
 		if ( TargetSlotField ) {
-			TargetSlotField.toggle( hasMultiplePanels() );
+			TargetSlotField.toggle( hasMultiplePanels() ||
+				( 'target-slot' in Model && Model[ 'target-slot' ].getValue() === 'main' ) );
 		}
 
 		if ( Form.options.view === 'popup' ) {
@@ -2615,7 +2623,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				return;
 			}
 
-			if ( res.form[ 'target-slot' ] === 'main' && !res.schemas.length ) {
+			if ( res.form[ 'target-slot' ] === 'main' && !res.schemas.length &&
+				!RecordedSchemas.length ) {
 				// eslint-disable-next-line no-alert
 				alert( mw.msg( 'visualdata-jsmodule-forms-submit-no-schemas' ) );
 				return;

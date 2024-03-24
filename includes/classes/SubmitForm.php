@@ -341,7 +341,7 @@ class SubmitForm {
 		}
 
 		// $targetSlot = isset( $data['form']['target-slot'] ) ? $data['form']['target-slot']
-		// 	: \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
+		// : \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
 
 		if ( !empty( $data['form']['target-slot'] ) ) {
 			$targetSlot = $data['form']['target-slot'];
@@ -358,6 +358,7 @@ class SubmitForm {
 			$jsonData['categories'] = $data['form']['categories'];
 		}
 
+		// *** not used anymore
 		if ( !empty( $data['options']['action'] ) && $data['options']['action'] === 'delete' ) {
 			// @FIXME remove only deleted schemas
 			// if context !== EditData
@@ -571,6 +572,14 @@ class SubmitForm {
 
 		// $errors is handled by reference
 		if ( !count( $errors ) ) {
+
+			if ( !empty( $editTitle ) ) {
+				$deletedSchemas = array_diff( $data['recordedSchemas'], $data['schemas'] );
+				if ( count( $deletedSchemas ) ) {
+					$databaseManager->deleteArticleSchemas( $editTitle, $deletedSchemas, $errors );
+				}
+			}
+
 			// @ATTENTION ! put this before setJsonData
 			// otherwise it will be delayes after $wikiPage->doPurge();
 			// below !!
@@ -598,6 +607,7 @@ class SubmitForm {
 				$slots,
 				$errors,
 			);
+
 			$databaseManager->invalidatePagesWithQueries( array_map( static function ( $v ) {
 				return [ 'name' => $v ];
 			}, $data['schemas'] ) );

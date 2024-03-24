@@ -267,7 +267,8 @@ const VisualDataProcessModel = function (
 					form: formModel,
 					schemas: Form.schemas,
 					// @FIXME or retrieve it server side
-					options: Form.options
+					options: Form.options,
+					recordedSchemas: RecordedSchemas
 				};
 
 			case 'validate&submit':

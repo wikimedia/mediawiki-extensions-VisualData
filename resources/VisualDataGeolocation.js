@@ -571,6 +571,13 @@ const VisualDataGeolocation = function ( phpConfig, windowManager ) {
 	function openDialog( callback, parentObj, fieldName ) {
 		Callback = callback;
 		Model = {};
+
+		// *** place here properties to copy
+		if ( fieldName in parentObj && 'uuid' in parentObj[ fieldName ].wiki ) {
+			Model.uuid = new VisualDataFunctions.MockupOOUIClass(
+				parentObj[ fieldName ].wiki.uuid );
+		}
+
 		ParentObj = parentObj;
 
 		CurrentKey =

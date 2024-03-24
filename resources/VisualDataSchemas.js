@@ -1408,6 +1408,12 @@ VisualDataSchemas = ( function () {
 
 		Models.push( { parentSchema: {} } );
 
+		// *** place here properties to copy
+		if ( 'uuid' in SelectedItems[ SelectedItems.length - 1 ].wiki ) {
+			Models[ Models.length - 1 ].uuid = new VisualDataFunctions.MockupOOUIClass(
+				schema.wiki.uuid );
+		}
+
 		var processDialog;
 		var title;
 

@@ -52,6 +52,7 @@
 
 	"visualdata-parserfunction-print-description": "A label message",
 
+	"visualdata-loading-placeholder": "A label message",
 	"visualdata-parserfunction-form-placeholder": "A label message",
 	"visualdata-parserfunction-button-placeholder": "A label message",
 	"visualdata-parserfunction-query-placeholder": "A label message",
@@ -250,6 +251,8 @@
 	"visualdata-jsmodule-outdated-version": "A label message",
 	"manageschemas": "A label message",
 
+	"visualdata-jsmodule-created-jobs": "A label message",
+	"visualdata-jsmodule-create-jobs-alert": "A label message",
 	"visualdata-jsmodule-forms-addremoveschemas": "A label message",
 	"visualdata-jsmodule-schemas-create-schema": "A label message",
 	"visualdata-jsmodule-schemas-columns": "A label message",

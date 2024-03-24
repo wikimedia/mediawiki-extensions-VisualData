@@ -106,10 +106,6 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function onContentGetParserOutput( $content, $title, $revId, $options, $generateHtml, &$output ) {
-		// this should be executed before onOutputPageParserOutput
-		$databaseManager = new DatabaseManager();
-		$databaseManager->removeLinks( $title );
-
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
@@ -279,6 +275,19 @@ class VisualDataHooks {
 	}
 
 	/**
+	 * @param Parser $parser
+	 * @param string &$text
+	 * @return void
+	 */
+	public static function onParserPreSaveTransformComplete( Parser $parser, string &$text ) {
+		$title = $parser->getTitle();
+		if ( $title->getNamespace() === NS_VISUALDATASCHEMA ) {
+			// although simpler than onMultiContentSave
+			// this does not apply for json content model
+		}
+	}
+
+	/**
 	 * @see https://www.mediawiki.org/wiki/Manual:Hooks/MultiContentSave
 	 * @param RenderedRevision $renderedRevision
 	 * @param UserIdentity $user
@@ -288,6 +297,36 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function onMultiContentSave( MediaWiki\Revision\RenderedRevision $renderedRevision, MediaWiki\User\UserIdentity $user, CommentStoreComment $summary, $flags, Status $hookStatus ) {
+		$revisionRecord = $renderedRevision->getRevision();
+		$title = Title::newFromLinkTarget( $revisionRecord->getPageAsLinkTarget() );
+
+		// add a uuid if missing to each "wiki"
+		// object to be used to compare properties on schema edit
+		if ( $title->getNamespace() === NS_VISUALDATASCHEMA ) {
+			$content = $revisionRecord->getContent( MediaWiki\Revision\SlotRecord::MAIN );
+			$contentHandler = $content->getContentHandler();
+			$modelId = $contentHandler->getModelID();
+			$text = $content->getNativeData();
+			$data = json_decode( $text, true );
+			if ( $data ) {
+				$walkRec = static function ( &$arr ) use( &$walkRec )  {
+					foreach ( $arr as $key => $value ) {
+						if ( $key === 'wiki' && is_array( $value ) && !isset( $value['uuid'] ) ) {
+							$arr[$key]['uuid'] = uniqid();
+						}
+						if ( is_array( $value ) ) {
+							$walkRec( $arr[$key] );
+						}
+					}
+				};
+				$walkRec( $data );
+				$jsonContent = new JsonContent( FormatJson::encode( $data ) );
+				$text = $jsonContent->beautifyJSON();
+				$slotContent = ContentHandler::makeContent( $text, $title, $modelId );
+				$slots = $revisionRecord->getSlots();
+				$slots->setContent( MediaWiki\Revision\SlotRecord::MAIN, $slotContent );
+			}
+		}
 	}
 
 	/**
@@ -307,8 +346,19 @@ class VisualDataHooks {
 		RevisionRecord $revisionRecord,
 		MediaWiki\Storage\EditResult $editResult
 	) {
-		$slots = $revisionRecord->getSlots()->getSlots();
+		$title = $wikiPage->getTitle();
+		$parserOutput = $wikiPage->getParserOutput();
+		$databaseManager = new DatabaseManager();
 
+		\VisualData::handleLinks( $parserOutput, $title, $databaseManager );
+
+		// purge pages with queries using this template
+		// (and their transclusion targets)
+		if ( $title->getNamespace() === NS_TEMPLATE ) {
+			$databaseManager->handleTemplateLinks( $title );
+		}
+
+		$slots = $revisionRecord->getSlots()->getSlots();
 		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
 			// rebuild only if restoring a revision
 			$revertMethod = $editResult->getRevertMethod();
@@ -330,7 +380,6 @@ class VisualDataHooks {
 
 		if ( $slot ) {
 			$content = $slot->getContent();
-			$title = $wikiPage->getTitle();
 			$errors = [];
 			\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
 		}
@@ -386,14 +435,8 @@ class VisualDataHooks {
 	 */
 	public static function onOutputPageParserOutput( OutputPage $out, ParserOutput $parserOutput ) {
 		$parserOutput->addWrapperDivClass( 'visualdata-content-model-' . $out->getTitle()->getContentModel() );
-
 		$title = $out->getTitle();
 		$user = $out->getUser();
-		$databaseManager = new DatabaseManager();
-		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
-			$queryParams = $parserOutput->getExtensionData( 'visualdataquerydata' );
-			$databaseManager->storeLink( $title, 'query', $queryParams['schema'] );
-		}
 
 		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
 			$pageForms = $parserOutput->getExtensionData( 'visualdataforms' );

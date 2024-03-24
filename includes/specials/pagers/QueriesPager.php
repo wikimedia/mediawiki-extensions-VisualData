@@ -26,6 +26,7 @@ namespace MediaWiki\Extension\VisualData\Pagers;
 
 use Linker;
 use MediaWiki\Linker\LinkRenderer;
+use ParserOutput;
 use TablePager;
 use Title;
 
@@ -57,6 +58,23 @@ class QueriesPager extends TablePager {
 	 * @param IResultWrapper $result
 	 */
 	public function preprocessResults( $result ) {
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getFullOutput() {
+		$navigation = $this->getNavigationBar();
+		// $body = parent::getBody();
+
+		$parentParent = get_parent_class( get_parent_class( $this ) );
+		$body = $parentParent::getBody();
+
+		$pout = new ParserOutput;
+		// $navigation .
+		$pout->setText( $body . $navigation );
+		$pout->addModuleStyles( $this->getModuleStyles() );
+		return $pout;
 	}
 
 	/**
@@ -140,9 +158,7 @@ class QueriesPager extends TablePager {
 		$schemaname = $this->request->getVal( 'schemaname' );
 		if ( !empty( $schemaname ) ) {
 			$schemaId = $this->parentClass->databaseManager->getSchemaId( $schemaname );
-			if ( $schemaId ) {
-				$conds[ 'schema_id' ] = $schemaId;
-			}
+			$conds[ 'schema_id' ] = $schemaId ?? 0;
 		}
 
 		$ret['tables'] = $tables;

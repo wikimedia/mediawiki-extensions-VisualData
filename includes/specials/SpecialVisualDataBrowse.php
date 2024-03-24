@@ -52,13 +52,14 @@ class SpecialVisualDataBrowse extends SpecialPage {
 	}
 
 	/**
-	 * @return string
+	 * @return string|Message
 	 */
 	public function getDescription() {
-		// if ( empty( $this->par ) ) {
-		// 	return $this->msg( strtolower( $this->mName ) )->text();
-		// }
-		return $this->msg( 'visualdatabrowse' . strtolower( $this->par ) )->text();
+		$msg = $this->msg( 'visualdatabrowse' . strtolower( (string)$this->par ) );
+		if ( version_compare( MW_VERSION, '1.40', '>' ) ) {
+			return $msg;
+		}
+		return $msg->text();
 	}
 
 	/**
@@ -146,11 +147,11 @@ class SpecialVisualDataBrowse extends SpecialPage {
 		}
 
 		if ( $pager->getNumRows() ) {
-			// $out->addParserOutputContent( $pager->getFullOutput() );
-			$out->addHTML(
-				$pager->getBody() .
-				$pager->getNavigationBar()
-			);
+			$out->addParserOutputContent( $pager->getFullOutput() );
+			// $out->addHTML(
+			// 	$pager->getBody() .
+			// 	$pager->getNavigationBar()
+			// );
 
 		} else {
 			$out->addWikiMsg( 'visualdata-special-browse-table-empty' );

@@ -97,7 +97,38 @@ class RebuildData extends Maintenance {
 	}
 
 	private function rebuildLinks() {
-		$search = '#visualdata(form|print|query)';
+		$databaseManager = new DatabaseManager();
+		$context = RequestContext::getMain();
+		$maxByPageId = $this->getMaxPageId();
+
+		for ( $i = 0; $i <= $maxByPageId; $i++ ) {
+			$title = Title::newFromID( $i );
+
+			if ( !$title || !$title->isKnown() ) {
+				continue;
+			}
+
+			foreach ( $this->excludePrefix as $prefix ) {
+				if ( strpos( $title->getFullText(), $prefix ) === 0 ) {
+					continue 2;
+				}
+			}
+
+			$wikiPage = \VisualData::getWikiPage( $title );
+
+			if ( !$wikiPage ) {
+				continue;
+			}
+
+			echo 'rebuilding links of ' . $title->getFullText() . PHP_EOL;
+
+			$parserOutput = $wikiPage->getParserOutput();
+			\VisualData::handleLinks( $parserOutput, $title, $databaseManager );
+		}
+	}
+
+	private function rebuildLinks_() {
+		$search = '#v(isual)?data(form|print|query)';
 		$selected_namespaces = null;
 		$category = null;
 		$prefix = null;
@@ -111,6 +142,7 @@ class RebuildData extends Maintenance {
 			$use_regex
 		);
 
+		$context = RequestContext::getMain();
 		foreach ( $res as $row ) {
 			$title = Title::makeTitleSafe( $row->page_namespace, $row->page_title );
 			if ( $title == null ) {
@@ -130,8 +162,6 @@ class RebuildData extends Maintenance {
 			}
 
 			$wikiPage->doPurge();
-			$context = RequestContext::getMain();
-			$context->setTitle( $title );
 
 			echo 'rebuilding links of ' . $title->getText() . PHP_EOL;
 
@@ -139,16 +169,35 @@ class RebuildData extends Maintenance {
 			// onOutputPageParserOutput, alternatively use
 			// addParserOutputMetadata @see McrUndoAction
 
+			$context->setTitle( $title );
 			try {
 				$article = new Article( $title );
 				$article->render();
 			} catch ( Exception $e ) {
 				echo $e->getMessage() . PHP_EOL;
 			}
+
+			$transclusionTargets = \VisualData::getTransclusionTargets( $title );
+
+			foreach ( $transclusionTargets as $title_ ) {
+				echo 'rebuilding links of (transclusion target) ' . $title_->getText() . PHP_EOL;
+
+				$wikiPage_ = \VisualData::getWikiPage( $title_ );
+				$wikiPage_->doPurge();
+
+				$context->setTitle( $title_ );
+				try {
+					$article_ = new Article( $title_ );
+					$article_->render();
+				} catch ( Exception $e ) {
+					echo $e->getMessage() . PHP_EOL;
+				}
+			}
 		}
 	}
 
 	private function rebuildData() {
+		$context = RequestContext::getMain();
 		$maxByPageId = $this->getMaxPageId();
 
 		for ( $i = 0; $i <= $maxByPageId; $i++ ) {
@@ -175,15 +224,15 @@ class RebuildData extends Maintenance {
 
 			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );
 
-			$slot = $this->getSlot( $revisionRecord );
+			$slotData = $this->getSlotData( $revisionRecord );
 
-			if ( !$slot ) {
+			if ( !$slotData ) {
 				continue;
 			}
 
 			echo 'rebuilding data for ' . $title->getFullText() . PHP_EOL;
 
-			$content = $slot->getContent();
+			$content = $slotData->getContent();
 			$errors = [];
 			\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
 		}
@@ -264,7 +313,7 @@ class RebuildData extends Maintenance {
 	 * @param RevisionRecord $revisionRecord
 	 * @return MediaWiki\Revision\SlotRecord
 	 */
-	private function getSlot( $revisionRecord ) {
+	private function getSlotData( $revisionRecord ) {
 		$slots = $revisionRecord->getSlots()->getSlots();
 
 		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {

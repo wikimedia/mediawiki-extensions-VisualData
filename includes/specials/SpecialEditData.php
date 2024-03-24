@@ -163,18 +163,24 @@ class SpecialEditData extends SpecialPage {
 			[ 'class' => 'rcfilters-head mw-rcfilters-head', 'id' => 'mw-rcfilters-spinner-wrapper', 'style' => 'position: relative' ],
 			Html::rawElement(
 				'div',
-				[ 'class' => 'mw-rcfilters-spinner', 'style' => 'margin-top: auto; top: 25%' ],
+				[ 'class' => 'initb mw-rcfilters-spinner', 'style' => 'margin-top: auto; top: 25%' ],
 				Html::element(
 					'div',
-					[ 'class' => 'mw-rcfilters-spinner-bounce' ]
+					[ 'class' => 'inita mw-rcfilters-spinner-bounce' ],
 				)
 			)
+		);
+
+		$loadingPlaceholder = Html::rawElement(
+			'div',
+			[ 'class' => 'VisualDataFormWrapperPlaceholder' ],
+			$this->msg( 'visualdata-loading-placeholder' )->text()
 		);
 
 		$out->addHTML( Html::rawElement( 'div', [
 				'id' => 'visualdataform-wrapper-' . ( count( $pageForms ) - 1 ),
 				'class' => 'VisualDataFormWrapper'
-			], $loadingContainer )
+			], $loadingContainer . $loadingPlaceholder )
 		);
 	}
 

@@ -59,6 +59,7 @@
 
 	"visualdata-parserfunction-print-description": "A parser function to print article-related data",
 
+	"visualdata-loading-placeholder": "Loading...",
 	"visualdata-parserfunction-form-placeholder": "form is loading...",
 	"visualdata-parserfunction-button-placeholder": "button is rendering...",
 	"visualdata-parserfunction-query-placeholder": "query is rendering...",
@@ -260,6 +261,8 @@
 	"visualdata-jsmodule-outdated-version": "This version of VisualData is outdated. <a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Special:ExtensionDistributor/VisualData\">Update</a> (<a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Extension:VisualData/Release_notes\">Release notes</a>)",
 
 	"manageschemas": "Manage Schemas",
+	"visualdata-jsmodule-created-jobs": "$1 {{PLURAL|$1|job|jobs}} created",
+	"visualdata-jsmodule-create-jobs-alert": "$1 {{PLURAL|$1|page|pages}} will be affected by this edit, continue?",
 	"visualdata-jsmodule-forms-addremoveschemas": "add/remove schemas",
 	"visualdata-jsmodule-schemas-create-schema": "create schema",
 	"visualdata-jsmodule-schemas-columns": "name, properties",

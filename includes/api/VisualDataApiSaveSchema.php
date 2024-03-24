@@ -71,7 +71,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		if ( $dialogAction === 'delete' ) {
 			if ( $evaluateJobs ) {
-				$jobsCount = $databaseManager->deleteSchema( $previousLabel, $evaluateJobs );
+				$jobsCount = $databaseManager->deleteSchema( $user, $previousLabel, $evaluateJobs );
 				if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
 					$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
 					return true;
@@ -83,7 +83,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$reason = '';
 			\VisualData::deletePage( $wikiPage_, $user, $reason );
 
-			$jobsCount = $databaseManager->deleteSchema( $previousLabel, false );
+			$jobsCount = $databaseManager->deleteSchema( $user, $previousLabel, false );
 
 			$result->addValue( [ $this->getModuleName() ], 'result-action', 'delete' );
 			$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
@@ -107,9 +107,9 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		// rename
 		if ( $resultAction === 'update' && $previousLabel !== $label ) {
-			$jobsCount = $databaseManager->renameSchema( $previousLabel, $label, $evaluateJobs );
 
-			if ( empty( $params['confirm-job-execution'] ) ) {
+			if ( $evaluateJobs ) {
+				$jobsCount = $databaseManager->renameSchema( $user, $previousLabel, $label, $evaluateJobs );
 				if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
 					$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
 					return true;
@@ -133,7 +133,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 				return true;
 			}
 
-			$jobsCount = $databaseManager->renameSchema( $previousLabel, $label, false );
+			$jobsCount = $databaseManager->renameSchema( $user, $previousLabel, $label, false );
 			$result->addValue( [ $this->getModuleName() ], 'label', $label );
 			$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
 			$result->addValue( [ $this->getModuleName() ], 'previous-label', $previousLabel );
@@ -148,19 +148,23 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		$recordedObj = $schemaProcessor->convertToSchema( $schema );
 
-		$jobsCount = $databaseManager->diffSchema( $storedSchema, $recordedObj, $evaluateJobs );
+		$processedSchema = $schemaProcessor->processSchema( $recordedObj, $label );
 
-		if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
-			$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
-			return true;
+		if ( $evaluateJobs ) {
+			$jobsCount = $databaseManager->diffSchema( $user, $label, $storedSchema, $processedSchema, $evaluateJobs );
+			if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
+				$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
+				return true;
+			}
 		}
 
 		\VisualData::saveRevision( $user, $pageTitle, json_encode( $recordedObj ) );
 
-		$jobsCount = $databaseManager->diffSchema( $storedSchema, $recordedObj, $evaluateJobs );
+		$jobsCount = $databaseManager->diffSchema( $user, $label, $storedSchema, $processedSchema, $evaluateJobs );
 
+		$result->addValue( [ $this->getModuleName() ], 'jobs-count', $jobsCount );
 		$result->addValue( [ $this->getModuleName() ], 'result-action', $resultAction );
-		$processedSchema = $schemaProcessor->processSchema( $recordedObj, $label );
+
 		$result->addValue( [ $this->getModuleName() ], 'schemas', json_encode( [ $label => $processedSchema ] ) );
 	}
 

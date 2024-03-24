@@ -945,7 +945,14 @@ class VisualData {
 
 		$databaseManager = new DatabaseManager();
 
-		$parserOutput->setExtensionData( 'visualdataquerydata', $params );
+		// this is still the title of the parent page (in case of
+		// transclusion)
+		// $databaseManager->storeLink( $title, 'query', $params['schema'] );
+
+		// used for template links
+		$params_ = $params;
+		$params_['templates'] = $templates;
+		$parserOutput->setExtensionData( 'visualdataquerydata', $params_ );
 
 		if ( !$databaseManager->schemaExists( $params['schema'] ) ) {
 			return $returnError( 'schema does not exist' );
@@ -968,6 +975,30 @@ class VisualData {
 		$isHtml = ( $resultPrinter ? $resultPrinter->isHtml() : false );
 
 		return [ $results, 'isHTML' => $isHtml ];
+	}
+
+	/**
+	 * @param ParserOutput $parserOutput
+	 * @param Title $title
+	 * @param DatabaseManager $databaseManager
+	 */
+	public static function handleLinks( $parserOutput, $title, $databaseManager ) {
+		$databaseManager->removeLinks( $title );
+
+		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
+			$pageForms = $parserOutput->getExtensionData( 'visualdataforms' );
+
+			foreach ( $pageForms as $formID => $value ) {
+				$databaseManager->storeLink( $title, 'form', $value['schemas'] );
+			}
+		}
+
+		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
+			$queryParams = $parserOutput->getExtensionData( 'visualdataquerydata' );
+			$databaseManager->storeLink( $title, 'query', $queryParams['schema'] );
+			$databaseManager->storeLinkTemplates( $title, $queryParams['schema'], $queryParams['templates'] );
+			$databaseManager->invalidateTransclusionTargets( $title );
+		}
 	}
 
 	/**
@@ -1506,6 +1537,7 @@ class VisualData {
 		}
 
 		$databaseManager->recordProperties( 'rebuildArticleDataFromSlot', $title, $flatten, $errors );
+		$databaseManager->removeUnusedEntries();
 	}
 
 	/**
@@ -1550,9 +1582,9 @@ class VisualData {
 		}
 
 		foreach ( $pageForms as $formID => $value ) {
-			if ( $config['context'] !== 'EditData' ) {
-				$databaseManager->storeLink( $title, 'form', $value['schemas'] );
-			}
+			// if ( $config['context'] !== 'EditData' ) {
+			//	$databaseManager->storeLink( $title, 'form', $value['schemas'] );
+			// }
 
 			$jsonData = [];
 			$freetext = null;
@@ -1922,7 +1954,6 @@ class VisualData {
 	 */
 	public static function plainToNested( $items, $unescapeJsonKeys = false, $token = '/' ) {
 		$ret = [];
-		// @see https://stackoverflow.com/questions/49563864/how-to-convert-a-string-to-a-multidimensional-recursive-array-in-php
 		foreach ( $items as $key => $value ) {
 			$ref = &$ret;
 			$parts = explode( $token, $key );
@@ -2019,39 +2050,6 @@ class VisualData {
 	}
 
 	/**
-	 * @return array
-	 */
-	public static function getAllCategories() {
-		$dbr = wfGetDB( DB_REPLICA );
-
-		$res = $dbr->select(
-			'category',
-			[ 'cat_title', 'cat_pages' ],
-			null,
-			__METHOD__,
-			[
-				'LIMIT' => self::$queryLimit,
-				'USE INDEX' => 'cat_title',
-			]
-		);
-
-		if ( !$res->numRows() ) {
-			return [];
-		}
-
-		$ret = [];
-		foreach ( $res as $row ) {
-			$title_ = Title::newFromText( $row->cat_title, NS_CATEGORY );
-			if ( !$title_ || !$title_->isKnown() ) {
-				continue;
-			}
-			$ret[] = $title_;
-		}
-
-		return $ret;
-	}
-
-	/**
 	 * @return Importer|Importer1_35|null
 	 */
 	public static function getImporter() {
@@ -2133,31 +2131,20 @@ class VisualData {
 	}
 
 	/**
-	 * @todo use to invalidate cache holding parserFunctionPrint
-	 * or parserFunctionQuery and pages containing those as templates
-	 * *** invalidate cache of all pages in which this page has been transcluded
 	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageOwnership/+/refs/heads/master/includes/PageOwnership.php
 	 * @param Title $title
-	 * @return void
+	 * @return array
 	 */
-	public static function invalidateCacheOfPagesWithTemplateLinksTo( $title ) {
+	public static function getTransclusionTargets( $title ) {
 		$context = RequestContext::getMain();
 		$config = $context->getConfig();
 		$options = [ 'LIMIT' => $config->get( 'PageInfoTransclusionLimit' ) ];
 
 		if ( version_compare( MW_VERSION, '1.39', '<' ) ) {
-			$transcludedTargets = self::getLinksTo( $title, $options, 'templatelinks', 'tl' );
-		} else {
-			$transcludedTargets = $title->getTemplateLinksTo( $options );
+			return self::getLinksTo( $title, $options, 'templatelinks', 'tl' );
 		}
 
-		foreach ( $transcludedTargets as $title_ ) {
-			// $title_->invalidateCache();
-			$wikiPage_ = self::getWikiPage( $title_ );
-			if ( $wikiPage_ ) {
-				$wikiPage_->doPurge();
-			}
-		}
+		return $title->getTemplateLinksTo( $options );
 	}
 
 	/**
