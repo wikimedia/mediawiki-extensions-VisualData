@@ -350,7 +350,9 @@ class VisualDataHooks {
 		MediaWiki\Storage\EditResult $editResult
 	) {
 		$title = $wikiPage->getTitle();
-		$parserOutput = $wikiPage->getParserOutput();
+		// or $output->parserOptions(), or ParserOptions::newFromUser( $user )
+		$parserOptions = ParserOptions::newFromAnon();
+		$parserOutput = $wikiPage->getParserOutput( $parserOptions, null, true );
 		$databaseManager = new DatabaseManager();
 
 		// *** attention !! this won't handle queries or forms

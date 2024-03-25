@@ -122,10 +122,10 @@ class RebuildData extends Maintenance {
 
 			echo 'rebuilding links of ' . $title->getFullText() . PHP_EOL;
 
-			$wikiPage->doPurge();
-
 			try {
-				$parserOutput = $wikiPage->getParserOutput();
+				// or $output->parserOptions();
+				$parserOptions = ParserOptions::newFromAnon();
+				$parserOutput = $wikiPage->getParserOutput( $parserOptions, null, true );
 			} catch ( Exception $e ) {
 				echo $e->getMessage() . PHP_EOL;
 				continue;
