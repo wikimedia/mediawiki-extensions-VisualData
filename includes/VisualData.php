@@ -51,6 +51,9 @@ class VisualData {
 	public static $schemas = [];
 
 	/** @var array */
+	public static $queries = [];
+
+	/** @var array */
 	public static $pageForms = [];
 
 	/** @var array */
@@ -952,7 +955,9 @@ class VisualData {
 		// used for template links
 		$params_ = $params;
 		$params_['templates'] = $templates;
-		$parserOutput->setExtensionData( 'visualdataquerydata', $params_ );
+
+		self::$queries[] = $params_;
+		$parserOutput->setExtensionData( 'visualdataqueries', self::$queries );
 
 		if ( !$databaseManager->schemaExists( $params['schema'] ) ) {
 			return $returnError( 'schema does not exist' );
@@ -994,9 +999,12 @@ class VisualData {
 		}
 
 		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
-			$queryParams = $parserOutput->getExtensionData( 'visualdataquerydata' );
-			$databaseManager->storeLink( $title, 'query', $queryParams['schema'] );
-			$databaseManager->storeLinkTemplates( $title, $queryParams['schema'], $queryParams['templates'] ?? [] );
+			$queries = $parserOutput->getExtensionData( 'visualdataqueries' );
+
+			foreach ( $queries as $value ) {
+				$databaseManager->storeLink( $title, 'query', $value['schema'] );
+				$databaseManager->storeLinkTemplates( $title, $value['schema'], $value['templates'] ?? [] );
+			}
 			$databaseManager->invalidateTransclusionTargets( $title );
 		}
 	}

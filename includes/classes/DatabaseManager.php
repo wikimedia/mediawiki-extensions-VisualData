@@ -201,25 +201,29 @@ class DatabaseManager {
 
 		$schemas = ( !is_array( $schema ) ? [ $schema ] : $schema );
 
-		// store a missing schema anyway
-		if ( !count( $schemas ) ) {
-			$schemas = [ null ];
-		}
-
 		$tableName = 'visualdata_links';
 		$conds = [
 			'page_id' => $title->getID(),
 			'type' => $type
 		];
-		$this->dbw->delete(
-			$tableName,
-			$conds,
-			__METHOD__
-		);
 
 		foreach ( $schemas as $schemaName ) {
 			$schemaId = $this->getSchemaId( $schemaName );
 			if ( !$schemaId ) {
+				continue;
+			}
+
+			if ( (bool)$this->dbr->selectField(
+				$tableName,
+				'count(*) as count',
+				array_merge( $conds, [
+					'schema_id' => $schemaId
+				] ),
+				__METHOD__,
+				[
+					'LIMIT' => 1
+				]
+			) ) {
 				continue;
 			}
 
@@ -228,6 +232,7 @@ class DatabaseManager {
 				'updated_at' => $this->dateTime,
 				'created_at' => $this->dateTime
 			] );
+
 			$res = $this->dbw->insert(
 				$tableName,
 				$conds_

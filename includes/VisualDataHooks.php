@@ -106,6 +106,11 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function onContentGetParserOutput( $content, $title, $revId, $options, $generateHtml, &$output ) {
+		// *** important ! otherwise maintenance/RebuildData
+		// will merge form and query data from different articles !
+		\VisualData::$pageForms = [];
+		\VisualData::$queries = [];
+
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
@@ -215,10 +220,8 @@ class VisualDataHooks {
 		$base = __DIR__;
 		$db = $updater->getDB();
 		$dbType = $db->getType();
-
 		$tables = DatabaseManager::$tables;
 
-		// print_r($types);
 		foreach ( $tables as $tableName ) {
 			$filename = "$base/../$dbType/$tableName.sql";
 
@@ -350,6 +353,8 @@ class VisualDataHooks {
 		$parserOutput = $wikiPage->getParserOutput();
 		$databaseManager = new DatabaseManager();
 
+		// *** attention !! this won't handle queries or forms
+		// within the includeonly tag !
 		\VisualData::handleLinks( $parserOutput, $title, $databaseManager );
 
 		// purge pages with queries using this template

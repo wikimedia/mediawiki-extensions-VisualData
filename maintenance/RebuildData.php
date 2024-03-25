@@ -122,6 +122,8 @@ class RebuildData extends Maintenance {
 
 			echo 'rebuilding links of ' . $title->getFullText() . PHP_EOL;
 
+			$wikiPage->doPurge();
+
 			try {
 				$parserOutput = $wikiPage->getParserOutput();
 			} catch ( Exception $e ) {
@@ -226,6 +228,7 @@ class RebuildData extends Maintenance {
 			if ( !$wikiPage ) {
 				continue;
 			}
+
 			$revisionRecord = $wikiPage->getRevisionRecord();
 
 			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );
