@@ -389,6 +389,61 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
+	function updateDependentFields( pathNoIndex ) {
+		// @TODO complete with other optionsInputs
+		var allowedInputsByContructor = [
+			'OoUiDropdownInputWidget',
+			'OoUiMenuTagMultiselectWidget'
+		];
+		for ( let model of ModelFlatten ) {
+			if ( !inArray( model.input.constructor.name, allowedInputsByContructor ) ) {
+				continue;
+			}
+			var field = model.schema.wiki;
+			if ( !( 'options-askquery' in field ) ) {
+				continue;
+			}
+			var askQuery = field[ 'options-askquery' ];
+			var regExp = new RegExp( '<' + pathNoIndex + '>' );
+			if ( regExp.test( askQuery ) ) {
+				ProcessModel.getModel( 'schema', SelectedSchema ).then( function ( res ) {
+					for ( var i in res.flatten ) {
+						if ( res.flatten[ i ].pathNoIndex === pathNoIndex ) {
+							performQuery( {
+								path: model.path,
+								schema: model.schema
+								// performQuery: performQuery
+							}, res.flatten[ i ].value ).then( ( data_ ) => {
+
+								// @TODO complete with other optionsInputs
+								switch ( model.input.constructor.name ) {
+									case 'OoUiDropdownInputWidget':
+										model.input.setOptions( VisualDataFunctions.createDropDownOptions( data_ ) );
+										break;
+									case 'OoUiMenuTagMultiselectWidget':
+										model.input.menu.clearItems();
+										// Map to an array of OO.ui.MenuOptionWidgets
+										var items = [];
+										for ( var j in data_ ) {
+											items.push(
+												new OO.ui.MenuOptionWidget( {
+													data: j,
+													label: data_[ j ]
+												} )
+											);
+										}
+										model.input.addOptions( items );
+										break;
+								}
+							} );
+							break;
+						}
+					}
+				} );
+			}
+		}
+	}
+
 	async function performQuery( data, value ) {
 		var field = data.schema.wiki;
 		var askQuery = field[ 'options-askquery' ];
@@ -644,6 +699,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		inputWidget.on( 'change', function () {
 			clearDependentFields( config.model.pathNoIndex );
+		} );
+
+		inputWidget.$element.find( 'input' ).on( 'blur', function () {
+			updateDependentFields( config.model.pathNoIndex );
 		} );
 
 		config.model.input = inputWidget;
@@ -1423,6 +1482,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}, 30 );
 
 			loadMaps();
+
+			for ( var model of ModelFlatten ) {
+				updateDependentFields( model.pathNoIndex );
+			}
 		}
 	};
 
