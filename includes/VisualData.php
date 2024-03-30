@@ -2164,9 +2164,9 @@ class VisualData {
 	 */
 	public static function getLinksTo( $title, $options = [], $table = 'pagelinks', $prefix = 'pl' ) {
 		if ( count( $options ) > 0 ) {
-			$db = wfGetDB( DB_PRIMARY );
+			$db = self::wfGetDB( DB_PRIMARY );
 		} else {
-			$db = wfGetDB( DB_REPLICA );
+			$db = self::wfGetDB( DB_REPLICA );
 		}
 
 		$res = $db->select(
@@ -2204,7 +2204,7 @@ class VisualData {
 	 * @return array
 	 */
 	public static function getPagesWithPrefix( $prefix, $namespace = NS_MAIN ) {
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = self::wfGetDB( DB_REPLICA );
 
 		$conds = [
 			'page_namespace' => $namespace,
@@ -2379,4 +2379,23 @@ class VisualData {
 		return array_keys( $arr ) === range( 0, count( $arr ) - 1 );
 	}
 
+	/**
+	 * @fixme use the suggested method since MW 1.39
+	 * @param int $db
+	 * @param string|string[] $groups
+	 * @param string|false $wiki
+	 * @return \Wikimedia\Rdbms\DBConnRef
+	 */
+	public static function wfGetDB( $db, $groups = [], $wiki = false ) {
+		if ( $wiki === false ) {
+			return MediaWikiServices::getInstance()
+				->getDBLoadBalancer()
+				->getMaintenanceConnectionRef( $db, $groups, $wiki );
+		} else {
+			return MediaWikiServices::getInstance()
+				->getDBLoadBalancerFactory()
+				->getMainLB( $wiki )
+				->getMaintenanceConnectionRef( $db, $groups, $wiki );
+		}
+	}
 }

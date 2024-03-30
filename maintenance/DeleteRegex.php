@@ -75,7 +75,7 @@ class DeleteRegex extends Maintenance {
 			return 'no regex';
 		}
 
-		$dbr = wfGetDB( DB_MASTER );
+		$dbr = \VisualData::wfGetDB( DB_MASTER );
 
 		$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 

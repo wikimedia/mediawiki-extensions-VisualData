@@ -84,8 +84,8 @@ class DatabaseManager {
 	];
 
 	public function __construct() {
-		$this->dbr = wfGetDB( DB_REPLICA );
-		$this->dbw = wfGetDB( DB_MASTER );
+		$this->dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$this->dbw = \VisualData::wfGetDB( DB_MASTER );
 		$this->dateTime = date( 'Y-m-d H:i:s' );
 	}
 

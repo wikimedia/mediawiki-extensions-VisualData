@@ -217,7 +217,7 @@ class SpecialVisualDataBrowse extends SpecialPage {
 	protected function showOptions( $request ) {
 		$formDescriptor = [];
 
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::wfGetDB( DB_REPLICA );
 
 		switch ( $this->par ) {
 			case 'Schemas':

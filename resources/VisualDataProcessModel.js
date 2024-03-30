@@ -120,7 +120,25 @@ const VisualDataProcessModel = function (
 
 		var hiddenErrors = {};
 		if ( 'errors' in validateAjv && Array.isArray( validateAjv.errors ) ) {
-			loopA: for ( var error of validateAjv.errors ) {
+			var AjvErrors = [];
+
+			// pre-process errors
+			// @see https://ajv.js.org/api.html
+			for ( var error of validateAjv.errors ) {
+				switch ( error.keyword ) {
+					case 'uniqueItems':
+						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }/${ error.params.j }` ) === -1 ) {
+							AjvErrors.push( $.extend( VisualDataFunctions.deepCopy( error ), { instancePath: `${ error.instancePath }/${ error.params.i }` } ) );
+						}
+						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }/${ error.params.i }` ) === -1 ) {
+							AjvErrors.push( $.extend( VisualDataFunctions.deepCopy( error ), { instancePath: `${ error.instancePath }/${ error.params.j }` } ) );
+						}
+						break;
+					default:
+						AjvErrors.push( error );
+				}
+			}
+			loopA: for ( var error of AjvErrors ) {
 				var path = `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }`;
 				for ( var path_ of Removed ) {
 					if ( path.indexOf( path_ ) === 0 ) {

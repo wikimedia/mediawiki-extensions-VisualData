@@ -369,32 +369,39 @@ class SchemaProcessor {
 
 		if ( array_key_exists( 'selectOptionsFrom', $properties )
 			&& $properties['selectOptionsFrom'] === 'options-values' ) {
-			// TODO unset other data sources if added
 			unset( $properties['options-wikilist'] );
+			unset( $properties['options-askquery'] );
+			unset( $properties['askquery-schema'] );
+			unset( $properties['askquery-printouts'] );
+			unset( $properties['options-query-formula'] );
 		}
+
+		// *** this should't be anymore necessary
+		// we use handleOptionsValues below
 
 		// copy hardcoded options to json-schema enum
 		// only if uniqueItems is true, see definition
-		// in schema-draft-07
-		if ( empty( $properties['input-config']['allowDuplicates'] )
-			&& in_array( $properties['preferred-input'], $this->optionsInputs ) ) {
-			$options = [];
-			if ( array_key_exists( 'options-allow-null', $properties ) && $properties['options-allow-null'] ) {
-				$options[] = '';
-			}
-			if (
+		// in schema-draft-07 (only for optionsInputs)
+		// if ( empty( $properties['input-config']['allowDuplicates'] )
+		// 	&& in_array( $properties['preferred-input'], $this->optionsInputs ) ) {
+		// 	$options = [];
+		// 	if ( array_key_exists( 'options-allow-null', $properties ) && $properties['options-allow-null'] ) {
+		// 		$options[] = '';
+		// 	}
+		// 	if (
 				// keep commented the following since
 				// 'selectOptionsFrom' only exists if the item/subitem
 				// has been edited
 				// $properties['selectOptionsFrom'] === 'options-values' &&
-				!empty( $properties['options-values'] )
-				&& is_array( $properties['options-values'] )
-				&& count( $properties['options-values'] ) ) {
-				$options = array_merge( $options, $properties['options-values'] );
-			}
+		// 		!empty( $properties['options-values'] )
+		// 		&& is_array( $properties['options-values'] )
+		// 		&& count( $properties['options-values'] ) ) {
+		// 		$options = array_merge( $options, $properties['options-values'] );
+		// 	}
 			// @TODO the wikilist could be hardcoded as well
-			$ret['enum'] = $options;
-		}
+
+		// 	$ret['enum'] = $options;
+		// }
 
 		if ( !empty( $properties['input-config'] ) && is_array( $properties['input-config'] ) ) {
 			foreach ( $properties['input-config'] as $prop => $val ) {
@@ -424,7 +431,7 @@ class SchemaProcessor {
 				if ( !empty( $properties['jsonSchema-type'] ) ) {
 					$ret['type'] = $properties['jsonSchema-type'];
 				}
-				if ( !empty( $properties['jsonSchema-format'] ) ) {
+				if ( !empty( $properties['jsonSchema-format'] ) && $ret['type'] === 'string' ) {
 					$ret['format'] = $properties['jsonSchema-format'];
 				}
 				break;
@@ -468,7 +475,7 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
@@ -479,6 +486,19 @@ class SchemaProcessor {
 			}
 
 			$ret['wiki'][$property] = $value;
+		}
+
+		$ret_ = [ 'wiki' => $properties ];
+		$this->handleOptionsValues( $ret_ );
+
+		if ( array_key_exists( 'uniqueItems', $ret )
+			&& empty( $ret['uniqueItems'] ) ) {
+			// unset( $ret['enum'] );
+		} elseif ( isset( $ret_['enum'] ) ) {
+			$ret['enum'] = array_map( static function ( $value ) use ( $ret ) {
+				self::castType( $value, $ret );
+				return $value;
+			}, $ret_['enum'] );
 		}
 	}
 
@@ -554,7 +574,7 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
@@ -573,7 +593,7 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
@@ -749,8 +769,7 @@ class SchemaProcessor {
 					if ( empty( $properties['wiki']['options-wikilist'] )
 						&& empty( $properties['wiki']['options-values'] )
 						&& empty( $properties['wiki']['options-askquery'] )
-						&& is_array( $value )
-						&& count( $value ) ) {
+						&& is_array( $value ) && count( $value ) ) {
 
 						// @FIXME we are not distinguishing between "" and NULL
 						if ( empty( $value[0] ) ) {
@@ -815,7 +834,7 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
@@ -829,13 +848,24 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
 			$ret[$property] = $value;
 		}
+
 		$this->handleOptionsValues( $ret );
+
+		if ( array_key_exists( 'uniqueItems', $properties )
+			&& empty( $properties['uniqueItems'] ) ) {
+			unset( $ret['enum'] );
+		} elseif ( isset( $ret['enum'] ) ) {
+			$ret['enum'] = array_map( static function ( $value ) use ( $properties ) {
+				self::castType( $value, $properties );
+				return $value;
+			}, $ret['enum'] );
+		}
 	}
 
 	/**
@@ -862,7 +892,7 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
@@ -901,7 +931,7 @@ class SchemaProcessor {
 				continue;
 			}
 
-			if ( is_string( $value ) && $value === "" ) {
+			if ( is_string( $value ) && $value === '' ) {
 				continue;
 			}
 
@@ -1094,8 +1124,10 @@ class SchemaProcessor {
 		$values = [];
 		$wiki = $ret['wiki'];
 
-		if ( !empty( $wiki['options-askquery'] )
-			&& !preg_match( '/\<.+?\>/', $wiki['options-askquery'] ) ) {
+		if ( in_array( $wiki['preferred-input'], $this->optionsInputs )
+			&& !empty( $wiki['options-askquery'] )
+			// && !preg_match( '/\<.+?\>/', $wiki['options-askquery'] )
+			) {
 			$values = $this->askQueryResults( $wiki );
 
 			if ( array_key_exists( 'options-allow-null', $wiki ) && $wiki['options-allow-null'] ) {
@@ -1238,6 +1270,49 @@ class SchemaProcessor {
 	}
 
 	/**
+	 * @param string &$value
+	 * @param array|null $properties
+	 */
+	private	static function castType( &$value, $properties = null ) {
+		// use validate filters
+		// @see https://www.php.net/manual/en/filter.filters.validate.php
+		switch ( $properties['type'] ) {
+			case 'number':
+				$value = filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
+				settype( $value, 'float' );
+				break;
+
+			case 'int':
+			case 'integer':
+				$value = filter_var( $value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
+				settype( $value, 'integer' );
+				break;
+
+			case 'bool':
+			case 'boolean':
+				$value = filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+				settype( $value, 'boolean' );
+				break;
+
+			case 'string':
+			default:
+				switch ( $properties['format'] ) {
+					case 'url':
+						$value = filter_var( $value, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );
+						break;
+					case 'email':
+						$value = filter_var( $value, FILTER_VALIDATE_EMAIL, FILTER_NULL_ON_FAILURE );
+						break;
+					case 'number':
+						$value = filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
+						break;
+					default:
+						 settype( $value, 'string' );
+				}
+		}
+	}
+
+	/**
 	 * @param string $value
 	 * @param array|null $properties
 	 * @return string
@@ -1248,43 +1323,8 @@ class SchemaProcessor {
 			// return $this->parser->recursiveTagParseFully( $str );
 			$val = Parser::stripOuterParagraph( $output->parseAsContent( $str ) );
 
-			// @FIXME move to a dedicated function
-			// use validate filters
-			// @see https://www.php.net/manual/en/filter.filters.validate.php
 			if ( $properties !== null ) {
-				switch ( $properties['type'] ) {
-					case 'number':
-						$val = filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
-						settype( $val, "float" );
-						break;
-
-					case 'int':
-					case 'integer':
-						$val = filter_var( $val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
-						settype( $val, "integer" );
-						break;
-
-					case 'bool':
-					case 'boolean':
-						$val = filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
-						settype( $val, "boolean" );
-						break;
-
-					case 'string':
-					default:
-						switch ( $properties['format'] ) {
-							case 'url':
-								$val = filter_var( $val, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );
-								break;
-							case 'email':
-								$val = filter_var( $val, FILTER_VALIDATE_EMAIL, FILTER_NULL_ON_FAILURE );
-								break;
-							case 'number':
-								$val = filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
-								break;
-						}
-						// settype( $val, "string" );
-				}
+				self::castType( $val, $properties );
 			} else {
 				$val = trim( $val );
 			}

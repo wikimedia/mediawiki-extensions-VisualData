@@ -87,7 +87,7 @@ class RebuildData extends Maintenance {
 		$this->onlySchemas = preg_split( '/\s*,\s*/', $this->onlySchemas, -1, PREG_SPLIT_NO_EMPTY );
 
 		$this->services = MediaWikiServices::getInstance();
-		$this->db = wfGetDB( DB_MASTER );
+		$this->db = \VisualData::wfGetDB( DB_MASTER );
 		$this->user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 
 		$this->dropTables();

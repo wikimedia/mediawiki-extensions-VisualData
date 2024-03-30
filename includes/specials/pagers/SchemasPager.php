@@ -134,7 +134,7 @@ class SchemasPager extends TablePager {
 	 * @return array
 	 */
 	public function getQueryInfo() {
-		$dbr = wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::wfGetDB( DB_REPLICA );
 		$ret = [];
 		$conds = [];
 		$join_conds = [];
