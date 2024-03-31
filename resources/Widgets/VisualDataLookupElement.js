@@ -38,7 +38,7 @@
 
 		var value = this.getValue(),
 			deferred = $.Deferred();
-		this.data.performQuery( this.data, value ).then( ( data ) => {
+		this.data.performQuery( this.data.model, value ).then( ( data ) => {
 			deferred.resolve( data );
 		} );
 

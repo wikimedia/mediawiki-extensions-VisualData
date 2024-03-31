@@ -44,7 +44,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var Fields;
 	var DialogName = 'dialogForm';
 	var StoredJsonData;
-	var ModelFlatten;
+	var ModelFlatten = [];
 	var SelectedSchema;
 	var PreviousSchemas = Schemas;
 	var ProcessModel = {};
@@ -157,15 +157,16 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	function callbackShowError( schemaName, errorMessage, errors, hiddenErrors ) {
 
-		// remove error messages
-		if ( !errorMessage && ( !errors || !Object.keys( errors ).length ) ) {
-			for ( var i in Fields ) {
-				if ( Fields[ i ].constructor.name === 'OoUiMessageWidget' ) {
-					Fields[ i ].toggle( false );
-				} else {
-					Fields[ i ].setErrors( [] );
-				}
+		// remove previous error messages
+		for ( var i in Fields ) {
+			if ( Fields[ i ].constructor.name === 'OoUiMessageWidget' ) {
+				Fields[ i ].toggle( false );
+			} else {
+				Fields[ i ].setErrors( [] );
 			}
+		}
+
+		if ( !schemaName ) {
 			return;
 		}
 
@@ -335,9 +336,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			}
 		}
 		inputConfig.data = {
-			path: config.model.path,
-			schema: config.model.schema,
-			performQuery: performQuery
+			// path: config.model.path,
+			// schema: config.model.schema,
+			model: config.model,
+			performQuery
 		};
 		return ( InputWidgets[ inputConfig.name ] =
 			VisualDataFunctions.inputInstanceFromName( inputName, inputConfig ) );
@@ -375,6 +377,77 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return !( 'popup-help' in Form.options ? Form.options[ 'popup-help' ] : false );
 	}
 
+	function updateFieldsVisibility( sourceModel ) {
+		// *** a more complicated solution is to loop through
+		// siblings using model.parent or model.parentSchema
+		var pathParent = sourceModel.pathNoIndex.split( '/' );
+		var pathNoIndex = pathParent.pop();
+		pathParent = pathParent.join( '/' );
+
+		for ( var i in ModelFlatten ) {
+			var model = ModelFlatten[ i ];
+
+			if ( sourceModel.schemaName !== model.schemaName ) {
+				continue;
+			}
+
+			if ( pathParent !== model.pathNoIndex.split( '/' ).slice( 0, -1 ).join( '/' ) ) {
+				continue;
+			}
+
+			var field = model.schema.wiki;
+			if ( !( 'showif-field' in field ) ) {
+				continue;
+			}
+
+			if ( field[ 'showif-field' ] !== pathNoIndex ) {
+				continue;
+			}
+			var value = VisualDataFunctions.castType( sourceModel.input.getValue(), model.schema.type );
+			var refValue = VisualDataFunctions.castType( field[ 'showif-value' ], model.schema.type );
+
+			var res;
+			switch ( field[ 'showif-condition' ] ) {
+				case '=':
+					res = ( refValue === value );
+					break;
+				case '!=':
+					res = ( refValue !== value );
+					break;
+				case 'starts':
+					res = ( value.indexOf( refValue ) === 0 );
+					break;
+				case '!starts':
+					res = ( value.indexOf( refValue ) !== 0 );
+					break;
+				case 'contains':
+					res = ( value.indexOf( refValue ) !== -1 );
+					break;
+				case '!contains':
+					res = ( value.indexOf( refValue ) === -1 );
+					break;
+				case 'ends':
+					var regExp = new RegExp( refValue + '$' );
+					res = regExp.test( value );
+					break;
+				case '!ends':
+					var regExp = new RegExp( refValue + '$' );
+					res = !regExp.test( value );
+					break;
+				case '!null':
+					res = ( !!value );
+					break;
+			}
+			model.removed = !res;
+
+			// Fields[ model.path ].toggle( res );
+			var el = window.document.querySelector( '#' +
+				jQuery.escapeSelector( makeElementId( model.path ) ) );
+
+			$( el ).toggle( res );
+		}
+	}
+
 	function clearDependentFields( pathNoIndex ) {
 		for ( var model of ModelFlatten ) {
 			var field = model.schema.wiki;
@@ -389,7 +462,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
-	function updateDependentFields( pathNoIndex ) {
+	function updateDependentFields( sourceModel ) {
+
 		// @TODO complete with other optionsInputs
 		var allowedInputsByContructor = [
 			'OoUiDropdownInputWidget',
@@ -399,21 +473,22 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			if ( !inArray( model.input.constructor.name, allowedInputsByContructor ) ) {
 				continue;
 			}
+			if ( sourceModel.schemaName !== model.schemaName ) {
+				continue;
+			}
 			var field = model.schema.wiki;
 			if ( !( 'options-askquery' in field ) ) {
 				continue;
 			}
+
 			var askQuery = field[ 'options-askquery' ];
-			var regExp = new RegExp( '<' + pathNoIndex + '>' );
+			var regExp = new RegExp( '<' + sourceModel.pathNoIndex + '>' );
 			if ( regExp.test( askQuery ) ) {
-				ProcessModel.getModel( 'schema', SelectedSchema ).then( function ( res ) {
+				ProcessModel.getModel( 'schema', sourceModel.schemaName ).then( function ( res ) {
 					for ( var i in res.flatten ) {
-						if ( res.flatten[ i ].pathNoIndex === pathNoIndex ) {
-							performQuery( {
-								path: model.path,
-								schema: model.schema
-								// performQuery: performQuery
-							}, res.flatten[ i ].value ).then( ( data_ ) => {
+
+						if ( res.flatten[ i ].pathNoIndex === sourceModel.pathNoIndex ) {
+							performQuery( model, res.flatten[ i ].value ).then( ( data_ ) => {
 
 								// @TODO complete with other optionsInputs
 								switch ( model.input.constructor.name ) {
@@ -444,8 +519,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
-	async function performQuery( data, value ) {
-		var field = data.schema.wiki;
+	async function performQuery( model, value ) {
+		var field = model.schema.wiki;
 		var askQuery = field[ 'options-askquery' ];
 		var matches = [];
 
@@ -491,10 +566,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		if ( matches.length ) {
-			var res = await ProcessModel.getModel( 'schema', field.schema );
+			var res = await ProcessModel.getModel( 'schema', model.schemaName );
 
 			// @MUST MATCH classes/SubmitForm -> replaceFormula
-			var parent = data.path.slice( 0, Math.max( 0, data.path.indexOf( '/' ) ) );
+			var parent = model.path.slice( 0, Math.max( 0, model.path.indexOf( '/' ) ) );
 			for ( var match of matches ) {
 				for ( var i in res.flatten ) {
 					if ( match[ 1 ] === 'value' ) {
@@ -702,7 +777,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		} );
 
 		inputWidget.$element.find( 'input' ).on( 'blur', function () {
-			updateDependentFields( config.model.pathNoIndex );
+			updateFieldsVisibility( config.model );
+			updateDependentFields( config.model );
 		} );
 
 		config.model.input = inputWidget;
@@ -1481,10 +1557,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				);
 			}, 30 );
 
+			// *** we use mutationChange instead
+			// for ( var model of ModelFlatten ) {
+			// 	updateFieldsVisibility( model );
+			// }
+
 			loadMaps();
 
 			for ( var model of ModelFlatten ) {
-				updateDependentFields( model.pathNoIndex );
+				updateDependentFields( model );
 			}
 		}
 	};
@@ -1536,7 +1617,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		// @TODO implement booklet also outside dialog
-		if ( Form.options.layout === 'booklet' && Form.options.view !== 'popup' ) {
+		if ( Form.options.layout === 'booklet' && Form.options.view !== 'popup' && Form.options.view !== 'button' ) {
 			Form.options.layout = 'tabs';
 		}
 
@@ -1797,9 +1878,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					Model[ 'target-slot' ] = targetSlotInput;
 
 					targetSlotInput.on( 'change', function ( value ) {
-						freeTextField.toggle( value !== 'main' );
-						categoriesField.toggle( value !== 'main' );
-						contentModelField.toggle( value !== 'main' );
+						if ( freeTextField ) {
+							freeTextField.toggle( value !== 'main' );
+						}
+						if ( categoriesField ) {
+							categoriesField.toggle( value !== 'main' );
+						}
+						if ( contentModelField ) {
+							contentModelField.toggle( value !== 'main' );
+						}
 					} );
 
 					TargetSlotField = new OO.ui.FieldLayout( targetSlotInput, {
@@ -2288,6 +2375,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		model.previousSchema = previousSchema;
 
 		model.schema = VisualDataFunctions.deepCopy( schema );
+		model.schemaName = schemaName;
 		model.path = path;
 		model.pathNoIndex = pathNoIndex;
 		// @TODO implement allOf, anyOf, oneOf using addCombinedItem
@@ -2408,7 +2496,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					}
 
 					// used by getFieldAlign
-					model.schema.wiki.schema = schemaName;
+					// model.schema.wiki.schema = schemaName;
 					var item = new ItemWidget( {
 						classes: [ 'VisualDataItemWidget' ],
 						model: model,
@@ -2618,7 +2706,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				( 'target-slot' in Model && Model[ 'target-slot' ].getValue() === 'main' ) );
 		}
 
-		if ( Form.options.view === 'popup' ) {
+		if ( Form.options.view === 'popup' || Form.options.view === 'button' ) {
 			return;
 		}
 		if ( hasMultiplePanels() ) {
@@ -2979,6 +3067,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			Initialized = false;
 		} else if ( !Initialized ) {
 			initialize();
+		}
+
+		for ( var model of ModelFlatten ) {
+			updateFieldsVisibility( model );
 		}
 	}
 

@@ -540,48 +540,16 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			} )
 		);
 
-		var labelValue = getPropertyValue( 'label' );
-
-		var labelInput = new OO.ui.TextInputWidget( {
-			value: labelValue
-		} );
-
-		Model.label = labelInput;
-
-		items.push(
-			new OO.ui.FieldLayout( labelInput, {
-				label: mw.msg( 'visualdata-jsmodule-formfield-label' ),
-				helpInline: true,
-				align: 'top'
-			} )
-		);
-
-		var helpMessageInput = new OO.ui.MultilineTextInputWidget( {
-			value: getPropertyValue( 'help-message' ),
-			autosize: true,
-			rows: 2
-		} );
-
-		Model[ 'help-message' ] = helpMessageInput;
-
-		items.push(
-			new OO.ui.FieldLayout( helpMessageInput, {
-				label: mw.msg( 'visualdata-jsmodule-formfield-help-message' ),
-				helpInline: true,
-				help: mw.msg( 'visualdata-jsmodule-formfield-help-message-help' ),
-				align: 'top'
-			} )
-		);
-
 		var visibilityInputValue = getPropertyValue( 'visibility' );
 
 		var visibilityInput = new OO.ui.DropdownInputWidget( {
 			options: VisualDataFunctions.createDropDownOptions( {
 				visible: mw.msg( 'visualdata-jsmodule-formfield-visibility-visible' ),
+				condition: mw.msg( 'visualdata-jsmodule-formfield-visibility-condition' ),
+				hidden: mw.msg( 'visualdata-jsmodule-formfield-visibility-hidden' ),
 				'oncreate-only': mw.msg(
 					'visualdata-jsmodule-formfield-visibility-create-only'
-				),
-				hidden: mw.msg( 'visualdata-jsmodule-formfield-visibility-hidden' )
+				)
 			} ),
 			value: visibilityInputValue
 		} );
@@ -596,6 +564,126 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				align: 'top'
 			} )
 		);
+
+		// ------------------ show-if -----------------
+
+		var otherFields = Object.keys( ParentObj ).filter( ( x ) => {
+			return ( x !== CurrentKey && ParentObj[ x ].wiki.type === 'property' &&
+				ParentObj[ x ].wiki[ 'multiple-items' ] === false );
+		} );
+
+		var showifFieldInput = new OO.ui.DropdownInputWidget( {
+			options: VisualDataFunctions.createDropDownOptions( otherFields, { key: 'value' } ),
+			value: getPropertyValue( 'showif-field' )
+		} );
+
+		var showifConditionInput = new OO.ui.DropdownInputWidget( {
+			// @https://github.com/Knowledge-Wiki/SemanticResultFormats/blob/561e5304e17fccc894d7b38ab88a03b75606d6c8/formats/datatables/Api.php
+			options: VisualDataFunctions.createDropDownOptions( {
+				'=': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-=' ),
+				'!=': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!=' ),
+				starts: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-starts' ),
+				'!starts': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!starts' ),
+				contains: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-contains' ),
+				'!contains': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!contains' ),
+				ends: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-ends' ),
+				'!ends': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!ends' ),
+				'!null': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!null' )
+			} ),
+			value: getPropertyValue( 'showif-condition' )
+		} );
+
+		var showifValueInput = new OO.ui.TextInputWidget( {
+			value: getPropertyValue( 'showif-value' )
+		} );
+
+		showifConditionInput.on( 'change', function ( value ) {
+			showifValueInput.toggle( value !== '!null' );
+			updateModelShowif( getPropertyValue( 'visibility' ) === 'condition' );
+		} );
+
+		showifValueInput.toggle( getPropertyValue( 'showif-condition' ) !== '!null' );
+
+		var layoutHorizontal = new OO.ui.HorizontalLayout( { items: [
+			showifFieldInput,
+			showifConditionInput,
+			showifValueInput
+		] } );
+
+		// Model[ 'showif-field' ] = showifFieldInput;
+		// Model[ 'showif-equal' ] = showifConditionInput;
+		// Model[ 'showif-value' ] = showifValueInput;
+
+		var showifField = new OO.ui.FieldLayout(
+			new OO.ui.Widget( {
+				content: [ layoutHorizontal ]
+			} ),
+			{
+				label: mw.msg( 'visualdata-jsmodule-formfield-showif' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-showif-help' ),
+				helpInline: true,
+				align: 'top'
+			}
+		);
+
+		items.push( showifField );
+
+		var modelMap = {
+			'showif-field': showifFieldInput,
+			'showif-condition': showifConditionInput,
+			'showif-value': showifValueInput
+		};
+
+		function updateModelShowif( thisVisibleItems ) {
+			for ( var i in modelMap ) {
+				if ( thisVisibleItems ) {
+					Model[ i ] = modelMap[ i ];
+				} else {
+					delete Model[ i ];
+				}
+			}
+			if ( getPropertyValue( 'showif-condition' ) === '!null' ) {
+				delete Model[ 'showif-value' ];
+			}
+		}
+
+		updateModelShowif( visibilityInputValue === 'condition' );
+		showifField.toggle( visibilityInputValue === 'condition' );
+
+		// ------------------ show-if >>>>>>>>>>>>>>>>>
+
+		var labelValue = getPropertyValue( 'label' );
+
+		var labelInput = new OO.ui.TextInputWidget( {
+			value: labelValue
+		} );
+
+		Model.label = labelInput;
+
+		var labelField = new OO.ui.FieldLayout( labelInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-label' ),
+			helpInline: true,
+			align: 'top'
+		} );
+
+		items.push( labelField );
+
+		var helpMessageInput = new OO.ui.MultilineTextInputWidget( {
+			value: getPropertyValue( 'help-message' ),
+			autosize: true,
+			rows: 2
+		} );
+
+		Model[ 'help-message' ] = helpMessageInput;
+
+		var helpMessageField = new OO.ui.FieldLayout( helpMessageInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-help-message' ),
+			helpInline: true,
+			help: mw.msg( 'visualdata-jsmodule-formfield-help-message-help' ),
+			align: 'top'
+		} );
+
+		items.push( helpMessageField );
 
 		var propertyModelValue = 'json-schema';
 		if ( Config.SMW ) {
@@ -789,7 +877,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				getPropertyValue: getPropertyValue
 			}
 		);
-		layoutParentSchema.toggle( multipleItemsInputValue );
+		// layoutParentSchema.toggle( multipleItemsInputValue );
 
 		var messageWidget = new OO.ui.MessageWidget( {
 			type: 'info',
@@ -839,10 +927,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			) {
 				thisDefaultValueInput.accept = Config.allowedMimeTypes;
 			}
-		} );
-
-		visibilityInput.on( 'change', function ( value ) {
-			onToggleHiddenInput( value === 'hidden' );
 		} );
 
 		Model[ 'preferred-input' ] = availableInputsInput;
@@ -1033,6 +1117,16 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			} )
 		);
 
+		function onVisibilityInputChange( value ) {
+			onToggleHiddenInput( value === 'hidden' );
+			showifField.toggle( value === 'condition' );
+			updateModelShowif( value === 'condition' );
+		}
+
+		visibilityInput.on( 'change', function ( value ) {
+			onVisibilityInputChange( value );
+		} );
+
 		function onToggleHiddenInput( hidden ) {
 			if ( hidden ) {
 				Model[ 'preferred-input' ].setValue( 'OO.ui.TextInputWidget' );
@@ -1040,11 +1134,12 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			availableInputsInput.setDisabled( hidden );
 			requiredInput.setDisabled( hidden );
 			fieldMultipleValues.toggle( !hidden );
+			layoutParentSchema.toggle( !hidden && ( getPropertyValue( 'multiple-items' ) || parentSchema.type === 'array' ) );
+			labelField.toggle( !hidden );
+			helpMessageField.toggle( !hidden );
 		}
 
-		if ( visibilityInputValue === 'hidden' ) {
-			onToggleHiddenInput( true );
-		}
+		onVisibilityInputChange( visibilityInputValue );
 
 		function redrawAvailableInputs() {
 			availableInputsInput.setOptions(

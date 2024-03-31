@@ -240,3 +240,8 @@ body > .oo-ui-windowManager,
 .mw-rcfilters-head + .VisualDataFormWrapperPlaceholder {
 	display: none;
 }
+
+.oo-ui-horizontalLayout > .oo-ui-textInputWidget,
+.oo-ui-horizontalLayout > .oo-ui-dropdownInputWidget {
+	max-width: 12em;
+}

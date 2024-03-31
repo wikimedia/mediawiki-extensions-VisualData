@@ -146,12 +146,18 @@ const VisualDataProcessModel = function (
 					}
 				}
 
-				if ( !$( '#' + jQuery.escapeSelector( makeElementId( path ) ) ).is( ':visible' ) ) {
-					hiddenErrors[ path ] = Flatten[ path ].schema.wiki.name + ' ' + error.message;
-				}
-
 				// eslint-disable-next-line no-console
 				console.error( error );
+
+				if ( !( path in Flatten ) ) {
+					hiddenErrors[ path ] = `${ error.instancePath.slice( 1 ) } ${ error.message }`;
+					continue;
+				}
+
+				if ( !$( '#' + jQuery.escapeSelector( makeElementId( path ) ) ).is( ':visible' ) ) {
+					hiddenErrors[ path ] = `${ Flatten[ path ].schema.wiki.name } ${ error.message }`;
+				}
+
 				errors[ path ] = error.message;
 			}
 		}
@@ -204,6 +210,15 @@ const VisualDataProcessModel = function (
 				var items = {};
 				for ( var ii in model.properties ) {
 					var path_ = `${ path }/${ VisualDataFunctions.escapeJsonPtr( ii ) }`;
+
+					if ( model.properties[ ii ].removed ) {
+						if ( Action !== 'validate' ) {
+							continue;
+						} else {
+							Removed.push( path_ );
+						}
+					}
+
 					items[ ii ] = await getValuesRec( path_, model.properties[ ii ] );
 				}
 				return items;
@@ -234,7 +249,7 @@ const VisualDataProcessModel = function (
 		var ret = {};
 		switch ( action ) {
 			case 'validate':
-				callbackShowError( null, null, [] );
+				callbackShowError( null );
 
 				try {
 					for ( var schemaName in ModelSchemas ) {

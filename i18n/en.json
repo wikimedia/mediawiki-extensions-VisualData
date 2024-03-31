@@ -261,6 +261,18 @@
 	"visualdata-jsmodule-outdated-version": "This version of VisualData is outdated. <a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Special:ExtensionDistributor/VisualData\">Update</a> (<a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Extension:VisualData/Release_notes\">Release notes</a>)",
 
 	"manageschemas": "Manage Schemas",
+	"visualdata-jsmodule-formfield-showif": "Show if",
+	"visualdata-jsmodule-formfield-showif-help": "",
+	"visualdata-jsmodule-formfield-showif-condition-=": "Equals",
+	"visualdata-jsmodule-formfield-showif-condition-!=": "Not",
+	"visualdata-jsmodule-formfield-showif-condition-starts": "Starts with",
+	"visualdata-jsmodule-formfield-showif-condition-!starts": "Does not start with",
+	"visualdata-jsmodule-formfield-showif-condition-contains": "Contains",
+	"visualdata-jsmodule-formfield-showif-condition-!contains": "Does not contain",
+	"visualdata-jsmodule-formfield-showif-condition-ends": "Ends with",
+	"visualdata-jsmodule-formfield-showif-condition-!ends": "Does not end with",
+	"visualdata-jsmodule-formfield-showif-condition-!null": "Not empty",
+
 	"visualdata-jsmodule-created-jobs": "$1 {{PLURAL|$1|job|jobs}} created",
 	"visualdata-jsmodule-create-jobs-alert": "$1 {{PLURAL|$1|page|pages}} will be affected by this edit, continue?",
 	"visualdata-jsmodule-forms-addremoveschemas": "add/remove schemas",
@@ -269,10 +281,8 @@
 	"visualdata-jsmodule-forms-edit-data": "Edit data",
 	"visualdata-jsmodule-forms-manage-schemas": "Manage schemas",
 	"visualdata-jsmodule-schemas-defineschema": "define schema",
-
 	"visualdata-jsmodule-manageproperties-main": "Main",
 	"visualdata-jsmodule-schemas-panel-properties": "properties",
-
 	"visualdata-jsmodule-dialog-save": "Save",
 	"visualdata-jsmodule-dialog-delete": "Delete",
 	"visualdata-jsmodule-schemas-name": "name",
@@ -283,11 +293,9 @@
 	"visualdata-jsmodule-schemas-add-field": "add field",
 	"visualdata-jsmodule-schemas-add-block-content": "Add content block",
 	"visualdata-jsmodule-schemas-add-geolocation": "Add geolocation",
-
 	"visualdata-jsmodule-formfield-define-geolocation": "Define geolocation",
 	"visualdata-jsmodule-geolocation-name": "name",
 	"visualdata-jsmodule-geolocation-message": "To enable a beautiful interactive map with reverse geocoding and draggable markers register an ApiKey at <a target=\"blank\" href=\"https://www.maptiler.com/\">maptiler.com</a>",
-
 	"visualdata-jsmodule-geolocation-newlabel": "geolocation",
 	"visualdata-jsmodule-geolocation-map": "map",
 	"visualdata-jsmodule-geolocation-reverse-geocoding": "reverse geocoding",
@@ -318,6 +326,7 @@
 	"visualdata-jsmodule-formfield-help-message-help": "wikitext and parser functions allowed",
 	"visualdata-jsmodule-formfield-visibility-label": "visibility",
 	"visualdata-jsmodule-formfield-visibility-visible": "visible",
+	"visualdata-jsmodule-formfield-visibility-condition": "condition",
 	"visualdata-jsmodule-formfield-visibility-help": "",
 	"visualdata-jsmodule-formfield-schematypes": "type",
 	"visualdata-jsmodule-formfield-schematextsubtypes": "format",
