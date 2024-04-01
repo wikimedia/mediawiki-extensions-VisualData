@@ -273,6 +273,26 @@ VisualDataFunctions = ( function () {
 		}
 
 		switch ( inputName ) {
+			case 'OO.ui.DropdownInputWidget':
+				if ( config.value ) {
+					if ( !config.options ) {
+						config.options = [];
+					}
+					var found = false;
+					for ( var val of config.options ) {
+						if ( val.data === config.value ) {
+							found = true;
+							break;
+						}
+					}
+					if ( !found ) {
+						config.options.push( {
+							data: config.value,
+							label: config.value
+						} );
+					}
+				}
+				break;
 			case 'OO.ui.NumberInputWidget':
 				if ( !( 'type' in config ) ) {
 					config.type = 'number';

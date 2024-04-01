@@ -493,11 +493,20 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 								// @TODO complete with other optionsInputs
 								switch ( model.input.constructor.name ) {
 									case 'OoUiDropdownInputWidget':
+										// *** @FIXME this unfortunately does not work.
+										// see here https://doc.wikimedia.org/mediawiki-core/1.39.5/js/source/oojs-ui-core.html#OO-ui-DropdownInputWidget
+										var value = model.input.getValue();
+										if ( !( value in data_ ) ) {
+											value = null;
+										}
+
 										model.input.setOptions( VisualDataFunctions.createDropDownOptions( data_ ) );
+										model.input.setValue( value );
 										break;
 									case 'OoUiMenuTagMultiselectWidget':
 										model.input.menu.clearItems();
 										// Map to an array of OO.ui.MenuOptionWidgets
+										var values = model.input.getValue();
 										var items = [];
 										for ( var j in data_ ) {
 											items.push(
@@ -508,6 +517,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 											);
 										}
 										model.input.addOptions( items );
+										model.input.setValue( values.filter( ( x ) => Object.keys( data_ ).indexOf( x ) !== -1 ) );
 										break;
 								}
 							} );
