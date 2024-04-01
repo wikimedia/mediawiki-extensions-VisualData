@@ -541,7 +541,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					properties: field[ 'askquery-printouts' ],
 					schema: field[ 'askquery-schema' ],
 					'options-query-formula': field[ 'options-query-formula' ],
-					'mapping-label-formula': field[ 'mapping-label-formula' ]
+					'options-label-formula': field[ 'options-label-formula' ]
 				} )
 			};
 
