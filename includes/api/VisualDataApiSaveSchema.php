@@ -54,9 +54,23 @@ class VisualDataApiSaveSchema extends ApiBase {
 		\VisualData::initialize();
 
 		$result = $this->getResult();
-		$context = new RequestContext();
+		// $context = new RequestContext();
+		$context = RequestContext::getMain();
+
 		$output = $context->getOutput();
 		$params = $this->extractRequestParams();
+
+		$sourcePage = null;
+		if ( !empty( $params['source-page'] ) ) {
+			$sourcePage = Title::newFromText( $params['source-page'] );
+		}
+
+		if ( !$sourcePage || !\VisualData::isKnownArticle( $sourcePage ) ) {
+			$sourcePage = Title::newMainPage();
+		}
+
+		$context->setTitle( $sourcePage );
+
 		$schema = json_decode( $params['schema'], true );
 		$dialogAction = $params['dialog-action'];
 		$previousLabel = $params['previous-label'];
@@ -140,9 +154,6 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$resultAction = 'rename';
 		}
 
-		$context->setTitle( !empty( $params['target-page'] ) ? Title::newFromText( $params['target-page'] ) :
-			Title::newMainPage() );
-
 		$schemaProcessor = new SchemaProcessor();
 		$schemaProcessor->setOutput( $output );
 
@@ -186,7 +197,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 				ApiBase::PARAM_TYPE => 'string',
 				ApiBase::PARAM_REQUIRED => true
 			],
-			'target-page' => [
+			'source-page' => [
 				ApiBase::PARAM_TYPE => 'string',
 				ApiBase::PARAM_REQUIRED => false
 			],

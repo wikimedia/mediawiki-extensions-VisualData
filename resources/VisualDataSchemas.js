@@ -562,7 +562,7 @@ VisualDataSchemas = ( function () {
 			action: 'visualdata-save-schema',
 			'dialog-action': action,
 			'previous-label': currentItem.wiki.name,
-			'target-page': Config.targetPage,
+			'source-page': mw.config.get( 'wgPageName' ),
 			format: 'json',
 			schema: {}
 		};

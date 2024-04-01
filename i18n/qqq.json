@@ -29,7 +29,7 @@
 	"apihelp-visualdata-submit-form-param-data": "A label message",
 	"apihelp-visualdata-askquery-param-data": "A label message",
 	"apihelp-visualdata-datatables-param-data": "A label message",
-	"apihelp-visualdata-save-schema-param-target-page": "A label message",
+	"apihelp-visualdata-save-schema-param-source-page": "A label message",
 	"apihelp-visualdata-save-schema-param-previous-label": "A label message",
 	"apihelp-visualdata-save-schema-param-dialog-action": "A label message",
 	"apihelp-visualdata-save-schema-param-confirm-job-execution": "A label message",
