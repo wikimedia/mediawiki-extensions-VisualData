@@ -362,6 +362,7 @@
 				"visualdata-jsmodule-formfield-showif-condition-ends",
 				"visualdata-jsmodule-formfield-showif-condition-!ends",
 				"visualdata-jsmodule-formfield-showif-condition-!null",
+				"visualdata-jsmodule-formfield-showif-condition-regex",
 
 				"visualdata-jsmodule-schemas-properties-columns",
 				"visualdata-jsmodule-schemas-add-subitem",

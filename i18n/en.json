@@ -272,6 +272,7 @@
 	"visualdata-jsmodule-formfield-showif-condition-ends": "Ends with",
 	"visualdata-jsmodule-formfield-showif-condition-!ends": "Does not end with",
 	"visualdata-jsmodule-formfield-showif-condition-!null": "Not empty",
+	"visualdata-jsmodule-formfield-showif-condition-regex": "Regex",
 
 	"visualdata-jsmodule-created-jobs": "$1 {{PLURAL|$1|job|jobs}} created",
 	"visualdata-jsmodule-create-jobs-alert": "$1 {{PLURAL|$1|page|pages}} will be affected by this edit, continue?",

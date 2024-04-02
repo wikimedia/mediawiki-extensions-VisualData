@@ -588,7 +588,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				'!contains': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!contains' ),
 				ends: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-ends' ),
 				'!ends': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!ends' ),
-				'!null': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!null' )
+				'!null': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!null' ),
+				regex: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-regex' )
 			} ),
 			value: getPropertyValue( 'showif-condition' )
 		} );

@@ -380,9 +380,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	function updateFieldsVisibility( sourceModel ) {
 		// *** a more complicated solution is to loop through
 		// siblings using model.parent or model.parentSchema
-		var pathParent = sourceModel.pathNoIndex.split( '/' );
-		var pathNoIndex = pathParent.pop();
-		pathParent = pathParent.join( '/' );
+		var pathParent = sourceModel.path.split( '/' ).slice( 0, -1 ).join( '/' );
+		var pathNoIndex = sourceModel.pathNoIndex.split( '/' ).slice( -1 )[ 0 ];
+
+		function escapeRegExp( string ) {
+			return string.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+		}
 
 		for ( var i in ModelFlatten ) {
 			var model = ModelFlatten[ i ];
@@ -391,7 +394,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				continue;
 			}
 
-			if ( pathParent !== model.pathNoIndex.split( '/' ).slice( 0, -1 ).join( '/' ) ) {
+			if ( pathParent !== model.path.split( '/' ).slice( 0, -1 ).join( '/' ) ) {
 				continue;
 			}
 
@@ -427,15 +430,19 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					res = ( value.indexOf( refValue ) === -1 );
 					break;
 				case 'ends':
-					var regExp = new RegExp( refValue + '$' );
+					var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
 					res = regExp.test( value );
 					break;
 				case '!ends':
-					var regExp = new RegExp( refValue + '$' );
+					var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
 					res = !regExp.test( value );
 					break;
 				case '!null':
 					res = ( !!value );
+					break;
+				case 'regex':
+					var regExp = new RegExp( refValue );
+					res = regExp.test( value );
 					break;
 			}
 			model.removed = !res;
@@ -2228,7 +2235,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// changed from non object to object, e.g.
 		// an array of text fields vs an array
 		// of subitems, and the name/key was the same
-		if ( typeof data !== 'object' ) {
+		if ( data === null || typeof data !== 'object' ) {
 			data = {};
 		}
 

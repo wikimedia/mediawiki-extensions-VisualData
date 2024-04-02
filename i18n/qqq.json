@@ -262,6 +262,7 @@
 	"visualdata-jsmodule-formfield-showif-condition-ends": "A label message",
 	"visualdata-jsmodule-formfield-showif-condition-!ends": "A label message",
 	"visualdata-jsmodule-formfield-showif-condition-!null": "A label message",
+	"visualdata-jsmodule-formfield-showif-condition-regex": "A label message",
 
 	"visualdata-jsmodule-created-jobs": "A label message",
 	"visualdata-jsmodule-create-jobs-alert": "A label message",
