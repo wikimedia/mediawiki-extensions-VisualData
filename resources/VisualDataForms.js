@@ -52,7 +52,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var SchemasLayout;
 	var Initialized = false;
 	var PendingRecursive;
-	// var QueuedWidgets = [];
+	var QueuedWidgets = [];
 	var Maps = [];
 	var TargetSlotField;
 
@@ -1633,7 +1633,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		PendingRecursive = 0;
-		// QueuedWidgets = [];
+		QueuedWidgets = [];
 		Maps = [];
 		function getWidgets() {
 			var ret = {};
@@ -2538,13 +2538,16 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// 	}
 		// }
 
-		// QueuedWidgets.push( widget );
+		QueuedWidgets.push( widget );
 		// inform queued widgets that the rendering of the form is complete
 		if ( --PendingRecursive === 0 ) {
 			// for ( widget_ of QueuedWidgets ) {
 			// @see https://www.mediawiki.org/wiki/OOjs/Events
-			widget_.emit( 'formLoaded' );
-			// }
+
+			// widget_.emit( 'formLoaded' );
+			if ( QueuedWidgets.length ) {
+				QueuedWidgets[ 0 ].emit( 'formLoaded' );
+			}
 		}
 	}
 
