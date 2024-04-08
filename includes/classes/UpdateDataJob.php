@@ -76,6 +76,8 @@ class UpdateDataJob extends Job {
 
 		$databaseManager = new DatabaseManager();
 		$context = RequestContext::getMain();
+		$context->setTitle( $title );
+
 		$schemaProcessor = new SchemaProcessor( $context );
 
 		$errors = [];

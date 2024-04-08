@@ -1434,21 +1434,24 @@ class SchemaProcessor {
 		if ( !$renamed && !$removed ) {
 			return;
 		}
-
 		switch ( $schema['type'] ) {
 			case 'object':
+				$prevData = $data;
+				$data = [];
 				if ( isset( $schema['properties'] ) ) {
 					foreach ( $schema['properties'] as $key => $value ) {
 						$currentPath = "$path/properties/$key";
 						if ( $renamed && $currentPath === $renamed[1] ) {
 							$pathItemsOld = explode( '/', $renamed[0] );
 							$keyOld = array_pop( $pathItemsOld );
-							$data[$key] = $data[$keyOld];
-							unset( $data[$keyOld] );
+							$data[$key] = $prevData[$keyOld];
+							// unset( $data[$keyOld] );
+						} else {
+							$data[$key] = $prevData[$key];
 						}
-						if ( $removed && $currentPath === $removed ) {
-							unset( $data[$key] );
-						}
+						// if ( $removed && $currentPath === $removed ) {
+						// 	unset( $data[$key] );
+						// }
 						$subSchema = $schema['properties'][$key];
 						$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
 					}

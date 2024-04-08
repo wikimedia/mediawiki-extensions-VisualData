@@ -340,6 +340,9 @@ class ResultPrinter {
 				case 'array':
 					// @FIXME handle tuple
 					// the source array does not contain indexes
+					if ( !array_key_exists( $key, $schema['items']['properties'] ) ) {
+						continue 2;
+					}
 					$subschema = $schema['items']['properties'][$key];
 					break;
 				default:
