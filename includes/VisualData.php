@@ -2117,8 +2117,16 @@ class VisualData {
 		$services = MediaWikiServices::getInstance();
 
 		// remove tracking categories
-		$trackingCategoriesClass = $services->getTrackingCategories();
-		$trackingCategories = $trackingCategoriesClass->getTrackingCategories();
+		$services = MediaWikiServices::getInstance();
+		if ( method_exists( $services, 'getTrackingCategories' ) ) {
+			$trackingCategoriesClass = $services->getTrackingCategories();
+			$trackingCategories = $trackingCategoriesClass->getTrackingCategories();
+
+		} else {
+			$context = RequestContext::getMain();
+			$config = $context->getConfig();
+			$trackingCategories = new TrackingCategories( $config );
+		}
 
 		$wikiPage = self::getWikiPage( $title );
 		$arr = $wikiPage->getCategories();
