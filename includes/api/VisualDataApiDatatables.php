@@ -82,12 +82,12 @@ class VisualDataApiDatatables extends ApiBase {
 			]
 		);
 
-		$output = RequestContext::getMain()->getOutput();
+		$context = RequestContext::getMain();
 		$templates = [];
 
 		$resultPrinter = \VisualData::getResults(
 			$parser,
-			$output,
+			$context,
 			$query,
 			$templates,
 			$printouts,

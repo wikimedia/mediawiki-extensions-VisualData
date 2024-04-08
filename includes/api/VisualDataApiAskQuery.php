@@ -49,7 +49,6 @@ class VisualDataApiAskQuery extends ApiBase {
 		\VisualData::initialize();
 		$result = $this->getResult();
 		$params = $this->extractRequestParams();
-		$output = $this->getContext()->getOutput();
 
 		$data = json_decode( $params['data'], true );
 
@@ -61,8 +60,8 @@ class VisualDataApiAskQuery extends ApiBase {
 			'options-label-formula' => $data['options-label-formula']
 		];
 
-		$schemaProcessor = new SchemaProcessor();
-		$schemaProcessor->setOutput( $output );
+		$context = RequestContext::getMain();
+		$schemaProcessor = new SchemaProcessor( $context );
 		$optionsValues = $schemaProcessor->askQueryResults( $wiki );
 
 		$result->addValue( [ $this->getModuleName() ], 'result', json_encode( $optionsValues ) );

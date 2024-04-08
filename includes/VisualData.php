@@ -442,25 +442,7 @@ class VisualData {
 		self::$Logger = LoggerFactory::getInstance( 'VisualData' );
 		self::$User = RequestContext::getMain()->getUser();
 		self::$userGroupManager = MediaWikiServices::getInstance()->getUserGroupManager();
-		self::$schemaProcessor = new SchemaProcessor();
-
-		// if ( !array_key_exists( 'wgVisualDataDisableSlotsNavigation', $GLOBALS )
-		// 	&& self::$User->isAllowed( 'visualdata-canmanageschemas' ) ) {
-		// 	$GLOBALS['wgVisualDataDisableSlotsNavigation'] = true;
-		// }
-
-		$GLOBALS['wgVisualDataResultPrinterClasses'] = [
-			'table' => 'TableResultPrinter',
-			'datatable' => 'DatatableResultPrinter',
-			'datatables' => 'DatatableResultPrinter',
-			// 'list' => 'ListResultPrinter',
-			'json' => 'JsonResultPrinter',
-			'template' => 'TemplateResultPrinter',
-			'templates' => 'TemplateResultPrinter',
-			'raw' => 'TemplateResultPrinter',
-			'query' => 'QueryResultPrinter',
-			'json-raw' => 'JsonRawResultPrinter',
-		];
+		// self::$schemaProcessor = new SchemaProcessor();
 	}
 
 	/**
@@ -551,6 +533,8 @@ class VisualData {
 	public static function parserFunctionButton( Parser $parser, ...$argv ) {
 		$parserOutput = $parser->getOutput();
 		$parserOutput->setExtensionData( 'visualdataform', true );
+		$parser->addTrackingCategory( 'visualdata-trackingcategory-parserfunction-button' );
+
 		$title = $parser->getTitle();
 
 /*
@@ -678,6 +662,8 @@ class VisualData {
 	public static function parserFunctionForm( Parser $parser, ...$argv ) {
 		$parserOutput = $parser->getOutput();
 		$parserOutput->setExtensionData( 'visualdataform', true );
+		$parser->addTrackingCategory( 'visualdata-trackingcategory-parserfunction-form' );
+
 		$title = $parser->getTitle();
 
 /*
@@ -862,6 +848,7 @@ class VisualData {
 		$parserOutput = $parser->getOutput();
 		$title = $parser->getTitle();
 		$parserOutput->setExtensionData( 'visualdataquery', true );
+		$parser->addTrackingCategory( 'visualdata-trackingcategory-parserfunction-query' );
 
 		$parserOutput->addModules( [ 'ext.VisualData.PrintResults' ] );
 /*
@@ -937,10 +924,6 @@ class VisualData {
 			return $returnError( 'schema not set' );
 		}
 
-		if ( !self::$schemaProcessor ) {
-			self::initialize();
-		}
-
 		if ( !array_key_exists( $params['format'], $GLOBALS['wgVisualDataResultPrinterClasses'] ) ) {
 			return 'format not supported';
 		}
@@ -964,11 +947,12 @@ class VisualData {
 
 		$printouts = array_keys( $printouts );
 
-		$output = RequestContext::getMain()->getOutput();
+		$context = new DerivativeContext( RequestContext::getMain() );
+		// $output = $context->getOutput();
 
 		$resultPrinter = self::getResults(
 			$parser,
-			$output,
+			$context,
 			$query,
 			$templates,
 			$printouts,
@@ -982,35 +966,71 @@ class VisualData {
 	}
 
 	/**
+	 * @param User $user
 	 * @param ParserOutput $parserOutput
 	 * @param Title $title
 	 * @param DatabaseManager $databaseManager
 	 */
-	public static function handleLinks( $parserOutput, $title, $databaseManager ) {
+	public static function handleLinks( $user, $parserOutput, $title, $databaseManager ) {
 		$databaseManager->removeLinks( $title );
 
-		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
-			$pageForms = $parserOutput->getExtensionData( 'visualdataforms' );
+		$getTransclusionParserOutput = static function () use ( $user, $title ) {
+			$transclusionTargets = self::getTransclusionTargets( $title );
+			if ( !count( $transclusionTargets ) ) {
+				return null;
+			}
+			$title_ = $transclusionTargets[0];
+			$wikiPage = self::getWikiPage( $title_ );
+			if ( !$wikiPage ) {
+				return null;
+			}
+			$parserOptions = ParserOptions::newFromUser( $user );
+			return $wikiPage->getParserOutput( $parserOptions );
+		};
 
-			foreach ( $pageForms as $formID => $value ) {
+		$formsData = null;
+		$queriesData = null;
+		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
+			$formsData = $parserOutput->getExtensionData( 'visualdataforms' );
+
+		// *** workaround to also match parserfunctions
+		// within includeonly tags
+		} else {
+			$parserOutput_ = $getTransclusionParserOutput();
+			if ( $parserOutput_ && $parserOutput_->getExtensionData( 'visualdataform' ) !== null ) {
+				$formsData = $parserOutput_->getExtensionData( 'visualdataforms' );
+			}
+		}
+
+		if ( $formsData ) {
+			foreach ( $formsData as $formID => $value ) {
 				$databaseManager->storeLink( $title, 'form', $value['schemas'] );
 			}
 		}
 
 		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
-			$queries = $parserOutput->getExtensionData( 'visualdataqueries' );
+			$queriesData = $parserOutput->getExtensionData( 'visualdataqueries' );
 
-			foreach ( $queries as $value ) {
+		} else {
+			$parserOutput_ = $parserOutput_ ?? $getTransclusionParserOutput();
+			if ( $parserOutput_ && $parserOutput_->getExtensionData( 'visualdataquery' ) !== null ) {
+				$queriesData = $parserOutput_->getExtensionData( 'visualdataqueries' );
+			}
+		}
+
+		if ( $queriesData ) {
+			foreach ( $queriesData as $value ) {
 				$databaseManager->storeLink( $title, 'query', $value['schema'] );
 				$databaseManager->storeLinkTemplates( $title, $value['schema'], $value['templates'] ?? [] );
 			}
-			$databaseManager->invalidateTransclusionTargets( $title );
 		}
+
+		$databaseManager->invalidateTransclusionTargets( $title );
 	}
 
 	/**
 	 * @param Parser $parser
-	 * @param Output $output
+	 * @param Context $context
 	 * @param string $query
 	 * @param array $templates
 	 * @param array $printouts
@@ -1019,7 +1039,7 @@ class VisualData {
 	 */
 	public static function getResults(
 		$parser,
-		$output,
+		$context,
 		$query,
 		$templates,
 		$printouts,
@@ -1028,7 +1048,7 @@ class VisualData {
 		if ( empty( $params['schema'] ) || empty( $params['format'] ) ) {
 			return false;
 		}
-		$schema = self::getSchema( $output, $params['schema'] );
+		$schema = self::getSchema( $context, $params['schema'] );
 		if ( !$schema ) {
 			return false;
 		}
@@ -1039,7 +1059,7 @@ class VisualData {
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
 		$queryProcessor = new QueryProcessor( $schema, $query, $printouts, $params );
 
-		return new $class( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts );
+		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts );
 	}
 
 	/**
@@ -1183,27 +1203,26 @@ class VisualData {
 	}
 
 	/**
-	 * @param Output $output
+	 * @param Context $context
 	 * @param string $name
 	 * @return array|null
 	 */
-	public static function getSchema( $output, $name ) {
-		self::setSchemas( $output, [ $name ] );
-		if ( array_key_exists( $name, self::$schemas )
-			&& !empty( self::$schemas[$name] ) ) {
+	public static function getSchema( $context, $name ) {
+		self::getSchemas( $context, [ $name ] );
+		if ( array_key_exists( $name, self::$schemas ) && !empty( self::$schemas[$name] ) ) {
 			return self::$schemas[$name];
 		}
-		return null;
 	}
 
 	/**
-	 * @param Output $output
+	 * @param Context $context
 	 * @param array $schemas
 	 * @param bool $loadData
 	 * @return array
 	 */
-	public static function getSchemas( $output, $schemas, $loadData = true ) {
-		self::setSchemas( $output, $schemas, $loadData );
+	public static function getSchemas( $context, $schemas, $loadData = true ) {
+		$schemaProcessor = new SchemaProcessor( $context );
+		self::setSchemas( $schemaProcessor, $schemas, $loadData );
 		return self::$schemas;
 	}
 
@@ -1497,11 +1516,12 @@ class VisualData {
 	}
 
 	/**
+	 * @param User $user
 	 * @param Title $title
 	 * @param Content $content
 	 * @param array &$errors
 	 */
-	public static function rebuildArticleDataFromSlot( $title, $content, &$errors ) {
+	public static function rebuildArticleDataFromSlot( $user, $title, $content, &$errors ) {
 		if ( empty( $content ) ) {
 			return;
 		}
@@ -1515,29 +1535,27 @@ class VisualData {
 		}
 
 		$schemas = array_keys( $data['schemas'] );
-		$context = RequestContext::getMain();
-
-		$output = $context->getOutput();
+		$context = new DerivativeContext( RequestContext::getMain() );
 
 		// @FIXME this will also process schamas, but it
 		// is not required since we need only type and format
-		$schemas = self::getSchemas( $output, $schemas, true );
+		$schemas = self::getSchemas( $context, $schemas, true );
 
 		$databaseManager = new DatabaseManager();
+		$schemaProcessor = new SchemaProcessor( $context );
 		$flatten = [];
-		self::$schemaProcessor->setOutput( $output );
 
 		foreach ( $data['schemas'] as $schemaName => $value ) {
 			if ( !array_key_exists( $schemaName, $schemas ) ) {
-				$schema = self::$schemaProcessor->generateFromData( $value, $schemaName );
+				$schema = $schemaProcessor->generateFromData( $value, $schemaName );
 
 				$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
-				$statusOK = self::saveRevision( self::$User, $title_, json_encode( $schema ) );
+				$statusOK = self::saveRevision( $user, $title_, json_encode( $schema ) );
 				if ( !$statusOK ) {
 					self::$Logger->error( 'rebuildArticleDataFromSlot cannot save schema' );
 					continue;
 				}
-				$schemas[$schemaName] = self::$schemaProcessor->processSchema( $schema, $schemaName );
+				$schemas[$schemaName] = $schemaProcessor->processSchema( $schema, $schemaName );
 			}
 
 			$flatten = array_merge( $flatten, $databaseManager->prepareData( $schemas[$schemaName], $value ) );
@@ -1545,6 +1563,71 @@ class VisualData {
 
 		$databaseManager->recordProperties( 'rebuildArticleDataFromSlot', $title, $flatten, $errors );
 		$databaseManager->removeUnusedEntries();
+	}
+
+	/**
+	 * @param User $user
+	 * @param WikiPage $wikiPage
+	 * @param RevisionRecord $revisionRecord
+	 * @param bool $rebuild
+	 */
+	public static function onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $rebuild ) {
+		$databaseManager = new DatabaseManager();
+		$title = $wikiPage->getTitle();
+
+		// purge pages with queries using this template
+		// (and their transclusion targets)
+		if ( $title->getNamespace() === NS_TEMPLATE ) {
+			$databaseManager->handleTemplateLinks( $title );
+			return;
+		}
+
+		$slots = $revisionRecord->getSlots()->getSlots();
+		// main slot and modelId of main slot
+		$slot = null;
+		$modelId = null;
+
+		if ( array_key_exists( SlotRecord::MAIN, $slots ) ) {
+			$slot = $slots[SlotRecord::MAIN];
+			$content = $slot->getContent();
+			$modelId = $content->getContentHandler()->getModelID();
+
+			if ( $modelId === 'wikitext' ) {
+				$contents = $content->getNativeData();
+				// @see maintenance/rebuildData
+				if ( preg_match( '/#v(isual)?data(form|print|query)/', $contents ) ) {
+					// or ParserOptions::newFromAnon()
+					$parserOptions = ParserOptions::newFromUser( $user );
+					$parserOutput = $wikiPage->getParserOutput( $parserOptions );
+					// *** or
+					// $services = MediaWikiServices::getInstance();
+					// $context = RequestContext::getMain();
+					// $options = $wikiPage->makeParserOptions( $context );
+					// $renderedRevision = $services->getRevisionRenderer()->getRenderedRevision( $revisionRecord, $options );
+					// $parserOutput = $renderedRevision->getSlotParserOutput( SlotRecord::MAIN );
+					self::handleLinks( $user, $parserOutput, $title, $databaseManager );
+				}
+			}
+		}
+
+		if ( !$rebuild ) {
+			return;
+		}
+		// rebuild article data on undelete
+		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
+			$slot = $slots[SLOT_ROLE_VISUALDATA_JSONDATA];
+
+		// rebuild only if main slot contains json data
+		} elseif ( $modelId !== 'json' && $modelId !== CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+			return;
+		}
+
+		if ( $slot ) {
+			$content = $slot->getContent();
+			$errors = [];
+			self::rebuildArticleDataFromSlot( $user, $title, $content, $errors );
+			// $databaseManager->invalidateTransclusionTargets( $title );
+		}
 	}
 
 	/**
@@ -1744,12 +1827,14 @@ class VisualData {
 	public static function addJsConfigVars( $out, $obj ) {
 		$title = $out->getTitle();
 		$user = $out->getUser();
+		$context = $out->getContext();
+		$schemaProcessor = new SchemaProcessor( $context );
 		$loadedData = [];
 
 		if ( isset( $obj['pageForms'] ) ) {
 			// this will populate self::$schemas with data
 			foreach ( $obj['pageForms'] as $value ) {
-				self::setSchemas( $out, $value['schemas'] );
+				self::setSchemas( $schemaProcessor, $value['schemas'] );
 			}
 
 			// *** this accounts also of forms inside forms
@@ -1760,20 +1845,20 @@ class VisualData {
 		}
 		if ( isset( $_SESSION ) && !empty( $_SESSION['visualdataform-submissiondata'] ) ) {
 			foreach ( $_SESSION['visualdataform-submissiondata'] as $formData ) {
-				self::setSchemas( $out, $formData['schemas'] );
+				self::setSchemas( $schemaProcessor, $formData['schemas'] );
 			}
 		}
 
 		// load all schemas also if context is !== than 'EditData'
 		// to display them in ask query schemas and other inputs
-		if ( ( self::$User->isAllowed( 'visualdata-caneditdata' )
-				|| self::$User->isAllowed( 'visualdata-canmanageschemas' )
+		if ( ( $user->isAllowed( 'visualdata-caneditdata' )
+				|| $user->isAllowed( 'visualdata-canmanageschemas' )
 			) ) {
 			$loadedData[] = 'schemas';
 			// this will retrieve all schema pages without contents
 			// without content @TODO set a limit
 			$schemasArr = self::getAllSchemas();
-			self::setSchemas( $out, $schemasArr, false );
+			self::setSchemas( $schemaProcessor, $schemasArr, false );
 		}
 
 		$obj['schemas'] = self::$schemas;
@@ -1782,10 +1867,7 @@ class VisualData {
 
 		// this is required as long as a 'OO.ui.SelectFileWidget'
 		// is added to a schema
-		$allowedMimeTypes = [];
-		if ( self::$schemaProcessor ) {
-			$allowedMimeTypes = self::$schemaProcessor->getAllowedMimeTypes();
-		}
+		$allowedMimeTypes = $schemaProcessor->getAllowedMimeTypes();
 
 		$VEForAll = false;
 		if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' )
@@ -1811,9 +1893,9 @@ class VisualData {
 
 				'loadedData' => $loadedData,
 				'allowedMimeTypes' => $allowedMimeTypes,
-				'caneditdata' => self::$User->isAllowed( 'visualdata-caneditdata' ),
-				'canmanageschemas' => self::$User->isAllowed( 'visualdata-canmanageschemas' ),
-				// 'canmanageforms' => self::$User->isAllowed( 'visualdata-canmanageforms' ),
+				'caneditdata' => $user->isAllowed( 'visualdata-caneditdata' ),
+				'canmanageschemas' => $user->isAllowed( 'visualdata-canmanageschemas' ),
+				// 'canmanageforms' => $user->isAllowed( 'visualdata-canmanageforms' ),
 				'contentModels' => array_flip( self::getContentModels() ),
 				'contentModel' => $title->getContentModel(),
 				// self::$SMW,
@@ -1829,8 +1911,8 @@ class VisualData {
 		$groups = [ 'sysop', 'bureaucrat', 'visualdata-admin' ];
 		$showOutdatedVersion = empty( $GLOBALS['wgVisualDataDisableVersionCheck'] )
 			&& (
-				self::$User->isAllowed( 'canmanageschemas' )
-				|| count( array_intersect( $groups, self::getUserGroups() ) )
+				$user->isAllowed( 'canmanageschemas' )
+				|| count( array_intersect( $groups, self::getUserGroups( $user ) ) )
 			);
 
 		$out->addJsConfigVars( [
@@ -1891,27 +1973,12 @@ class VisualData {
 	}
 
 	/**
-	 * @param Output $output
+	 * @param SchemaProcessor $schemaProcessor
 	 * @param array $schemas
 	 * @param bool $loadSchemas
 	 * @return array
 	 */
-	public static function setSchemas( $output, $schemas, $loadSchemas = true ) {
-		// @FIXME this seems required with
-		// visual editor $wgVisualEditorEnableWikitext
-		if ( !self::$schemaProcessor ) {
-			self::initialize();
-		}
-
-		$context = $output->getContext();
-		$method = ( method_exists( $context, 'hasTitle' ) ? 'hasTitle' : 'getTitle' );
-
-		// phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged
-		if ( !@$context->$method() ) {
-			$output->setTitle( Title::newMainPage() );
-		}
-
-		self::$schemaProcessor->setOutput( $output );
+	public static function setSchemas( $schemaProcessor, $schemas, $loadSchemas = true ) {
 		$ret = [];
 		foreach ( $schemas as $value ) {
 			$title = Title::newFromText( $value, NS_VISUALDATASCHEMA );
@@ -1937,7 +2004,7 @@ class VisualData {
 			if ( !empty( $text ) ) {
 				$json = json_decode( $text, true );
 				if ( $json ) {
-					self::$schemas[$titleText] = self::$schemaProcessor->processSchema( $json, $titleText );
+					self::$schemas[$titleText] = $schemaProcessor->processSchema( $json, $titleText );
 				}
 			}
 		}
@@ -2047,11 +2114,25 @@ class VisualData {
 		if ( !$title || !$title->isKnown() ) {
 			return [];
 		}
+		$services = MediaWikiServices::getInstance();
+
+		// remove tracking categories
+		$trackingCategoriesClass = $services->getTrackingCategories();
+		$trackingCategories = $trackingCategoriesClass->getTrackingCategories();
+
 		$wikiPage = self::getWikiPage( $title );
-		$ret = [];
 		$arr = $wikiPage->getCategories();
+		$arrTrackingCategories = [];
+		foreach ( $trackingCategories as $value ) {
+			foreach ( $value['cats'] as $title_ ) {
+				$arrTrackingCategories[] = $title_->getText();
+			}
+		}
+		$ret = [];
 		foreach ( $arr as $title ) {
-			$ret[] = $title->getText();
+			if ( !in_array( $title->getText(), $arrTrackingCategories ) ) {
+				$ret[] = $title->getText();
+			}
 		}
 		return $ret;
 	}
@@ -2062,11 +2143,11 @@ class VisualData {
 	public static function getImporter() {
 		$services = MediaWikiServices::getInstance();
 
-		if ( version_compare( MW_VERSION, '1.41', '>' ) ) {
+		if ( version_compare( MW_VERSION, '1.42', '>=' ) ) {
 			// @TODO MW 1.42
 			return null;
 
-		} elseif ( version_compare( MW_VERSION, '1.36', '>' ) ) {
+		} elseif ( version_compare( MW_VERSION, '1.37', '>=' ) ) {
 			include_once __DIR__ . '/importer/VisualDataImporter.php';
 
 			// @see ServiceWiring.php -> WikiImporterFactory
@@ -2089,11 +2170,15 @@ class VisualData {
 	}
 
 	/**
+	 * @param User $user
 	 * @return array
 	 */
-	public static function getUserGroups() {
-		$user = self::$User;
+	public static function getUserGroups( $user ) {
+		if ( !self::$userGroupManager ) {
+			self::initialize();
+		}
 		$UserGroupManager = self::$userGroupManager;
+
 		$user_groups = array_unique( array_merge(
 			$UserGroupManager->getUserEffectiveGroups( $user ),
 			$UserGroupManager->getUserImplicitGroups( $user )
@@ -2140,12 +2225,13 @@ class VisualData {
 	/**
 	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageOwnership/+/refs/heads/master/includes/PageOwnership.php
 	 * @param Title $title
+	 * @param null|int $limit null
 	 * @return array
 	 */
-	public static function getTransclusionTargets( $title ) {
+	public static function getTransclusionTargets( $title, $limit = null ) {
 		$context = RequestContext::getMain();
 		$config = $context->getConfig();
-		$options = [ 'LIMIT' => $config->get( 'PageInfoTransclusionLimit' ) ];
+		$options = [ 'LIMIT' => $limit ?? $config->get( 'PageInfoTransclusionLimit' ) ];
 
 		if ( version_compare( MW_VERSION, '1.39', '<' ) ) {
 			return self::getLinksTo( $title, $options, 'templatelinks', 'tl' );

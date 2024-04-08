@@ -82,7 +82,7 @@ class ImportData extends Maintenance {
 		}
 
 		$context = new RequestContext();
-		$context->setTitle( Title::makeTitle( NS_MAIN, '' ) );
+		// $context->setTitle( Title::makeTitle( NS_MAIN, '' ) );
 
 		$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 

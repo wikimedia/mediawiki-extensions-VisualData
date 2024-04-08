@@ -24,11 +24,15 @@
 
 namespace MediaWiki\Extension\VisualData;
 
+use Context;
 use MediaWiki\MediaWikiServices;
+use MWException;
 use Parser;
-use RequestContext;
 
 class SchemaProcessor {
+
+	/** @var Context */
+	private $context;
 
 	/** @var Output */
 	private $output;
@@ -148,18 +152,17 @@ class SchemaProcessor {
 		'OO.ui.CheckboxMultiselectInputWidget'
 	];
 
-	public function __construct() {
+	/**
+	 * @param Context $context
+	 */
+	public function __construct( $context ) {
+		$this->context = $context;
+		$this->output = $context->getOutput();
+
 		$this->formattedNamespaces = MediaWikiServices::getInstance()
 			->getContentLanguage()->getFormattedNamespaces();
 
 		$this->allowedMimeTypes = $this->getAllowedMimeTypes();
-	}
-
-	/**
-	 * @param Output $output
-	 */
-	public function setOutput( $output ) {
-		$this->output = $output;
 	}
 
 	/**
@@ -186,7 +189,25 @@ class SchemaProcessor {
 			]
 		];
 		$this->handleRootFrom( $ret, $schema );
+		$this->assignUUID( $ret );
 		return $ret;
+	}
+
+	/**
+	 * @param array &$obj
+	 */
+	public function assignUUID( &$obj ) {
+		$walkRec = static function ( &$arr ) use( &$walkRec )  {
+			foreach ( $arr as $key => $value ) {
+				if ( $key === 'wiki' && is_array( $value ) && !isset( $value['uuid'] ) ) {
+					$arr[$key]['uuid'] = uniqid();
+				}
+				if ( is_array( $value ) ) {
+					$walkRec( $arr[$key] );
+				}
+			}
+		};
+		$walkRec( $obj );
 	}
 
 	/**
@@ -605,9 +626,8 @@ class SchemaProcessor {
 				switch ( $property ) {
 					case 'title':
 					case 'description':
-						$ret['wiki']["$property-parsed"] = $ret[$standardProp] =
-							$this->parseWikitext( $value );
-						$value;
+						$ret[$standardProp] = $this->parseWikitext( $value );
+						// $ret['wiki']["$property-parsed"] = $ret[$standardProp];
 						break;
 					default:
 						$ret[$standardProp] = $value;
@@ -671,6 +691,7 @@ class SchemaProcessor {
 			case 'content-block':
 				$ret['type'] = 'object';
 				$ret['wiki'] = $schema['wiki'];
+				unset( $ret['wiki']['description'] );
 				$ret['description'] = $this->parseWikitext( $schema['wiki']['content'] );
 				break;
 			case 'geolocation':
@@ -1203,14 +1224,13 @@ class SchemaProcessor {
 	public function askQueryResults( $wiki ) {
 		$query = $wiki['options-askquery'];
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
-		$output = $this->output;
 
 		// *** credits WikiTeQ
-		$title = RequestContext::getMain()->getTitle();
-		$poptions = $output->parserOptions();
+		// $title = RequestContext::getMain()->getTitle();
+		$poptions = $this->output->parserOptions();
 
 		// parsed query
-		$query = $parser->preprocess( $query, $title, $poptions );
+		$query = $parser->preprocess( $query, $this->context->getTitle(), $poptions );
 		// -------------->
 
 		$params = [
@@ -1222,7 +1242,7 @@ class SchemaProcessor {
 
 		$resultPrinter = \VisualData::getResults(
 			$parser,
-			$output,
+			$this->context,
 			$query,
 			$templates,
 			$printouts,
@@ -1319,6 +1339,11 @@ class SchemaProcessor {
 	 */
 	private	function parseWikitext( $value, $properties = null ) {
 		$output = $this->output;
+
+		if ( !$output->getTitle() ) {
+			throw new MWException( 'Context title not set' );
+		}
+
 		$parseWikitext = static function ( $str ) use ( $output, $properties ) {
 			// return $this->parser->recursiveTagParseFully( $str );
 			$val = Parser::stripOuterParagraph( $output->parseAsContent( $str ) );

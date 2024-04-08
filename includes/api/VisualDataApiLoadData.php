@@ -51,7 +51,7 @@ class VisualDataApiLoadData extends ApiBase {
 		\VisualData::initialize();
 		$result = $this->getResult();
 		$params = $this->extractRequestParams();
-		$output = $this->getContext()->getOutput();
+		$derivativeContext = new DerivativeContext( RequestContext::getMain() );
 
 		$dataSet = explode( '|', $params['dataset'] );
 
@@ -60,7 +60,7 @@ class VisualDataApiLoadData extends ApiBase {
 			switch ( $value ) {
 				case 'schemas':
 					$schemasArr = \VisualData::getAllSchemas();
-					$schemas = \VisualData::getSchemas( $output, $schemasArr, false );
+					$schemas = \VisualData::getSchemas( $derivativeContext, $schemasArr, false );
 					$ret['schemas'] = $schemas;
 					break;
 			}

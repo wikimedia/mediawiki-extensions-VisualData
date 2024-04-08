@@ -58,6 +58,9 @@ class RebuildData extends Maintenance {
 	/** @var array */
 	private $onlySchemas;
 
+	/** @var bool */
+	private $rebuildLinks;
+
 	public function __construct() {
 		parent::__construct();
 		$this->addDescription( 'rebuild data' );
@@ -71,6 +74,7 @@ class RebuildData extends Maintenance {
 		$this->addOption( 'exclude-prefix', 'exclude prefix', false, true );
 		$this->addOption( 'exclude-schemas', 'exclude schemas', false, true );
 		$this->addOption( 'only-schemas', 'only schemas', false, true );
+		$this->addOption( 'rebuild-links', 'rebuild links', false, false );
 	}
 
 	/**
@@ -81,6 +85,7 @@ class RebuildData extends Maintenance {
 		$this->excludePrefix = $this->getOption( 'exclude-prefix' ) ?? '';
 		$this->excludeSchemas = $this->getOption( 'exclude-schemas' ) ?? '';
 		$this->onlySchemas = $this->getOption( 'only-schemas' ) ?? '';
+		$this->rebuildLinks = (bool)$this->getOption( 'rebuild-links' ) ?? false;
 
 		$this->excludePrefix = preg_split( '/\s*,\s*/', $this->excludePrefix, -1, PREG_SPLIT_NO_EMPTY );
 		$this->excludeSchemas = preg_split( '/\s*,\s*/', $this->excludeSchemas, -1, PREG_SPLIT_NO_EMPTY );
@@ -93,55 +98,25 @@ class RebuildData extends Maintenance {
 		$this->dropTables();
 		$this->createTables();
 		$this->rebuildData();
+
+		// *** unfortunately we cannot rely on tracking categories
+		// and the standard maintenance/refreshLinks.php @see https://www.mediawiki.org/wiki/Manual:RefreshLinks.php
+		// since tracking categories do not contain enough information
 		$this->rebuildLinks();
 	}
 
 	private function rebuildLinks() {
-		$databaseManager = new DatabaseManager();
-		$context = RequestContext::getMain();
-		$maxByPageId = $this->getMaxPageId();
-
-		for ( $i = 0; $i <= $maxByPageId; $i++ ) {
-			$title = Title::newFromID( $i );
-
-			if ( !$title || !$title->isKnown() ) {
-				continue;
-			}
-
-			foreach ( $this->excludePrefix as $prefix ) {
-				if ( strpos( $title->getFullText(), $prefix ) === 0 ) {
-					continue 2;
-				}
-			}
-
-			$wikiPage = \VisualData::getWikiPage( $title );
-
-			if ( !$wikiPage ) {
-				continue;
-			}
-
-			echo 'rebuilding links of ' . $title->getFullText() . PHP_EOL;
-
-			try {
-				// or $output->parserOptions();
-				$parserOptions = ParserOptions::newFromAnon();
-				$parserOutput = $wikiPage->getParserOutput( $parserOptions, null, true );
-			} catch ( Exception $e ) {
-				echo $e->getMessage() . PHP_EOL;
-				continue;
-			}
-
-			\VisualData::handleLinks( $parserOutput, $title, $databaseManager );
-		}
-	}
-
-	private function rebuildLinks_() {
 		$search = '#v(isual)?data(form|print|query)';
 		$selected_namespaces = null;
 		$category = null;
 		$prefix = null;
 		$use_regex = true;
 
+		$databaseManager = new DatabaseManager();
+
+		// *** this could lead to "false-positive"
+		// for instance when the parser function is in
+		// comments, but does not cause harm
 		$res = Search::doSearchQuery(
 			$search,
 			$selected_namespaces,
@@ -152,18 +127,18 @@ class RebuildData extends Maintenance {
 
 		$context = RequestContext::getMain();
 		foreach ( $res as $row ) {
-			$title = Title::makeTitleSafe( $row->page_namespace, $row->page_title );
-			if ( $title == null ) {
+			$title_ = Title::makeTitleSafe( $row->page_namespace, $row->page_title );
+			if ( $title_ == null ) {
 				continue;
 			}
 
 			foreach ( $this->excludePrefix as $prefix ) {
-				if ( strpos( $title->getFullText(), $prefix ) === 0 ) {
+				if ( strpos( $title_->getFullText(), $prefix ) === 0 ) {
 					continue 2;
 				}
 			}
 
-			$wikiPage = \VisualData::getWikiPage( $title );
+			$wikiPage = \VisualData::getWikiPage( $title_ );
 
 			if ( !$wikiPage ) {
 				continue;
@@ -171,42 +146,24 @@ class RebuildData extends Maintenance {
 
 			$wikiPage->doPurge();
 
-			echo 'rebuilding links of ' . $title->getText() . PHP_EOL;
+			echo 'rebuilding links of ' . $title_->getText() . PHP_EOL;
 
-			// @ATTENTION required to execute
-			// onOutputPageParserOutput, alternatively use
-			// addParserOutputMetadata @see McrUndoAction
-
-			$context->setTitle( $title );
 			try {
-				$article = new Article( $title );
-				$article->render();
+				// or ParserOptions::newFromAnon()
+				$parserOptions = ParserOptions::newFromUser( $this->user );
+				$parserOutput = $wikiPage->getParserOutput( $parserOptions, null, true );
 			} catch ( Exception $e ) {
 				echo $e->getMessage() . PHP_EOL;
+				continue;
 			}
 
-			$transclusionTargets = \VisualData::getTransclusionTargets( $title );
-
-			foreach ( $transclusionTargets as $title_ ) {
-				echo 'rebuilding links of (transclusion target) ' . $title_->getText() . PHP_EOL;
-
-				$wikiPage_ = \VisualData::getWikiPage( $title_ );
-				$wikiPage_->doPurge();
-
-				$context->setTitle( $title_ );
-				try {
-					$article_ = new Article( $title_ );
-					$article_->render();
-				} catch ( Exception $e ) {
-					echo $e->getMessage() . PHP_EOL;
-				}
-			}
+			\VisualData::handleLinks( $this->user, $parserOutput, $title_, $databaseManager );
 		}
 	}
 
 	private function rebuildData() {
-		$context = RequestContext::getMain();
 		$maxByPageId = $this->getMaxPageId();
+		$context = RequestContext::getMain();
 
 		for ( $i = 0; $i <= $maxByPageId; $i++ ) {
 			$title = Title::newFromID( $i );
@@ -229,6 +186,8 @@ class RebuildData extends Maintenance {
 				continue;
 			}
 
+			$context->setTitle( $title );
+
 			$revisionRecord = $wikiPage->getRevisionRecord();
 
 			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );
@@ -243,7 +202,7 @@ class RebuildData extends Maintenance {
 
 			$content = $slotData->getContent();
 			$errors = [];
-			\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
+			\VisualData::rebuildArticleDataFromSlot( $this->user, $title, $content, $errors );
 		}
 	}
 

@@ -75,8 +75,8 @@ class UpdateDataJob extends Job {
 		}
 
 		$databaseManager = new DatabaseManager();
-		$schemaProcessor = new SchemaProcessor();
-		$output = RequestContext::getMain()->getOutput();
+		$context = RequestContext::getMain();
+		$schemaProcessor = new SchemaProcessor( $context );
 
 		$errors = [];
 		switch ( $this->params['action'] ) {
@@ -129,7 +129,7 @@ class UpdateDataJob extends Job {
 
 				if ( $jsonData && isset( $jsonData['schemas'] ) && isset( $jsonData['schemas'][$this->params['schema']] ) ) {
 					$schemaName = $this->params['schema'];
-					$schema = \VisualData::getSchema( $output, $schemaName );
+					$schema = \VisualData::getSchema( $context, $schemaName );
 					foreach ( $this->params['renamed'] as $value ) {
 						$schemaProcessor->processSchemaRec( $schema, $jsonData['schemas'][$schemaName],
 							$value, [], '' );
@@ -158,7 +158,7 @@ class UpdateDataJob extends Job {
 
 					$slots = \VisualData::getSlots( $title );
 					$content = $slots[$targetSlot]->getContent();
-					\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
+					\VisualData::rebuildArticleDataFromSlot( $user, $title, $content, $errors );
 				}
 				break;
 		}

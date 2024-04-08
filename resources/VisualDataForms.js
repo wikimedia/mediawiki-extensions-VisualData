@@ -52,7 +52,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var SchemasLayout;
 	var Initialized = false;
 	var PendingRecursive;
-	var QueuedWidgets = [];
+	// var QueuedWidgets = [];
 	var Maps = [];
 	var TargetSlotField;
 
@@ -79,8 +79,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		// @IMPORTANT use "let" with timeout !!
 		for ( let i in InputWidgets ) {
-			if (
-				InputWidgets[ i ].constructor.name === 'VisualDataVisualEditor' ||
+			var constructorName = InputWidgets[ i ].constructorName || InputWidgets[ i ].constructor.name;
+			if ( constructorName === 'VisualDataVisualEditor' ||
 				( 'constructorName' in InputWidgets[ i ] &&
 					InputWidgets[ i ].constructorName === 'VisualDataVisualEditor' )
 			) {
@@ -477,7 +477,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			'OoUiMenuTagMultiselectWidget'
 		];
 		for ( let model of ModelFlatten ) {
-			if ( !inArray( model.input.constructor.name, allowedInputsByContructor ) ) {
+			let constructorName = model.input.constructorName || model.input.constructor.name;
+			if ( !inArray( constructorName, allowedInputsByContructor ) ) {
 				continue;
 			}
 			if ( sourceModel.schemaName !== model.schemaName ) {
@@ -498,7 +499,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 							performQuery( model, res.flatten[ i ].value ).then( ( data_ ) => {
 
 								// @TODO complete with other optionsInputs
-								switch ( model.input.constructor.name ) {
+								switch ( constructorName ) {
 									case 'OoUiDropdownInputWidget':
 										// *** @FIXME this unfortunately does not work.
 										// see here https://doc.wikimedia.org/mediawiki-core/1.39.5/js/source/oojs-ui-core.html#OO-ui-DropdownInputWidget
@@ -1362,6 +1363,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			if (
 				data.schema.type === 'array' &&
 				data.schema.items.type !== 'object' &&
+				'wiki' in data.schema.items &&
 				'preferred-input' in data.schema.items.wiki &&
 				VisualDataFunctions.isMultiselect(
 					data.schema.items.wiki[ 'preferred-input' ]
@@ -1470,26 +1472,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			default:
 				this.fieldset = new OO.ui.FieldsetLayout( {
-					label: new OO.ui.HtmlSnippet(
-						'title-parsed' in data.schema.wiki ?
-							data.schema.wiki[ 'title-parsed' ] :
-							'title' in data.schema.wiki ?
-								data.schema.wiki.title :
-								''
-					)
+					label: new OO.ui.HtmlSnippet( 'title' in data.schema.wiki ? data.schema.wiki.title : '' )
 				} );
 
 				if ( 'description' in data.schema.wiki ) {
 					this.fieldset.addItems( [
 						new OO.ui.Element( {
 							content: [
-								new OO.ui.HtmlSnippet(
-									'description-parsed' in data.schema.wiki ?
-										data.schema.wiki[ 'description-parsed' ] :
-										'description' in data.schema.wiki ?
-											data.schema.wiki.description :
-											''
-								)
+								new OO.ui.HtmlSnippet( data.schema.wiki.description )
 							]
 						} )
 					] );
@@ -1563,28 +1553,28 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	// OO.mixinClass( GroupWidget, OO.EventEmitter );
 
 	GroupWidget.prototype.formLoaded = function () {
-		if ( this.data.root === true ) {
-			setTimeout( function () {
-				VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
-			}, 30 );
+	//	if ( this.data.root === true ) {
+		setTimeout( function () {
+			VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
+		}, 30 );
 
-			setTimeout( function () {
-				VisualDataFunctions.removeNbspFromLayoutHeader(
-					'#visualdataform-wrapper-dialog-' + FormID
-				);
-			}, 30 );
+		setTimeout( function () {
+			VisualDataFunctions.removeNbspFromLayoutHeader(
+				'#visualdataform-wrapper-dialog-' + FormID
+			);
+		}, 30 );
 
-			// *** we use mutationChange instead
-			// for ( var model of ModelFlatten ) {
-			// 	updateFieldsVisibility( model );
-			// }
+		// *** we use mutationChange instead
+		// for ( var model of ModelFlatten ) {
+		//	updateFieldsVisibility( model );
+		// }
 
-			loadMaps();
+		loadMaps();
 
-			for ( var model of ModelFlatten ) {
-				updateDependentFields( model );
-			}
+		for ( var model of ModelFlatten ) {
+			updateDependentFields( model );
 		}
+		// }
 	};
 
 	GroupWidget.prototype.addItems = function ( items ) {
@@ -1639,7 +1629,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		PendingRecursive = 0;
-		QueuedWidgets = [];
+		// QueuedWidgets = [];
 		Maps = [];
 		function getWidgets() {
 			var ret = {};
@@ -2544,13 +2534,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// 	}
 		// }
 
-		QueuedWidgets.push( widget );
+		// QueuedWidgets.push( widget );
 		// inform queued widgets that the rendering of the form is complete
 		if ( --PendingRecursive === 0 ) {
-			for ( widget_ of QueuedWidgets ) {
-				// @see https://www.mediawiki.org/wiki/OOjs/Events
-				widget_.emit( 'formLoaded' );
-			}
+			// for ( widget_ of QueuedWidgets ) {
+			// @see https://www.mediawiki.org/wiki/OOjs/Events
+			widget_.emit( 'formLoaded' );
+			// }
 		}
 	}
 
@@ -3089,6 +3079,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		for ( var model of ModelFlatten ) {
 			updateFieldsVisibility( model );
 		}
+
+		// for ( var model of ModelFlatten ) {
+		//	updateDependentFields( model );
+		// }
 	}
 
 	function initialize() {

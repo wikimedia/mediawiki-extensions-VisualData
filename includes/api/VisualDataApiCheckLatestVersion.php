@@ -51,7 +51,7 @@ class VisualDataApiCheckLatestVersion extends ApiBase {
 		// execute if any of the condition below is true
 		if ( !$user->isAllowed( 'visualdata-canmanageschemas' )
 			// execute if user is in the admin group
-			&& !count( array_intersect( $groups, \VisualData::getUserGroups() ) ) ) {
+			&& !count( array_intersect( $groups, \VisualData::getUserGroups( $user ) ) ) ) {
 			$this->dieWithError( 'apierror-visualdata-permissions-error' );
 		}
 

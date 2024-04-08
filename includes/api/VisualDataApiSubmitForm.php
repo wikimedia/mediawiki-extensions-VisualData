@@ -49,11 +49,15 @@ class VisualDataApiSubmitForm extends ApiBase {
 		\VisualData::initialize();
 		$result = $this->getResult();
 		$params = $this->extractRequestParams();
-		$output = $this->getContext()->getOutput();
+		$context = RequestContext::getMain();
+
+		// *** required by onContentAlterParserOutput
+		$specialpage_title = SpecialPage::getTitleFor( 'VisualDataSubmit' );
+		$context->setTitle( $specialpage_title );
 
 		$data = json_decode( $params['data'], true );
 
-		$submitForm = new SubmitForm( $user, $this->getContext() );
+		$submitForm = new SubmitForm( $user, $context );
 
 		$result_ = $submitForm->processData( $data );
 

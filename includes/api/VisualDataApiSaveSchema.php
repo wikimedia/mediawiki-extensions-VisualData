@@ -54,10 +54,9 @@ class VisualDataApiSaveSchema extends ApiBase {
 		\VisualData::initialize();
 
 		$result = $this->getResult();
-		// $context = new RequestContext();
-		$context = RequestContext::getMain();
+		$derivativeContext = new DerivativeContext( RequestContext::getMain() );
 
-		$output = $context->getOutput();
+		// $output = $context->getOutput();
 		$params = $this->extractRequestParams();
 
 		$sourcePage = null;
@@ -69,7 +68,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$sourcePage = Title::newMainPage();
 		}
 
-		$context->setTitle( $sourcePage );
+		$derivativeContext->setTitle( $sourcePage );
 
 		$schema = json_decode( $params['schema'], true );
 		$dialogAction = $params['dialog-action'];
@@ -113,7 +112,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 		$resultAction = ( !empty( $previousLabel ) ? 'update' : 'create' );
 
 		if ( $resultAction === 'update' ) {
-			$schemas = \VisualData::getSchemas( $output, [ $label ] );
+			$schemas = \VisualData::getSchemas( $derivativeContext, [ $label ] );
 			$storedSchema = $schemas[$label];
 		} else {
 			$storedSchema = null;
@@ -154,11 +153,8 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$resultAction = 'rename';
 		}
 
-		$schemaProcessor = new SchemaProcessor();
-		$schemaProcessor->setOutput( $output );
-
+		$schemaProcessor = new SchemaProcessor( $derivativeContext );
 		$recordedObj = $schemaProcessor->convertToSchema( $schema );
-
 		$processedSchema = $schemaProcessor->processSchema( $recordedObj, $label );
 
 		if ( $evaluateJobs ) {

@@ -146,7 +146,10 @@
 		}
 	],
 	"TrackingCategories": [
-		"visualdata-jsondata-tracking-category"
+		"visualdata-jsondata-tracking-category",
+		"visualdata-trackingcategory-parserfunction-query",
+		"visualdata-trackingcategory-parserfunction-form",
+		"visualdata-trackingcategory-parserfunction-button"
 	],
 	"GroupPermissions": {
 		"sysop": {
@@ -474,7 +477,10 @@
 		"VisualDataDisableVersionCheck": false,
 		"VisualDataCreateJobsWarningLimit": 0,
 		"VisualDataEditDataNamespaces": [ 0, 4, 2226, 2230 ],
-		"VisualDataJsonDataTrackingCategory": true,
+		"wgVisualDataTrackingCategoryJsonData": false,
+		"wgVisualDataTrackingCategoryForms": true,
+		"wgVisualDataTrackingCategoryQueries": true,
+		"wgVisualDataTrackingCategoryButtons": true,
 		"VisualDataMaptilerApiKey": null
 	},
 	"manifest_version": 1

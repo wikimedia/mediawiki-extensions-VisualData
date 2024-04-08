@@ -107,6 +107,7 @@ class DatabaseManager {
 	 */
 	public function invalidateTransclusionTargets( $title ) {
 		$transclusionTargets = \VisualData::getTransclusionTargets( $title );
+
 		foreach ( $transclusionTargets as $title_ ) {
 			// $title_->invalidateCache();
 			$wikiPage_ = \VisualData::getWikiPage( $title_ );
@@ -379,18 +380,9 @@ class DatabaseManager {
 						$wikiPage_->doPurge();
 					}
 
-					// *** this is not necessary, since
-					// visualdata_links already contain transclusion
-					// targets
-					// $transclusionTargets = \VisualData::getTransclusionTargets( $title_ );
-
-					// foreach ( $transclusionTargets as $title_ ) {
-					// 	// $title_->invalidateCache();
-					// 	$wikiPage_ = self::getWikiPage( $title_ );
-					// 	if ( $wikiPage_ ) {
-					// 		$wikiPage_->doPurge();
-					// 	}
-					// }
+					// *** this is not necessary, since visualdata_links
+					// already contain transclusion targets
+					// $this->invalidateTransclusionTargets( $title_ );
 				}
 			}
 		}
@@ -493,10 +485,13 @@ class DatabaseManager {
 			return;
 		}
 
+		// instead than (object)$storedSchema
+		$storedSchemaObj = json_decode( json_encode( $storedSchema ) );
+		$updatedSchemaObj = json_decode( json_encode( $updatedSchema ) );
+
 		$diff = new JsonDiff(
-			// instead than (object)$storedSchema
-			json_decode( json_encode( $storedSchema ) ),
-			json_decode( json_encode( $updatedSchema ) ),
+			$storedSchemaObj,
+			$updatedSchemaObj,
 			JsonDiff::REARRANGE_ARRAYS
 		);
 
@@ -504,17 +499,27 @@ class DatabaseManager {
 		// @see https://github.com/swaggest/json-diff?tab=readme-ov-file#jsonpatch
 		$patches = $patch->jsonSerialize();
 
+		$getRelatedSchema = static function ( $obj, $path ) {
+			return json_decode( json_encode( JsonPointer::getByPointer( $obj, $path ) ), true );
+		};
+
 		$added = [];
 		$removed = [];
 		foreach ( $patches as $patch ) {
-			$patch = (array)$patch;
+			$patch = json_decode( json_encode( $patch ), true );
 
 			switch ( $patch['op'] ) {
 				case 'remove':
-					$removed[] = $patch['path'];
+					$schema_ = $getRelatedSchema( $storedSchemaObj, $patch['path'] );
+					if ( is_array( $schema_ ) && $schema_['wiki']['type'] !== 'content-block' ) {
+						$removed[] = $patch['path'];
+					}
 					break;
 				case 'add':
-					$added[] = $patch['path'];
+					$schema_ = $getRelatedSchema( $updatedSchemaObj, $patch['path'] );
+					if ( is_array( $schema_ ) && $schema_['wiki']['type'] !== 'content-block' ) {
+						$added[] = $patch['path'];
+					}
 					break;
 				case 'replace':
 					break;
@@ -530,10 +535,10 @@ class DatabaseManager {
 
 		$renamed = [];
 		foreach ( $added as $key => $path ) {
-			$obj = json_decode( json_encode( JsonPointer::getByPointer( (object)$updatedSchema, $path ) ), true );
+			$obj = $getRelatedSchema( $updatedSchemaObj, $path );
 			if ( isset( $obj['wiki']['uuid'] ) ) {
 				foreach ( $removed as $k => $p ) {
-					$o = json_decode( json_encode( JsonPointer::getByPointer( (object)$storedSchema, $p ) ), true );
+					$o = $getRelatedSchema( $storedSchemaObj, $p );
 					if ( isset( $o['wiki']['uuid'] )
 					&& $o['wiki']['uuid'] === $obj['wiki']['uuid'] ) {
 						$renamed[] = [ $p, $path ];
@@ -635,6 +640,23 @@ class DatabaseManager {
 	public function deletePage( $title ) {
 		$articleId = $title->getID();
 
+		// check if the current page contains any query
+		$tableName = 'visualdata_links';
+		$res = $this->dbr->select(
+			$tableName,
+			[ 'page_id' ],
+			[ 'type' => 'query', 'page_id' => $articleId ],
+			__METHOD__,
+			[]
+		);
+
+		// invalidate transclusion targets
+		if ( $res->count() ) {
+			$this->invalidateTransclusionTargets( $title );
+		}
+
+		// check if the deleted page contains data
+		// related to one or more schemas
 		$tableName = 'visualdata_schema_pages';
 		$conds = [
 			'page_id' => $articleId
@@ -662,6 +684,7 @@ class DatabaseManager {
 			[]
 		);
 
+		// delete properties related to the deleted article
 		foreach ( self::$propTypes as $propType ) {
 			$tableName = "visualdata_$propType";
 
@@ -696,8 +719,8 @@ class DatabaseManager {
 		// remove unused entries
 		$this->removeUnusedEntries();
 
-		// invalidateCacheOfPagesWithTemplateLinksTo
-		// on pages with queries involving delete schemas
+		// invalidate cache of pages with queries
+		// involving delete schemas
 		$this->invalidatePagesWithQueries( $schemas );
 	}
 
@@ -757,6 +780,13 @@ class DatabaseManager {
 			);
 
 			$schemas[] = [ 'id' => $schemaId ];
+		}
+
+		// before deleting links
+		$this->invalidatePagesWithQueries( $schemas );
+
+		foreach ( $schemas as $value ) {
+			$schemaId = $value['id'];
 
 			foreach ( self::$propTypes as $propType ) {
 				$tableName = "visualdata_$propType";
@@ -799,7 +829,6 @@ class DatabaseManager {
 		}
 
 		$this->removeUnusedEntries();
-		$this->invalidatePagesWithQueries( $schemas );
 	}
 
 	/**
@@ -1213,7 +1242,7 @@ class DatabaseManager {
 	 * @param string $pathNoIndex
 	 */
 	private function flattenData( &$ret, $schema, $data, $path, $pathNoIndex ) {
-		foreach ( $data as $key => $value ) {
+		foreach ( (array)$data as $key => $value ) {
 			$keyEscaped = $this->escapeJsonPtr( $key );
 			$currentPath = $path ? "$path/$keyEscaped" : $keyEscaped;
 

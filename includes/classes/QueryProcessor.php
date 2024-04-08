@@ -164,9 +164,7 @@ class QueryProcessor {
 	}
 
 	private function parseQuery() {
-		// @TODO implement search operators
-		// https://www.semantic-mediawiki.org/wiki/Help:Search_operators
-		preg_replace_callback( '/\[\[([^\[\]]+)\]\]/',
+		preg_replace_callback( '/\[\[(.+?)\]\]/',
 			function ( $matches ) {
 				if ( strpos( $matches[1], '::' ) !== false ) {
 					[ $prop, $value ] = explode( '::', $matches[1] );
@@ -267,30 +265,34 @@ class QueryProcessor {
 	private function castValAndQuote( $dataType, &$val ) {
 		switch ( $dataType ) {
 			case 'integer':
-				settype( $val, "integer" );
+				$val = filter_var( $val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
+				settype( $val, 'integer' );
 				break;
 			case 'numeric':
-				settype( $val, "float" );
+				$val = filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
+				settype( $val, 'float' );
 				break;
 			case 'date':
-				$val = date( "Y-m-d", strtotime( $val ) );
+				$val = date( 'Y-m-d', strtotime( $val ) );
 				$val = $this->dbr->addQuotes( $val );
 				break;
 			case 'datetime':
-				$val = date( "Y-m-d H:i:s", strtotime( $val ) );
+				$val = date( 'Y-m-d H:i:s', strtotime( $val ) );
 				$val = $this->dbr->addQuotes( $val );
 				break;
 			case 'time':
-				$val = date( "H:i:s", strtotime( $val ) );
+				$val = date( 'H:i:s', strtotime( $val ) );
 				$val = $this->dbr->addQuotes( $val );
 				break;
 			case 'boolean':
-				settype( $val, "boolean" );
+				$val = filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+				settype( $val, 'boolean' );
+				$val = $val ? 'TRUE' : 'FALSE';
 				break;
 			case 'text':
 			case 'textarea':
 			default:
-				settype( $val, "string" );
+				settype( $val, 'string' );
 				$val = $this->dbr->addQuotes( $val );
 		}
 	}
@@ -302,45 +304,6 @@ class QueryProcessor {
 	 * @return string
 	 */
 	private function parseCondition( $value, $field, $dataType = 'string' ) {
-		// @TODO expand query language with <, > and more
-		// cast where
-		/*
-
-		and use a form like the following:
-
-			[[name::equals::Afghanistan]]
-		(in the parser function + create
-		a query builder similar to that
-		of Datatables
-		@see https://datatables.net/extensions/searchbuilder/customConditions.html
-
-		case '=':
-								$searchBuilder[] = "[[{$str}{$v}]]";
-								break;
-							case '!=':
-								$searchBuilder[] = "[[{$str}!~$v]]";
-								break;
-							case 'starts':
-								$searchBuilder[] = "[[{$str}~$v*]]";
-								break;
-							case '!starts':
-								$searchBuilder[] = "[[{$str}!~$v*]]";
-								break;
-							case 'contains':
-								$searchBuilder[] = "[[{$str}~*$v*]]";
-								break;
-							case '!contains':
-								$searchBuilder[] = "[[{$str}!~*$v*]]";
-								break;
-							case 'ends':
-								$searchBuilder[] = "[[{$str}~*$v]]";
-								break;
-							case '!ends':
-								$searchBuilder[] = "[[$str}!~*$v]]";
-								break;
-
-				*/
-
 		// use $this->dbr->buildLike( $prefix, $this->dbr->anyString() )
 		// if $value contains ~
 		$likeBefore = false;
@@ -555,9 +518,9 @@ class QueryProcessor {
 		$options = [];
 		$joins = [];
 
-		$fields["page_id"] = "t0.page_id";
+		$fields['page_id'] = 't0.page_id';
 		$conds = [
-			"t0.schema_id" => $schemaId,
+			't0.schema_id' => $schemaId,
 		];
 
 		foreach ( $combined as $key => $v ) {
@@ -739,7 +702,7 @@ class QueryProcessor {
 						continue;
 					}
 					$paths = explode( $separator, $row["p$key"] );
-					$values = explode( $separator, $row["v$key"] );
+					$values = explode( $separator, (string)$row["v$key"] );
 					foreach ( $paths as $key => $path ) {
 						$row_[$path] = $values[$key];
 					}

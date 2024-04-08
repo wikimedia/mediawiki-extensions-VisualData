@@ -28,6 +28,7 @@ use ApiMain;
 use CommentStoreComment;
 use ContentHandler;
 use ContentModelChange;
+use DerivativeContext;
 use DerivativeRequest;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
@@ -54,11 +55,10 @@ class SubmitForm {
 	 */
 	public function __construct( $user, $context = null ) {
 		$this->user = $user;
-		// $this->context = $context ?? RequestContext::getMain();
 		// @ATTENTION ! use always Main context, in api
 		// context OutputPage -> parseAsContent will work
 		// in a different way !
-		$this->context = RequestContext::getMain();
+		$this->context = new DerivativeContext( $context ?? RequestContext::getMain() );
 		$this->output = $this->context->getOutput();
 	}
 
@@ -613,9 +613,9 @@ class SubmitForm {
 
 		if ( count( $errors ) ) {
 			return [
-				'freetext' => $data['form']['freetext'],
+				'freetext' => $data['form']['freetext'] ?? '',
 				'jsonData' => $jsonData,
-				'categories' => $data['form']['categories'],
+				'categories' => $data['form']['categories'] ?? [],
 				'errors' => array_unique( $errors ),
 				'userDefined' => ( !array_key_exists( 'target-title', $data['form'] ) ? ''
 					 : $data['form']['target-title'] ),

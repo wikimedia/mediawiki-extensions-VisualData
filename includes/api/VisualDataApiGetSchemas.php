@@ -49,12 +49,10 @@ class VisualDataApiGetSchemas extends ApiBase {
 		\VisualData::initialize();
 		$result = $this->getResult();
 		$params = $this->extractRequestParams();
-		$output = $this->getContext()->getOutput();
-
+		$context = RequestContext::getMain();
 		$schemasArr = explode( '|', $params['schemas'] );
-		$out = $this->getContext()->getOutput();
 
-		$schemas = \VisualData::getSchemas( $out, $schemasArr );
+		$schemas = \VisualData::getSchemas( $context, $schemasArr );
 
 		// @ATTENTION json_encode avoid internal mediawiki
 		// transformations @see include/api/ApiResult.php -> getResultData

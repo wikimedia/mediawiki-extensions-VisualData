@@ -38,9 +38,6 @@ class Importer {
 	/** @var Context */
 	private $context;
 
-	/** @var Output */
-	private $output;
-
 	/** @var bool|int */
 	private $limit = false;
 
@@ -63,7 +60,6 @@ class Importer {
 	public function __construct( $user, $context, $schemaName, $mainSlot = false, $limit = false ) {
 		$this->user = $user;
 		$this->context = $context;
-		$this->output = $this->context->getOutput();
 		$this->schemaName = $schemaName;
 		$this->mainSlot = $mainSlot;
 		$this->limit = $limit;
@@ -82,7 +78,7 @@ class Importer {
 		}
 
 		$this->showMsg = $showMsg;
-		$schema = \VisualData::getSchema( $this->output, $this->schemaName );
+		$schema = \VisualData::getSchema( $this->context, $this->schemaName );
 
 		if ( !$schema ) {
 			$showMsg( 'generating schema' );
@@ -175,8 +171,7 @@ class Importer {
 	 * @return array|bool
 	 */
 	private function createSchema( $name, $data ) {
-		$schemaProcessor = new SchemaProcessor();
-		$schemaProcessor->setOutput( $this->output );
+		$schemaProcessor = new SchemaProcessor( $this->context );
 		$schema = $schemaProcessor->generateFromData( $data, $name );
 		$title = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $name );
 		$statusOK = \VisualData::saveRevision( $this->user, $title, json_encode( $schema ) );

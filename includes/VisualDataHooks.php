@@ -23,6 +23,7 @@
  */
 
 use MediaWiki\Extension\VisualData\DatabaseManager;
+use MediaWiki\Extension\VisualData\SchemaProcessor;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\RevisionRecord;
 use MediaWiki\Revision\SlotRecord;
@@ -41,6 +42,23 @@ class VisualDataHooks {
 		if ( !is_array( $GLOBALS['wgVisualDataEditDataNamespaces'] ) ) {
 			$GLOBALS['wgVisualDataEditDataNamespaces'] = [ 0 ];
 		}
+		// if ( !array_key_exists( 'wgVisualDataDisableSlotsNavigation', $GLOBALS )
+		// 	&& self::$User->isAllowed( 'visualdata-canmanageschemas' ) ) {
+		// 	$GLOBALS['wgVisualDataDisableSlotsNavigation'] = true;
+		// }
+
+		$GLOBALS['wgVisualDataResultPrinterClasses'] = [
+			'table' => 'TableResultPrinter',
+			'datatable' => 'DatatableResultPrinter',
+			'datatables' => 'DatatableResultPrinter',
+			// 'list' => 'ListResultPrinter',
+			'json' => 'JsonResultPrinter',
+			'template' => 'TemplateResultPrinter',
+			'templates' => 'TemplateResultPrinter',
+			'raw' => 'TemplateResultPrinter',
+			'query' => 'QueryResultPrinter',
+			'json-raw' => 'JsonRawResultPrinter',
+		];
 	}
 
 	/**
@@ -177,6 +195,12 @@ class VisualDataHooks {
 	 */
 	public static function onContentAlterParserOutput( Content $content, Title $title, ParserOutput &$parserOutput ) {
 		$jsonData = \VisualData::getJsonData( $title );
+		$context = RequestContext::getMain();
+
+		$requestTitle = $context->getTitle();
+		if ( !$requestTitle || $requestTitle->getFullText() !== 'Special:VisualDataSubmit' ) {
+			return;
+		}
 
 		$categories = [];
 		if ( !empty( $jsonData['categories'] ) ) {
@@ -205,10 +229,10 @@ class VisualDataHooks {
 			return;
 		}
 
-		if ( !empty( $GLOBALS['wgVisualDataJsonDataTrackingCategory'] ) ) {
+		if ( !empty( $GLOBALS['wgVisualDataTrackingCategoryJsonData'] ) ) {
 			$jsonData = \VisualData::getJsonData( $title );
 			if ( !empty( $jsonData ) ) {
-				$parser->addTrackingCategory( 'visualdata-jsondata-tracking-category' );
+				$parser->addTrackingCategory( 'visualdata-trackingcategory-jsondata' );
 			}
 		}
 	}
@@ -312,17 +336,9 @@ class VisualDataHooks {
 			$text = $content->getNativeData();
 			$data = json_decode( $text, true );
 			if ( $data ) {
-				$walkRec = static function ( &$arr ) use( &$walkRec )  {
-					foreach ( $arr as $key => $value ) {
-						if ( $key === 'wiki' && is_array( $value ) && !isset( $value['uuid'] ) ) {
-							$arr[$key]['uuid'] = uniqid();
-						}
-						if ( is_array( $value ) ) {
-							$walkRec( $arr[$key] );
-						}
-					}
-				};
-				$walkRec( $data );
+				$context = RequestContext::getMain();
+				$schemaProcessor = new SchemaProcessor( $context );
+				$schemaProcessor->assignUUID( $data );
 				$jsonContent = new JsonContent( FormatJson::encode( $data ) );
 				$text = $jsonContent->beautifyJSON();
 				$slotContent = ContentHandler::makeContent( $text, $title, $modelId );
@@ -350,46 +366,10 @@ class VisualDataHooks {
 		MediaWiki\Storage\EditResult $editResult
 	) {
 		$title = $wikiPage->getTitle();
-		// or $output->parserOptions(), or ParserOptions::newFromUser( $user )
-		$parserOptions = ParserOptions::newFromAnon();
-		$parserOutput = $wikiPage->getParserOutput( $parserOptions, null, true );
-		$databaseManager = new DatabaseManager();
-
-		// *** attention !! this won't handle queries or forms
-		// within the includeonly tag !
-		\VisualData::handleLinks( $parserOutput, $title, $databaseManager );
-
-		// purge pages with queries using this template
-		// (and their transclusion targets)
-		if ( $title->getNamespace() === NS_TEMPLATE ) {
-			$databaseManager->handleTemplateLinks( $title );
-		}
-
-		$slots = $revisionRecord->getSlots()->getSlots();
-		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
-			// rebuild only if restoring a revision
-			$revertMethod = $editResult->getRevertMethod();
-			if ( $revertMethod === null ) {
-				return;
-			}
-			$slot = $slots[SLOT_ROLE_VISUALDATA_JSONDATA];
-
-		} else {
-			// rebuild only if main slot contains json data
-			$modelId = $revisionRecord->getSlot( SlotRecord::MAIN )->getContent()->getContentHandler()->getModelID();
-
-			if ( $modelId !== 'json' && $modelId !== CONTENT_MODEL_VISUALDATA_JSONDATA ) {
-				return;
-			}
-
-			$slot = $slots[SlotRecord::MAIN];
-		}
-
-		if ( $slot ) {
-			$content = $slot->getContent();
-			$errors = [];
-			\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
-		}
+		$revertMethod = $editResult->getRevertMethod();
+		// rebuild only if restoring a revision
+		$rebuild = $revertMethod !== null;
+		\VisualData::onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $rebuild );
 	}
 
 	/**
@@ -401,26 +381,11 @@ class VisualDataHooks {
 	 * @return bool|void
 	 */
 	public static function onArticleUndelete( Title $title, $create, $comment, $oldPageId, $restoredPages ) {
+		// @TODO use https://www.mediawiki.org/wiki/Manual:Hooks/PageUndeleteComplete
 		$revisionRecord = \VisualData::revisionRecordFromTitle( $title );
-		$slots = $revisionRecord->getSlots()->getSlots();
-		$errors = [];
-		$slot = null;
-		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
-			$slot = $slots[SLOT_ROLE_VISUALDATA_JSONDATA];
-
-		} else {
-			// rebuild only if main slot contains json data
-			$modelId = $revisionRecord->getSlot( SlotRecord::MAIN )->getContent()->getContentHandler()->getModelID();
-
-			if ( $modelId === 'json' || $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
-				$slot = $slots[SlotRecord::MAIN];
-			}
-		}
-
-		if ( $slot ) {
-			$content = $slot->getContent();
-			\VisualData::rebuildArticleDataFromSlot( $title, $content, $errors );
-		}
+		$user = RequestContext::getMain()->getUser();
+		$wikipage = \VisualData::getWikiPage( $title );
+		\VisualData::onArticleSaveOrUndelete( $user, $wikipage, $revisionRecord, true );
 	}
 
 	/**
