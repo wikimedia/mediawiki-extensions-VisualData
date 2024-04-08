@@ -1471,15 +1471,19 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				break;
 
 			default:
+				// title and description are mapped to label and
+				// help-message in the property field, and
+				// schema.wiki.title and schema.wiki.description
+				// contain the wikitext, not the parsed output
 				this.fieldset = new OO.ui.FieldsetLayout( {
-					label: new OO.ui.HtmlSnippet( 'title' in data.schema.wiki ? data.schema.wiki.title : '' )
+					label: new OO.ui.HtmlSnippet( 'title' in data.schema.wiki ? data.schema.title : '' )
 				} );
 
 				if ( 'description' in data.schema.wiki ) {
 					this.fieldset.addItems( [
 						new OO.ui.Element( {
 							content: [
-								new OO.ui.HtmlSnippet( data.schema.wiki.description )
+								new OO.ui.HtmlSnippet( data.schema.description )
 							]
 						} )
 					] );
