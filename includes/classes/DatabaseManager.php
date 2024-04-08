@@ -1052,6 +1052,11 @@ class DatabaseManager {
 			foreach ( $values as $path => $val ) {
 				$path_no_index = $val['pathNoIndex'];
 
+				if ( !array_key_exists( 'type', $val['schema'] ) ) {
+					// @TODO log error
+					continue;
+				}
+
 				[ $table_id, $propType ] = $this->schemaFormatToTableId( $val['schema']['type'],
 					array_key_exists( 'format', $val['schema'] ) ? $val['schema']['format'] : null );
 
@@ -1257,7 +1262,7 @@ class DatabaseManager {
 				case 'array':
 					$currentPathNoIndex = $pathNoIndex;
 					// @FIXME handle tuple
-					$subschema = $schema['items'];
+					$subschema = $schema['items'] ?? [];
 					break;
 				default:
 					if ( !array_key_exists( $key, $schema ) ) {
