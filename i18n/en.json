@@ -444,7 +444,7 @@
 
 	"visualdata-jsmodule-formfield-message-schemapage": "Find here the <a target=\"_blank\" href=\"$1\">source schema</a>",
 	"visualdata-jsmodule-schemas-container-schema": "container schema",
-	"visualdata-jsmodule-schemas-message-container-info": "When multiple-items is toggled on the actual name used in templates, value formulas and queries will be the name given to the container schema, the name above will be ignored",
+	"visualdata-jsmodule-schemas-message-container-info": "When multiple-items is toggled on, the actual name used in templates, value formulas and queries will be the name given to the container schema, the name above will be ignored",
 	"visualdata-jsmodule-dialog-cancel": "cancel",
 	"visualdata-jsmodule-dialog-main": "main",
 	"visualdata-special-browse-pager-noschema": "no schema"

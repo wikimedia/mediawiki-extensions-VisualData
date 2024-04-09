@@ -1,7 +1,7 @@
 {
 	"name": "VisualData",
 	"author": "thomas-topway-it",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"url": "https://www.mediawiki.org/wiki/Extension:VisualData",
 	"descriptionmsg": "visualdata-extension-desc",
 	"license-name": "GPL-2.0-or-later",
@@ -478,10 +478,10 @@
 		"VisualDataDisableVersionCheck": false,
 		"VisualDataCreateJobsWarningLimit": 0,
 		"VisualDataEditDataNamespaces": [ 0, 4, 2226, 2230 ],
-		"wgVisualDataTrackingCategoryJsonData": false,
-		"wgVisualDataTrackingCategoryForms": true,
-		"wgVisualDataTrackingCategoryQueries": true,
-		"wgVisualDataTrackingCategoryButtons": true,
+		"VisualDataTrackingCategoryJsonData": false,
+		"VisualDataTrackingCategoryForms": true,
+		"VisualDataTrackingCategoryQueries": true,
+		"VisualDataTrackingCategoryButtons": true,
 		"VisualDataMaptilerApiKey": null
 	},
 	"manifest_version": 1
