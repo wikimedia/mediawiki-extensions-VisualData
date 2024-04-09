@@ -300,7 +300,8 @@
 				"visualdata-jsmodule-forms-target-slot",
 				"visualdata-jsmodule-forms-target-slot-option-jsondata",
 				"visualdata-jsmodule-forms-target-slot-option-main",
-				"visualdata-jsmodule-forms-submit-no-schemas"
+				"visualdata-jsmodule-forms-submit-no-schemas",
+				"visualdata-jsmodule-missing-json-diff-library"
 			]
 		},
 		"ext.VisualData.ManageSchemas": {

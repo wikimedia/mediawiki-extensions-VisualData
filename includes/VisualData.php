@@ -1900,7 +1900,8 @@ class VisualData {
 				'contentModel' => $title->getContentModel(),
 				// self::$SMW,
 				'SMW' => false,
-				'VEForAll' => $VEForAll
+				'VEForAll' => $VEForAll,
+				'jsonDiffLibrary' => class_exists( 'Swaggest\JsonDiff\JsonDiff' )
 			],
 		];
 

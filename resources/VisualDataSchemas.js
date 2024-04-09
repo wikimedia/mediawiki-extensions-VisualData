@@ -1298,9 +1298,11 @@ VisualDataSchemas = ( function () {
 
 		var layoutParentSchema = parentSchemaContainer( ( model.parentSchema = {} ) );
 		layoutParentSchema.toggle( multipleItemsInputValue );
+		nameInput.setDisabled( multipleItemsInputValue );
 
 		multipleItemsInput.on( 'change', function ( enabled ) {
 			layoutParentSchema.toggle( enabled );
+			nameInput.setDisabled( enabled );
 		} );
 
 		// var layout = new OO.ui.HorizontalLayout( {
@@ -1447,6 +1449,20 @@ VisualDataSchemas = ( function () {
 		}
 
 		WindowManager.newWindow( processDialog, { title: title, initialTab: initialTab || 'main' } );
+
+		if ( !Config.jsonDiffLibrary && !mw.cookie.get( 'visualdata-check-json-diff-library' ) ) {
+			VisualDataFunctions.OOUIAlert( new OO.ui.HtmlSnippet( mw.msg( 'visualdata-jsmodule-missing-json-diff-library' ) ), {
+				size: 'medium',
+				actions: [ OO.ui.MessageDialog.static.actions[ 0 ] ]
+			}, function () {
+				// 15 days
+				var timeLapse = 15 * 86400;
+				mw.cookie.set( 'visualdata-check-json-diff-library', true, {
+					path: '/',
+					expires: timeLapse
+				} );
+			} );
+		}
 	}
 
 	// function escape( s ) {

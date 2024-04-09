@@ -991,6 +991,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			redrawAvailableInputs();
 			layoutParentSchema.toggle( value );
 			fieldRequiredInput.toggle( !value );
+			nameInput.setDisabled( value );
 		} );
 
 		fieldRequiredInput.toggle( !multipleItemsInputValue );
@@ -1136,6 +1137,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			requiredInput.setDisabled( hidden );
 			fieldMultipleValues.toggle( !hidden );
 			layoutParentSchema.toggle( !hidden && ( getPropertyValue( 'multiple-items' ) || parentSchema.type === 'array' ) );
+			nameInput.setDisabled( layoutParentSchema.isVisible() );
 			labelField.toggle( !hidden );
 			helpMessageField.toggle( !hidden );
 		}
