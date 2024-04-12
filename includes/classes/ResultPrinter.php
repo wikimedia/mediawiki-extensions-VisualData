@@ -207,7 +207,7 @@ class ResultPrinter {
 		$titleText = $title->getText();
 		$frame = $this->parser->getPreprocessor()->newFrame();
 
-		if ( $frame->depth >= $this->parser->mOptions->getMaxTemplateDepth() ) {
+		if ( $frame->depth >= $this->parser->getOptions()->getMaxTemplateDepth() ) {
 			throw new MWException( 'expandTemplate: template depth limit exceeded' );
 		}
 
