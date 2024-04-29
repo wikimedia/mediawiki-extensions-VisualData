@@ -96,6 +96,7 @@ class QueryProcessor {
 			'limit' => [ 100, 'integer' ],
 			'offset' => [ 0, 'integer' ],
 			'order' => [ '', 'string' ],
+			'pagetitle' => [ true, 'bool' ],
 			'pagetitle-name' => [ 'pagetitle', 'string' ],
 			'articleid-name' => [ 'articleid', 'string' ],
 			'hierarchical-conditions' => [ true, 'bool' ],

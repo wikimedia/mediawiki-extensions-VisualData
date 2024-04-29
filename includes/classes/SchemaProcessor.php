@@ -502,8 +502,8 @@ class SchemaProcessor {
 
 			// copy as standard json-schema
 			if ( array_key_exists( $property, $this->mapField ) ) {
-				$ret[$this->mapField[$property]] = $value;
-				continue;
+				$parseWikitextMethod = ( $property !== 'default' ? 'parseWikitext' : 'parseWikitextInputValue' );
+				$ret[$this->mapField[$property]] = $this->$parseWikitextMethod( $value );
 			}
 
 			$ret['wiki'][$property] = $value;
@@ -809,11 +809,13 @@ class SchemaProcessor {
 					$mappedField = array_search( $key, $this->mapField );
 
 					if ( $mappedField ) {
-						$ret['wiki'][$mappedField] = $value;
+						$ret['wiki'][$mappedField] = array_key_exists( $mappedField, $properties['wiki'] )
+							? $properties['wiki'][$mappedField] : $value;
 
-						if ( in_array( $mappedField, $parseFields ) ) {
-							$ret['wiki'][ "$mappedField-parsed" ] = $this->parseWikitext( $value,
-								$mappedField !== 'default' ? null : $properties );
+						// parse again
+						if ( in_array( $mappedField, $parseFields ) && array_key_exists( $mappedField, $properties['wiki'] ) ) {
+							$parseWikitextMethod = ( $key !== 'default' ? 'parseWikitext' : 'parseWikitextInputValue' );
+							$ret[$key] = $this->$parseWikitextMethod( $properties['wiki'][$mappedField] );
 						}
 					}
 			}
@@ -1207,7 +1209,7 @@ class SchemaProcessor {
 		$options = [];
 		foreach ( $values as $val ) {
 			// @credits: WikiTeq
-			$label = $this->parseWikitext(
+			$label = $this->parseWikitextInputValue(
 					$this->replaceFormula( [ 'value' => $val ], $wiki['options-label-formula'] ) );
 			// ----------
 			$options[ $val ] = ( !empty( $label ) ? $label : $val );
@@ -1268,7 +1270,7 @@ class SchemaProcessor {
 			$value = $this->replaceFormula( $properties, $defaultValue );
 			// option value formula
 			if ( !empty( $wiki['options-query-formula'] ) ) {
-				$value = $this->parseWikitext( $value );
+				$value = $this->parseWikitextInputValue( $value );
 			}
 
 			if ( empty( $value ) ) {
@@ -1279,7 +1281,7 @@ class SchemaProcessor {
 
 			// only available for MenuTagSearchMultiselect
 			if ( !empty( $wiki['options-label-formula'] ) ) {
-				$label = $this->parseWikitext(
+				$label = $this->parseWikitextInputValue(
 					$this->replaceFormula( array_merge( [ 'value' => $value ], $properties ),
 						$wiki['options-label-formula'] ) );
 			}
@@ -1291,12 +1293,12 @@ class SchemaProcessor {
 
 	/**
 	 * @param string &$value
-	 * @param array|null $properties
+	 * @param array|null $schema
 	 */
-	private	static function castType( &$value, $properties = null ) {
+	private	static function castType( &$value, $schema = null ) {
 		// use validate filters
 		// @see https://www.php.net/manual/en/filter.filters.validate.php
-		switch ( $properties['type'] ) {
+		switch ( $schema['type'] ) {
 			case 'number':
 				$value = filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
 				settype( $value, 'float' );
@@ -1316,7 +1318,7 @@ class SchemaProcessor {
 
 			case 'string':
 			default:
-				switch ( $properties['format'] ) {
+				switch ( $schema['format'] ) {
 					case 'url':
 						$value = filter_var( $value, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );
 						break;
@@ -1334,34 +1336,67 @@ class SchemaProcessor {
 
 	/**
 	 * @param string $value
-	 * @param array|null $properties
+	 * @param bool $inputValue
+	 * @param array|null $schema
 	 * @return string
 	 */
-	private	function parseWikitext( $value, $properties = null ) {
+	private	function parseWikitextFunc( $value, $inputValue, $schema = null ) {
 		$output = $this->output;
 
 		if ( !$output->getTitle() ) {
 			throw new MWException( 'Context title not set' );
 		}
 
-		$parseWikitext = static function ( $str ) use ( $output, $properties ) {
+		$parseWikitext = static function ( $str ) use ( $output, $schema ) {
+			// or:
+			// $parser = MediaWikiServices::getInstance()->getParserFactory()->getInstance();
+			// $parser->setTitle( $output->getTitle() );
+			// $parser->setOptions( $output->parserOptions() );
+			// $parser->setOutputType( Parser::OT_HTML );
+			// $parser->clearState();
 			// return $this->parser->recursiveTagParseFully( $str );
 			$val = Parser::stripOuterParagraph( $output->parseAsContent( $str ) );
 
-			if ( $properties !== null ) {
-				self::castType( $val, $properties );
+			if ( $schema !== null ) {
+				self::castType( $val, $schema );
 			} else {
 				$val = trim( $val );
 			}
 			return $val;
 		};
-		// *** html_entity_decode is required for the default value in input
+
+		$ret = static function ( $value ) use ( &$parseWikitext, $inputValue ) {
+			$ret = $parseWikitext( $value );
+
+			// *** html_entity_decode is required for the default value in input
+			return !$inputValue ? $ret : html_entity_decode( $ret );
+		};
+
 		if ( !is_array( $value ) ) {
-			return html_entity_decode( $parseWikitext( $value ) );
+			return $ret( $value );
 		}
-		return array_filter( array_map( static function ( $value ) use ( &$parseWikitext ) {
-			return html_entity_decode( $parseWikitext( $value ) );
+
+		return array_filter( array_map( static function ( $value ) use ( &$ret ) {
+			return $ret( $value );
 		}, $value ) );
+	}
+
+	/**
+	 * @param string $value
+	 * @param array|null $schema
+	 * @return string
+	 */
+	private	function parseWikitext( $value, $schema = null ) {
+		return $this->parseWikitextFunc( $value, false, $schema );
+	}
+
+	/**
+	 * @param string $value
+	 * @param array|null $schema
+	 * @return string
+	 */
+	private	function parseWikitextInputValue( $value, $schema = null ) {
+		return $this->parseWikitextFunc( $value, true, $schema );
 	}
 
 	/**
@@ -1446,7 +1481,7 @@ class SchemaProcessor {
 							$keyOld = array_pop( $pathItemsOld );
 							$data[$key] = $prevData[$keyOld];
 							// unset( $data[$keyOld] );
-						} else {
+						} elseif ( array_key_exists( $key, $prevData ) ) {
 							$data[$key] = $prevData[$key];
 						}
 						// if ( $removed && $currentPath === $removed ) {

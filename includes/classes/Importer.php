@@ -38,14 +38,11 @@ class Importer {
 	/** @var Context */
 	private $context;
 
-	/** @var bool|int */
-	private $limit = false;
-
 	/** @var Importer|Importer1_35 */
 	private $importer;
 
-	/** @var bool */
-	private $mainSlot = false;
+	/** @var array */
+	private $options = [];
 
 	/** @var callback */
 	private $showMsg;
@@ -54,15 +51,20 @@ class Importer {
 	 * @param User $user
 	 * @param Context $context
 	 * @param string $schemaName
-	 * @param bool|null $mainSlot false
-	 * @param bool|null $limit false
+	 * @param array|null $options []
 	 */
-	public function __construct( $user, $context, $schemaName, $mainSlot = false, $limit = false ) {
+	public function __construct( $user, $context, $schemaName, $options = [] ) {
 		$this->user = $user;
 		$this->context = $context;
 		$this->schemaName = $schemaName;
-		$this->mainSlot = $mainSlot;
-		$this->limit = $limit;
+		$this->options = $options;
+
+		$options = [ 'main-slot', 'limit', 'category-field' ];
+		foreach ( $options as $value ) {
+			if ( !isset( $this->options[$value] ) ) {
+				$this->options[$value] = false;
+			}
+		}
 	}
 
 	/**
@@ -119,7 +121,7 @@ class Importer {
 
 			$showMsg( "$entries entries created for article $pagename" );
 			$n++;
-			if ( $this->limit !== false && $n === $this->limit ) {
+			if ( $this->options['limit'] !== false && $n === $this->options['limit'] ) {
 				break;
 			}
 		}
@@ -132,21 +134,33 @@ class Importer {
 	 * @return string
 	 */
 	public function createArticle( $title, $data ) {
+		$categories = [];
+		if ( !empty( $this->options['category-field'] ) ) {
+			if ( isset( $data[$this->options['category-field']] ) ) {
+				$categories = $data[$this->options['category-field']];
+			}
+			unset( $data[$this->options['category-field']] );
+		}
+
 		$obj = [
 			'schemas' => [
 				$this->schemaName => $data
 			]
 		];
 
+		if ( !empty( $categories ) ) {
+			$obj['categories'] = $categories;
+		}
+
 		$contents = [
 			[
-				'role' => $this->mainSlot ? SlotRecord::MAIN : SLOT_ROLE_VISUALDATA_JSONDATA,
+				'role' => $this->options['main-slot'] ? SlotRecord::MAIN : SLOT_ROLE_VISUALDATA_JSONDATA,
 				'model' => CONTENT_MODEL_VISUALDATA_JSONDATA,
 				'text' => json_encode( $obj, JSON_PRETTY_PRINT )
 			],
 		];
 
-		if ( !$this->mainSlot ) {
+		if ( !$this->options['main-slot'] ) {
 			array_unshift( $contents, [
 				'role' => SlotRecord::MAIN,
 				'model' => 'wikitext',

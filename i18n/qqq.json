@@ -32,6 +32,7 @@
 	"apihelp-visualdata-submit-form-example-1": "A label message",
 	"apihelp-visualdata-askquery-example-1": "A label message",
 	"apihelp-visualdata-load-data-param-dataset": "A label message",
+	"apihelp-visualdata-load-data-param-source-page": "A label message",
 	"apihelp-visualdata-save-schema-param-schema": "A label message",
 	"apihelp-visualdata-get-schemas-param-schemas": "A label message",
 	"apihelp-visualdata-submit-form-param-data": "A label message",

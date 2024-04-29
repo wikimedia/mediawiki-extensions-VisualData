@@ -946,9 +946,7 @@ class VisualData {
 		}
 
 		$printouts = array_keys( $printouts );
-
-		$context = new DerivativeContext( RequestContext::getMain() );
-		// $output = $context->getOutput();
+		$context = RequestContext::getMain();
 
 		$resultPrinter = self::getResults(
 			$parser,
@@ -1060,6 +1058,40 @@ class VisualData {
 		$queryProcessor = new QueryProcessor( $schema, $query, $printouts, $params );
 
 		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts );
+	}
+
+	/**
+	 * @param string $schema
+	 * @param string $query
+	 * @param array $printouts []
+	 * @param string $format json-raw
+	 * @return null|array
+	 */
+	public static function getQueryResults( $schema, $query, $printouts = [], $format = 'json-raw' ) {
+		$context = RequestContext::getMain();
+
+		$params = [
+			'schema' => $schema,
+			'format' => $format
+		];
+
+		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
+		$templates = [];
+
+		$resultPrinter = self::getResults(
+			$parser,
+			$context,
+			$query,
+			$templates,
+			$printouts,
+			$params
+		);
+
+		if ( !$resultPrinter ) {
+			return null;
+		}
+
+		return $resultPrinter->getResults();
 	}
 
 	/**
@@ -1274,7 +1306,7 @@ class VisualData {
 		$user,
 		$title,
 		$schemas,
-		$defaultSlot,
+		$defaultSlot = 'jsondata',
 		&$errors = []
 	) {
 		$jsonData = self::getJsonData( $title );
@@ -1287,7 +1319,7 @@ class VisualData {
 			$jsonData['schemas'] = [];
 		}
 
-		$jsonData['schemas'] = array_merge( $jsonData['schemas'], $schemas );
+		$jsonData['schemas'] = self::array_merge_recursive( $jsonData['schemas'], $schemas );
 
 		$targetSlot = self::getTargetSlot( $title, $defaultSlot );
 
@@ -1298,7 +1330,9 @@ class VisualData {
 			]
 		];
 
-		return self::setJsonData(
+		self::rebuildArticleData( $user, $title, $jsonData, $errors );
+
+		$ret = self::setJsonData(
 			$user,
 			$title,
 			$slots,
@@ -1344,7 +1378,7 @@ class VisualData {
 					if ( is_array( $value['content']['schemas-data']['untransformed'] ) ) {
 						foreach ( $value['content']['schemas-data']['untransformed'] as $k => $v ) {
 							// @FIXME save untrasformed values for each schema
-							$schemaName = substr( $k, 0, strpos( $k, '/' ) );
+							$schemaName = self::unescapeJsonKey( substr( $k, 0, strpos( $k, '/' ) ) );
 							if ( is_array( $value['content']['schemas'] )
 								&& !array_key_exists( $schemaName, $value['content']['schemas'] ) ) {
 								unset( $value['content']['schemas-data']['untransformed'][$k] );
@@ -1355,10 +1389,6 @@ class VisualData {
 						&& empty( $value['content']['schemas-data']['untransformed'] ) ) {
 						unset( $value['content']['schemas-data']['untransformed'] );
 					}
-				}
-
-				if ( $slotName === SlotRecord::MAIN ) {
-					unset( $value['content']['categories'] );
 				}
 
 				if ( empty( $value['content'] ) ) {
@@ -1516,6 +1546,29 @@ class VisualData {
 	}
 
 	/**
+	 * @param Title $title
+	 * @param ParserOutput $parserOutput
+	 */
+	public static function setCategories( $title, $parserOutput ) {
+		$jsonData = self::getJsonData( $title );
+		$categories = [];
+		if ( !empty( $jsonData['categories'] ) ) {
+			foreach ( $jsonData['categories'] as $category ) {
+				if ( !empty( $category ) ) {
+					$categories[str_replace( ' ', '_', $category )] = ( version_compare( MW_VERSION, '1.38', '<' )
+						? $parserOutput->getProperty( 'defaultsort' ) : null );
+				}
+			}
+		}
+
+		if ( version_compare( MW_VERSION, '1.38', '<' ) ) {
+			$parserOutput->mCategories = $categories;
+		} else {
+			$parserOutput->setCategories( $categories );
+		}
+	}
+
+	/**
 	 * @param User $user
 	 * @param Title $title
 	 * @param Content $content
@@ -1527,17 +1580,26 @@ class VisualData {
 		}
 
 		$contents = $content->getNativeData();
-
 		$data = json_decode( $contents, true );
 
+		self::rebuildArticleData( $user, $title, $data, $errors );
+	}
+
+	/**
+	 * @param User $user
+	 * @param Title $title
+	 * @param array $data
+	 * @param array &$errors
+	 */
+	public static function rebuildArticleData( $user, $title, $data, &$errors ) {
 		if ( empty( $data['schemas'] ) ) {
 			return;
 		}
 
 		$schemas = array_keys( $data['schemas'] );
-		$context = new DerivativeContext( RequestContext::getMain() );
+		$context = RequestContext::getMain();
 
-		// @FIXME this will also process schamas, but it
+		// @FIXME this will also process schemas, but it
 		// is not required since we need only type and format
 		$schemas = self::getSchemas( $context, $schemas, true );
 
@@ -1552,7 +1614,7 @@ class VisualData {
 				$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
 				$statusOK = self::saveRevision( $user, $title_, json_encode( $schema ) );
 				if ( !$statusOK ) {
-					self::$Logger->error( 'rebuildArticleDataFromSlot cannot save schema' );
+					self::$Logger->error( 'rebuildArticleData cannot save schema' );
 					continue;
 				}
 				$schemas[$schemaName] = $schemaProcessor->processSchema( $schema, $schemaName );
@@ -1561,7 +1623,7 @@ class VisualData {
 			$flatten = array_merge( $flatten, $databaseManager->prepareData( $schemas[$schemaName], $value ) );
 		}
 
-		$databaseManager->recordProperties( 'rebuildArticleDataFromSlot', $title, $flatten, $errors );
+		$databaseManager->recordProperties( 'rebuildArticleData', $title, $flatten, $errors );
 		$databaseManager->removeUnusedEntries();
 	}
 
@@ -1886,11 +1948,6 @@ class VisualData {
 				'VisualDataSchemaUrl' => $schemaUrl,
 				'actionUrl' => SpecialPage::getTitleFor( 'VisualDataSubmit', $title->getPrefixedDBkey() )->getLocalURL(),
 				'isNewPage' => $title->getArticleID() === 0 || !$title->isKnown(),
-
-				// *** keep commented to prevent array_merge_recursive
-				// creating an array instead of a single value
-				// 'context' => null,
-
 				'loadedData' => $loadedData,
 				'allowedMimeTypes' => $allowedMimeTypes,
 				'caneditdata' => $user->isAllowed( 'visualdata-caneditdata' ),
@@ -1907,7 +1964,7 @@ class VisualData {
 
 		$config = $obj['config'];
 		$obj = array_merge( $default, $obj );
-		$obj['config'] = array_merge_recursive( $default['config'], $config );
+		$obj['config'] = self::array_merge_recursive( $default['config'], $config );
 
 		$groups = [ 'sysop', 'bureaucrat', 'visualdata-admin' ];
 		$showOutdatedVersion = empty( $GLOBALS['wgVisualDataDisableVersionCheck'] )
@@ -2111,13 +2168,11 @@ class VisualData {
 	 * @param Title $title
 	 * @return array
 	 */
-	public static function getCategories( $title ) {
+	public static function getTrackingCategories( $title ) {
 		if ( !$title || !$title->isKnown() ) {
 			return [];
 		}
-		$services = MediaWikiServices::getInstance();
 
-		// remove tracking categories
 		$services = MediaWikiServices::getInstance();
 		if ( method_exists( $services, 'getTrackingCategories' ) ) {
 			$trackingCategoriesClass = $services->getTrackingCategories();
@@ -2129,21 +2184,70 @@ class VisualData {
 			$trackingCategories = new TrackingCategories( $config );
 		}
 
-		$wikiPage = self::getWikiPage( $title );
-		$arr = $wikiPage->getCategories();
-		$arrTrackingCategories = [];
+		$ret = [];
 		foreach ( $trackingCategories as $value ) {
 			foreach ( $value['cats'] as $title_ ) {
-				$arrTrackingCategories[] = $title_->getText();
-			}
-		}
-		$ret = [];
-		foreach ( $arr as $title ) {
-			if ( !in_array( $title->getText(), $arrTrackingCategories ) ) {
-				$ret[] = $title->getText();
+				$ret[] = $title_->getText();
 			}
 		}
 		return $ret;
+	}
+
+	/**
+	 * @param Title $title
+	 * @param int $mode 2
+	 * @return array
+	 */
+	public static function getCategories( $title, $mode = 2 ) {
+		if ( !$title || !$title->isKnown() ) {
+			return [];
+		}
+
+		$wikiPage = self::getWikiPage( $title );
+		$arr = $wikiPage->getCategories();
+		$ret = [];
+		foreach ( $arr as $title_ ) {
+			$ret[] = $title_->getText();
+		}
+
+		switch ( $mode ) {
+			// all categories
+			case 1:
+				return $ret;
+
+			case 2:
+				// remove tracking categories
+				$trackingCategories = self::getTrackingCategories( $title );
+				foreach ( $ret as $key => $category ) {
+					if ( in_array( $category, $trackingCategories ) ) {
+						unset( $ret[$key] );
+					}
+				}
+
+				// remove categories annotated on the page,
+				// since we will not tinker with wikitext
+				$jsonData = self::getJsonData( $title );
+				if ( !empty( $jsonData['categories'] ) ) {
+					foreach ( $ret as $key => $category ) {
+						if ( !in_array( $category, $jsonData['categories'] ) ) {
+							unset( $ret[$key] );
+						}
+					}
+				}
+				break;
+
+			// only tracking categories
+			case 3:
+				$trackingCategories = self::getTrackingCategories( $title );
+				foreach ( $ret as $key => $category ) {
+					if ( !in_array( $category, $trackingCategories ) ) {
+						unset( $ret[$key] );
+					}
+				}
+				break;
+		}
+
+		return array_values( $ret );
 	}
 
 	/**
@@ -2472,6 +2576,25 @@ class VisualData {
 			return true;
 		}
 		return array_keys( $arr ) === range( 0, count( $arr ) - 1 );
+	}
+
+	/**
+	 * @see https://www.php.net/manual/en/function.array-merge-recursive.php
+	 * @param array &$arr1
+	 * @param array &$arr2
+	 * @return array
+	 */
+	public static function array_merge_recursive( &$arr1, &$arr2 ) {
+		$ret = $arr1;
+		foreach ( $arr2 as $key => &$value ) {
+			if ( is_array( $value ) && isset( $ret[$key] )
+				&& is_array( $ret[$key] ) ) {
+				$ret[$key] = self::array_merge_recursive( $ret[$key], $value );
+			} else {
+				$ret[$key] = $value;
+			}
+		}
+		return $ret;
 	}
 
 	/**

@@ -173,8 +173,12 @@ const VisualDataProcessModel = function (
 	async function getValuesRec( path, model ) {
 		switch ( model.schema.type ) {
 			case 'array':
-				var items = [];
 				// @TODO handle tuple
+				if ( !VisualDataFunctions.isObject( model.items ) ) {
+					return [];
+				}
+				var items = [];
+
 				// multiselect
 				if ( 'schema' in model.items ) {
 					items = await formatValue( path, model.items );

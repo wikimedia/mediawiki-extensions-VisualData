@@ -46,7 +46,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var StoredJsonData;
 	var ModelFlatten = [];
 	var SelectedSchema;
-	var PreviousSchemas = Schemas;
+	var PreviousSchemas = {};
 	var ProcessModel = {};
 	var InputWidgets;
 	var SchemasLayout;
@@ -367,13 +367,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return Form.categories;
 	}
 
-	function getFieldAlign( field ) {
+	function getFieldAlign( schema ) {
 		return 'layout-align' in Form.options ?
 			Form.options[ 'layout-align' ] :
 			'top';
 	}
 
-	function getHelpInline( field ) {
+	function getHelpInline( schema ) {
 		return !( 'popup-help' in Form.options ? Form.options[ 'popup-help' ] : false );
 	}
 
@@ -406,8 +406,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			if ( field[ 'showif-field' ] !== pathNoIndex ) {
 				continue;
 			}
-			var value = VisualDataFunctions.castType( sourceModel.input.getValue(), model.schema.type );
-			var refValue = VisualDataFunctions.castType( field[ 'showif-value' ], model.schema.type );
+
+			var value = VisualDataFunctions.castType( sourceModel.input.getValue(), sourceModel.schema.type );
+			var refValue = VisualDataFunctions.castType( field[ 'showif-value' ], sourceModel.schema.type );
 
 			var res;
 			switch ( field[ 'showif-condition' ] ) {
@@ -753,40 +754,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		config = config || {};
 		ItemWidget.super.call( this, config );
 
-		var field = config.model.schema.wiki;
-
-		var helpMessage = '';
-		if ( 'help-message' in field ) {
-			if ( field[ 'help-message-parsed' ] ) {
-				helpMessage = field[ 'help-message-parsed' ];
-			} else {
-				helpMessage = field[ 'help-message' ];
-
-				if ( Array.isArray( helpMessage ) ) {
-					helpMessage = helpMessage[ 0 ];
-				}
-			}
-		} else if ( isSMWProperty( field ) ) {
-			var SMWProperty = getSMWProperty( field );
-			if ( SMWProperty.description ) {
-				helpMessage = SMWProperty.description;
-			}
-		}
-
-		var label = '';
-		if ( 'label' in field ) {
-			if ( field[ 'label-parsed' ] ) {
-				label = field[ 'label-parsed' ];
-			} else {
-				label = field.label;
-
-				if ( Array.isArray( label ) ) {
-					label = label[ 0 ];
-				}
-			}
-		}
-		var fieldAlign = getFieldAlign( field );
-		var helpInline = getHelpInline( field );
+		var schema = config.model.schema;
+		var fieldAlign = getFieldAlign( schema );
+		var helpInline = getHelpInline( schema );
 
 		var inputWidget = getInputWidget( config );
 
@@ -804,7 +774,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		ModelFlatten.push( config.model );
 
 		config.model.multiselect = VisualDataFunctions.isMultiselect(
-			field[ 'preferred-input' ]
+			schema.wiki[ 'preferred-input' ]
 		);
 
 		config.model.isFile = config.model.inputName === 'OO.ui.SelectFileWidget';
@@ -926,10 +896,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			inputWidget.on( 'change', upload.uploadFiles.bind( upload ) );
 		}
 
+		var helpMessage = ( 'help-message' in schema.wiki ? schema.description : '' );
+
 		var fieldLayout = new OO.ui.FieldLayout(
-			!config.model.isFile ? inputWidget : fileUploadGroupWidget,
-			{
-				label: new OO.ui.HtmlSnippet( label ),
+			!config.model.isFile ? inputWidget : fileUploadGroupWidget, {
+				label: new OO.ui.HtmlSnippet( 'label' in schema.wiki ? schema.title : '' ),
 				align: fieldAlign,
 				helpInline: helpMessage ? helpInline : true,
 				help: new OO.ui.HtmlSnippet( helpMessage )
@@ -1362,9 +1333,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			if (
 				data.schema.type === 'array' &&
+				VisualDataFunctions.getNestedProp( [ 'items', 'wiki', 'preferred-input' ], data.schema ) &&
 				data.schema.items.type !== 'object' &&
-				'wiki' in data.schema.items &&
-				'preferred-input' in data.schema.items.wiki &&
 				VisualDataFunctions.isMultiselect(
 					data.schema.items.wiki[ 'preferred-input' ]
 				)
@@ -1475,6 +1445,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				// help-message in the property field, and
 				// schema.wiki.title and schema.wiki.description
 				// contain the wikitext, not the parsed output
+
 				this.fieldset = new OO.ui.FieldsetLayout( {
 					label: new OO.ui.HtmlSnippet( 'title' in data.schema.wiki ? data.schema.title : '' )
 				} );
@@ -1607,7 +1578,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		var ThisPageLayout = function ( name, config ) {
-			pageLayout.super.call( this, name, config );
+			ThisPageLayout.super.call( this, name, config );
 			this.$element.append( item.$element );
 		};
 		OO.inheritClass( ThisPageLayout, OO.ui.PageLayout );
@@ -1737,7 +1708,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				}
 
 				var ThisPageLayout = function ( name, thisConfig ) {
-					pageLayout.super.call( this, name, thisConfig );
+					ThisPageLayout.super.call( this, name, thisConfig );
 				};
 
 				OO.inheritClass( ThisPageLayout, OO.ui.PageLayout );
@@ -1892,9 +1863,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						if ( freeTextField ) {
 							freeTextField.toggle( value !== 'main' );
 						}
-						if ( categoriesField ) {
-							categoriesField.toggle( value !== 'main' );
-						}
 						if ( contentModelField ) {
 							contentModelField.toggle( value !== 'main' );
 						}
@@ -1948,8 +1916,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						align: data.fieldAlign,
 						classes: [ 'VisualDataItemWidget' ]
 					} );
-
-					categoriesField.toggle( Form.options[ 'target-slot' ] !== 'main' );
 
 					items.push( categoriesField );
 				}
@@ -2215,10 +2181,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			( !Array.isArray( data ) || !data.length ) &&
 			( isNewSchema( schemaName ) || Form.options.action === 'create' )
 		) {
-			data =
-				'default-parsed' in item.wiki ?
-					item.wiki[ 'default-parsed' ] :
-					item.default;
+			data = item.default;
 		}
 
 		if ( Array.isArray( data ) && minItems < data.length ) {
@@ -2340,15 +2303,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return ret;
 		}
 
-		if ( !( 'default-parsed' in schema.wiki ) ) {
+		if ( !( 'default' in schema ) ) {
 			return ret;
 		}
 
+		// if ret is the default of previousSchema
+		// update to the default of current schema
 		if (
 			ret !== null &&
-			( !( 'wiki' in previousSchema ) ||
-				!( 'default-parsed' in previousSchema.wiki ) ||
-				ret !== previousSchema.wiki[ 'default-parsed' ] )
+			( !( 'default' in previousSchema ) || ret !== previousSchema.default )
 		) {
 			return ret;
 		}
@@ -2356,7 +2319,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// *** in case of array the default values will
 		// create the respective entries by OptionsListContainer
 		if (
-			Array.isArray( schema.wiki[ 'default-parsed' ] ) &&
+			Array.isArray( schema.default ) &&
 				(
 					!( 'preferred-input' in schema.wiki ) ||
 					!VisualDataFunctions.isMultiselect( schema.wiki[ 'preferred-input' ] )
@@ -2365,7 +2328,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return ret;
 		}
 
-		return schema.wiki[ 'default-parsed' ];
+		return schema.default;
 	}
 
 	function processSchema(
@@ -2383,7 +2346,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		if ( !( 'type' in schema ) ) {
 			schema.type = 'default' in schema ? 'string' : 'object';
 		}
-		model.previousSchema = previousSchema;
+		// model.previousSchema = previousSchema;
 
 		model.schema = VisualDataFunctions.deepCopy( schema );
 		model.schemaName = schemaName;
@@ -2736,9 +2699,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
-	function updateSchemas( schemas, data ) {
-		PreviousSchemas = Schemas;
-		Schemas = VisualDataFunctions.deepCopy( schemas );
+	function updateSchemas( previousSchemas, schemas, data ) {
+		PreviousSchemas = previousSchemas;
+		Schemas = schemas;	// VisualDataFunctions.deepCopy( schemas );
 
 		if ( data && data[ 'result-action' ] === 'rename' ) {
 			// *** do not compare Schemas with Form.schemas,
@@ -3155,17 +3118,17 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				var args = [ Form.options.value ];
 
 				if ( Form.options.schema !== '' ) {
-					initializePropertiesStack();
-					ProcessModel.getModel( 'schema', Form.options.schema ).then( async function ( res ) {
-						if ( typeof res === 'boolean' && res === false ) {
-							return;
-						}
-						args.push( res.data );
-						VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
-					} );
-				} else {
-					VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
+					// initializePropertiesStack();
+					// ProcessModel.getModel( 'schema', Form.options.schema ).then( async function ( res ) {
+					// 	if ( typeof res === 'boolean' && res === false ) {
+					// 		return;
+					// 	}
+					// 	args.push( res.data );
+					// 	VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
+					// } );
+					args.push( Form.jsonData.schemas[ Form.options.schema ] );
 				}
+				VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
 			} );
 
 			$( '#visualdataform-wrapper-' + FormID ).html( widget.$element );

@@ -51,6 +51,7 @@ class ImportData extends Maintenance {
 		$this->addOption( 'pagename-formula', 'pagename formula', false, true );
 		$this->addOption( 'main-slot', 'whether to save to main slot', false, false );
 		$this->addOption( 'limit', 'limit pages to be imported', false, true );
+		$this->addOption( 'category-field', 'field to be used to assign categories (at root level)', false, true );
 	}
 
 	/**
@@ -63,6 +64,7 @@ class ImportData extends Maintenance {
 		$pagenameFormula = $this->getOption( 'pagename-formula' ) ?? null;
 		$mainSlot = $this->getOption( 'main-slot' ) ?? false;
 		$limit = $this->getOption( 'limit' ) ?? false;
+		$categoryField = $this->getOption( 'category-field' ) ?? false;
 
 		$limit = ( $limit === false ? INF : (int)$limit );
 		$contents = file_get_contents( $path );
@@ -81,12 +83,18 @@ class ImportData extends Maintenance {
 			return 'invalid json';
 		}
 
-		$context = new RequestContext();
+		// $context = new RequestContext();
+		$context = RequestContext::getMain();
 		// $context->setTitle( Title::makeTitle( NS_MAIN, '' ) );
 
 		$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 
-		$importer = new Importer( $user, $context, $schemaName, $mainSlot, $limit );
+		$options = [
+			'main-slot' => $mainSlot,
+			'limit' => $limit,
+			'category-field' => $categoryField,
+		];
+		$importer = new Importer( $user, $context, $schemaName, $options );
 
 		$showMsg = static function ( $msg ) {
 			echo $msg . PHP_EOL;

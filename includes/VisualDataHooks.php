@@ -195,26 +195,19 @@ class VisualDataHooks {
 	 */
 	public static function onContentAlterParserOutput( Content $content, Title $title, ParserOutput &$parserOutput ) {
 		$jsonData = \VisualData::getJsonData( $title );
-		$context = RequestContext::getMain();
 
-		$requestTitle = $context->getTitle();
-		if ( !$requestTitle || $requestTitle->getFullText() !== 'Special:VisualDataSubmit' ) {
-			return;
+		// this does not include jsonData's categories
+		// but it includes tracking categories
+		$categoryNames = $parserOutput->getCategoryNames();
+
+		foreach ( $categoryNames as $category ) {
+			$parserOutput->addCategory( $category );
 		}
 
-		$categories = [];
 		if ( !empty( $jsonData['categories'] ) ) {
 			foreach ( $jsonData['categories'] as $category ) {
-				if ( !empty( $category ) ) {
-					$categories[str_replace( ' ', '_', $category )] = ( version_compare( MW_VERSION, '1.38', '<' )
-						? $parserOutput->getProperty( 'defaultsort' ) : null );
-				}
+				$parserOutput->addCategory( $category );
 			}
-		}
-		if ( version_compare( MW_VERSION, '1.38', '<' ) ) {
-			$parserOutput->mCategories = $categories;
-		} else {
-			$parserOutput->setCategories( $categories );
 		}
 	}
 

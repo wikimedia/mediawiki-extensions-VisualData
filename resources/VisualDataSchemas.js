@@ -30,7 +30,7 @@ VisualDataSchemas = ( function () {
 	var DialogName = 'dialogSchemas';
 	var Config;
 	var WindowManager;
-	var Schemas = [];
+	var Schemas = {};
 
 	/* eslint-disable-next-line no-unused-vars */
 	var VisualDataForms;
@@ -112,7 +112,13 @@ VisualDataSchemas = ( function () {
 		if ( !SelectedItems.length ) {
 			return null;
 		}
-		return SelectedItems[ SelectedItems.length - 1 ];
+		var ret = SelectedItems[ SelectedItems.length - 1 ];
+
+		if ( ret.type === 'array' && !ret.items ) {
+			ret.items = { wiki: {}, properties: {} };
+		}
+
+		return ret;
 	}
 
 	function orderFields( fields, panel ) {
@@ -688,6 +694,7 @@ VisualDataSchemas = ( function () {
 												initializeDataTable();
 											}
 										}
+
 									} else {
 										VisualDataFunctions.OOUIAlert( 'unknown error', {
 											size: 'medium'

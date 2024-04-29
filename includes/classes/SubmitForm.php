@@ -28,7 +28,6 @@ use ApiMain;
 use CommentStoreComment;
 use ContentHandler;
 use ContentModelChange;
-use DerivativeContext;
 use DerivativeRequest;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
@@ -58,7 +57,7 @@ class SubmitForm {
 		// @ATTENTION ! use always Main context, in api
 		// context OutputPage -> parseAsContent will work
 		// in a different way !
-		$this->context = new DerivativeContext( $context ?? RequestContext::getMain() );
+		$this->context = $context ?? RequestContext::getMain();
 		$this->output = $this->context->getOutput();
 	}
 
@@ -507,7 +506,7 @@ class SubmitForm {
 		}
 
 		// merge transformedValues to json data
-		$transformedValues = \VisualData::plainToNested( $transformedValues, false );
+		$transformedValues = \VisualData::plainToNested( $transformedValues, true );
 
 		// move files if needed
 		$walkRec = function ( $arr1, $arr2, $path ) use( &$walkRec, $data, &$errors ) {
@@ -561,9 +560,9 @@ class SubmitForm {
 			}
 		}
 
-		// @FIXME once this will be managed by the api
-		// this check can be omitted
 		if ( $targetTitle ) {
+			// @FIXME once this will be managed by the api
+			// this can be omitted
 			$wikiPage = \VisualData::getWikiPage( $targetTitle );
 			$this->updateContentModel( $targetTitle, $wikiPage, $contentModel, $errors );
 		}

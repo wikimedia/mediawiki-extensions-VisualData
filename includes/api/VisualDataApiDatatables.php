@@ -84,6 +84,7 @@ class VisualDataApiDatatables extends ApiBase {
 
 		$context = RequestContext::getMain();
 		$templates = [];
+		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 
 		$resultPrinter = \VisualData::getResults(
 			$parser,

@@ -187,7 +187,6 @@ class RebuildData extends Maintenance {
 			}
 
 			$context->setTitle( $title );
-
 			$revisionRecord = $wikiPage->getRevisionRecord();
 
 			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );

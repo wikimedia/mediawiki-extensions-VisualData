@@ -36,6 +36,7 @@ VisualData = ( function () {
 			var payload = {
 				action: 'visualdata-load-data',
 				dataset: dataToLoad.join( '|' ),
+				'source-page': mw.config.get( 'wgPageName' ),
 				format: 'json'
 			};
 			new mw.Api()
@@ -69,7 +70,7 @@ VisualData = ( function () {
 			action: 'visualdata-get-schemas',
 			schemas: schemas.join( '|' )
 		};
-
+		var previousSchemas = VisualDataFunctions.deepCopy( Schemas );
 		return new Promise( ( resolve, reject ) => {
 			new mw.Api()
 				.postWithToken( 'csrf', payload )
@@ -81,7 +82,7 @@ VisualData = ( function () {
 						}
 						resolve( thisSchemas );
 						for ( var instance of VisualDataForms ) {
-							instance.updateSchemas( Schemas );
+							instance.updateSchemas( previousSchemas, Schemas );
 						}
 					}
 				} )
@@ -102,6 +103,8 @@ VisualData = ( function () {
 	}
 
 	function updateSchemas( data, action ) {
+		var previousSchemas = VisualDataFunctions.deepCopy( Schemas );
+
 		switch ( action ) {
 			case 'update':
 				Schemas = jQuery.extend( Schemas, data.schemas );
@@ -127,7 +130,7 @@ VisualData = ( function () {
 
 		if ( Config.context !== 'ManageSchemas' ) {
 			for ( var instance of VisualDataForms ) {
-				instance.updateSchemas( Schemas, data );
+				instance.updateSchemas( previousSchemas, Schemas, data );
 			}
 		}
 

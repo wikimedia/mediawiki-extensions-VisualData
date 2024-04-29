@@ -54,7 +54,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 		\VisualData::initialize();
 
 		$result = $this->getResult();
-		$derivativeContext = new DerivativeContext( RequestContext::getMain() );
+		$context = RequestContext::getMain();
 
 		// $output = $context->getOutput();
 		$params = $this->extractRequestParams();
@@ -62,13 +62,8 @@ class VisualDataApiSaveSchema extends ApiBase {
 		$sourcePage = null;
 		if ( !empty( $params['source-page'] ) ) {
 			$sourcePage = Title::newFromText( $params['source-page'] );
+			$context->setTitle( $sourcePage );
 		}
-
-		if ( !$sourcePage || !\VisualData::isKnownArticle( $sourcePage ) ) {
-			$sourcePage = Title::newMainPage();
-		}
-
-		$derivativeContext->setTitle( $sourcePage );
 
 		$schema = json_decode( $params['schema'], true );
 		$dialogAction = $params['dialog-action'];
@@ -112,7 +107,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 		$resultAction = ( !empty( $previousLabel ) ? 'update' : 'create' );
 
 		if ( $resultAction === 'update' ) {
-			$schemas = \VisualData::getSchemas( $derivativeContext, [ $label ] );
+			$schemas = \VisualData::getSchemas( $context, [ $label ] );
 			$storedSchema = $schemas[$label];
 		} else {
 			$storedSchema = null;
@@ -153,7 +148,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$resultAction = 'rename';
 		}
 
-		$schemaProcessor = new SchemaProcessor( $derivativeContext );
+		$schemaProcessor = new SchemaProcessor( $context );
 		$recordedObj = $schemaProcessor->convertToSchema( $schema );
 		$processedSchema = $schemaProcessor->processSchema( $recordedObj, $label );
 

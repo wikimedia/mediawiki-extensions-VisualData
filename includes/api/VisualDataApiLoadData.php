@@ -51,7 +51,13 @@ class VisualDataApiLoadData extends ApiBase {
 		\VisualData::initialize();
 		$result = $this->getResult();
 		$params = $this->extractRequestParams();
-		$derivativeContext = new DerivativeContext( RequestContext::getMain() );
+		$context = RequestContext::getMain();
+
+		$sourcePage = null;
+		if ( !empty( $params['source-page'] ) ) {
+			$sourcePage = Title::newFromText( $params['source-page'] );
+			$context->setTitle( $sourcePage );
+		}
 
 		$dataSet = explode( '|', $params['dataset'] );
 
@@ -60,7 +66,7 @@ class VisualDataApiLoadData extends ApiBase {
 			switch ( $value ) {
 				case 'schemas':
 					$schemasArr = \VisualData::getAllSchemas();
-					$schemas = \VisualData::getSchemas( $derivativeContext, $schemasArr, false );
+					$schemas = \VisualData::getSchemas( $context, $schemasArr, false );
 					$ret['schemas'] = $schemas;
 					break;
 			}
@@ -81,6 +87,10 @@ class VisualDataApiLoadData extends ApiBase {
 			'dataset' => [
 				ApiBase::PARAM_TYPE => 'string',
 				ApiBase::PARAM_REQUIRED => true
+			],
+			'source-page' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_REQUIRED => false
 			]
 		];
 	}

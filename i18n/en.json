@@ -37,6 +37,7 @@
 	"apihelp-visualdata-askquery-example-1": "",
 
 	"apihelp-visualdata-load-data-param-dataset": "",
+	"apihelp-visualdata-load-data-param-source-page": "",
 	"apihelp-visualdata-save-schema-param-schema": "",
 	"apihelp-visualdata-get-schemas-param-schemas": "",
 	"apihelp-visualdata-submit-form-param-data": "",
