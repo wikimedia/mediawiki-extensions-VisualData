@@ -92,7 +92,7 @@ VisualData = ( function () {
 					reject( res );
 				} );
 		} ).catch( ( err ) => {
-			OOUIAlert( `error: ${ err }`, { size: 'medium' } );
+			VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
 		} );
 	}
 
