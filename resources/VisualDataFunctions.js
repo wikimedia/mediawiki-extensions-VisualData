@@ -750,9 +750,18 @@ VisualDataFunctions = ( function () {
 	// https://stackoverflow.com/questions/359788/how-to-execute-a-javascript-function-when-i-have-its-name-as-a-string
 	function executeFunctionByName( functionName, context, args ) {
 		var namespaces = functionName.split( '.' );
+
 		var func = namespaces.pop();
 		for ( var i = 0; i < namespaces.length; i++ ) {
-			context = context[ namespaces[ i ] ];
+			if ( ( namespaces[ i ] in context ) ) {
+				context = context[ namespaces[ i ] ];
+			}
+		}
+
+		if ( !( func in context ) ) {
+			// eslint-disable-next-line no-console
+			console.error( 'executeFunctionByName function not defined', namespaces );
+			return;
 		}
 
 		return context[ func ].apply( context, args );

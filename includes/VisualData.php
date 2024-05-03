@@ -531,64 +531,14 @@ class VisualData {
 	 * @return array
 	 */
 	public static function parserFunctionButton( Parser $parser, ...$argv ) {
-		$parserOutput = $parser->getOutput();
-		$parserOutput->setExtensionData( 'visualdataform', true );
-		$parser->addTrackingCategory( 'visualdata-trackingcategory-parserfunction-button' );
-
-		$title = $parser->getTitle();
-
 /*
 {{#visualdatabutton: Get folders
 |callback = ContactManager.formAction
 }}
 */
-		$defaultParameters = array_merge( self::$FormDefaultParameters,
-			self::$ButtonDefaultParameters );
+		$argv[] = 'function=button';
 
-		array_walk( $defaultParameters, static function ( &$value, $key ) {
-			$value = [ $value['default'], $value['type'] ];
-		} );
-
-		[ $values, $options ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
-
-		if ( !count( $values ) || empty( $values[0] ) ) {
-			return 'no label';
-		}
-
-		$label = $values[0];
-
-		$params = self::applyDefaultParams( $defaultParameters, $options );
-
-		$params['label'] = $label;
-		$params['action'] = 'edit';
-		$params['view'] = 'button';
-		$params['edit-categories'] = false;
-		$params['edit-freetext'] = false;
-		$params['return-page'] = $title->getFullText();
-
-		self::$pageForms[] = [
-			'schemas' => ( !empty( $params['schema'] ) ? [ $params['schema'] ] : [] ),
-			'options' => $params
-		];
-
-		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
-
-		$spinner = Html::rawElement(
-			'div',
-			[ 'class' => 'mw-rcfilters-spinner mw-rcfilters-spinner-inline', 'style' => 'display:none' ],
-			Html::element(
-				'div',
-				[ 'class' => 'mw-rcfilters-spinner-bounce' ]
-			)
-		);
-
-		// $spinner .
-		return [
-			'<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
-				. wfMessage( 'visualdata-parserfunction-button-placeholder' )->text() . '</div>',
-			'noparse' => true,
-			'isHTML' => true
-		];
+		return self::parserFunctionForm( $parser, ...$argv );
 	}
 
 	/**
@@ -662,7 +612,11 @@ class VisualData {
 	public static function parserFunctionForm( Parser $parser, ...$argv ) {
 		$parserOutput = $parser->getOutput();
 		$parserOutput->setExtensionData( 'visualdataform', true );
-		$parser->addTrackingCategory( 'visualdata-trackingcategory-parserfunction-form' );
+
+		$isButton = in_array( 'function=button', $argv );
+		$function = ( $isButton ? 'button' : 'form' );
+
+		$parser->addTrackingCategory( "visualdata-trackingcategory-parserfunction-$function" );
 
 		$title = $parser->getTitle();
 
@@ -692,6 +646,11 @@ class VisualData {
 }}
 */
 		$defaultParameters = self::$FormDefaultParameters;
+
+		if ( $isButton ) {
+			$defaultParameters = array_merge( $defaultParameters, self::$ButtonDefaultParameters );
+		}
+
 		array_walk( $defaultParameters, static function ( &$value, $key ) {
 			$value = [ $value['default'], $value['type'] ];
 		} );
@@ -699,7 +658,7 @@ class VisualData {
 		[ $values, $options, $unknownNamed ] = self::parseParameters( $argv, array_keys( $defaultParameters ) );
 
 		if ( !count( $values ) || empty( $values[0] ) ) {
-			return 'no schemas';
+			return ( !$isButton ? 'no schemas' : 'no label' );
 		}
 
 		// @see https://wikisphere.org/wiki/User:Filburt/Nested_Schemas_and_Templates_Example
@@ -713,12 +672,25 @@ class VisualData {
 			}
 		}
 
-		$schemas = preg_split( '/\s*,\s*/', $values[0], -1, PREG_SPLIT_NO_EMPTY );
-
 		$params = self::applyDefaultParams( $defaultParameters, $options );
 		$params['preload-data-override'] = $preloadDataOverride;
 
+		if ( $isButton ) {
+			$params['label'] = $values[0];
+			$params['action'] = 'edit';
+			$params['view'] = 'button';
+			$params['edit-categories'] = false;
+			$params['edit-freetext'] = false;
+			$params['return-page'] = $title->getFullText();
+		}
+
 		$databaseManager = new DatabaseManager();
+
+		if ( !$isButton ) {
+			$schemas = preg_split( '/\s*,\s*/', $values[0], -1, PREG_SPLIT_NO_EMPTY );
+		} else {
+			$schemas = ( !empty( $params['schema'] ) ? [ $params['schema'] ] : [] );
+		}
 
 		$schemas = array_filter( $schemas, static function ( $val ) use( $databaseManager ) {
 			return $databaseManager->schemaExists( $val );
@@ -740,10 +712,19 @@ class VisualData {
 			)
 		);
 
-		// . $spinner
+		if ( !$isButton ) {
+			return [
+				// . $spinner
+				'<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
+					. wfMessage( 'visualdata-parserfunction-form-placeholder' )->text() . '</div>',
+				'noparse' => true,
+				'isHTML' => true
+			];
+		}
+
 		return [
-			'<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
-				. wfMessage( 'visualdata-parserfunction-form-placeholder' )->text() . '</div>',
+			'<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
+				. wfMessage( "visualdata-parserfunction-$function-placeholder" )->text() . '</div>',
 			'noparse' => true,
 			'isHTML' => true
 		];
@@ -1751,8 +1732,31 @@ class VisualData {
 			// 	}
 			// }
 
-			if ( !empty( $value['options']['preload-data'] ) ) {
+			if ( $value['options']['action'] === 'edit' ) {
+				if ( $title ) {
+					$editTitle = $title;
+				}
+
+				if ( !empty( $value['options']['edit-page'] ) ) {
+					// $editTitle = self::getTitleIfKnown( $value['options']['edit-page'] );
+					// can be unknown
+					$editTitle = Title::newFromText( $value['options']['edit-page'] );
+				}
+
+				if ( $editTitle ) {
+					$pageForms[$formID]['options']['edit-page'] = $editTitle->getFullText();
+					$jsonData = self::getJsonData( $editTitle );
+
+					if ( empty( $targetSlot ) ) {
+						$targetSlot = self::getTargetSlot( $editTitle, 'jsondata' );
+					}
+				}
+			}
+
+			$emptyData = empty( $jsonData );
+			if ( $emptyData && !empty( $value['options']['preload-data'] ) ) {
 				$jsonData = self::getPreloadData( $value['options']['preload-data'] );
+
 				if ( !empty( $jsonData ) ) {
 					$title_ = self::getTitleIfKnown( $value['options']['preload-data'] );
 					$modelId = $slotRoleRegistry->getRoleHandler( SlotRecord::MAIN )->getDefaultModel( $title_ );
@@ -1769,7 +1773,7 @@ class VisualData {
 				}
 			}
 
-			if ( !empty( $value['options']['preload-data-override'] )
+			if ( $emptyData && !empty( $value['options']['preload-data-override'] )
 				&& class_exists( 'Swaggest\JsonDiff\JsonPointer' ) ) {
 
 				foreach ( $value['options']['preload-data-override'] as $k => $v ) {
@@ -1787,30 +1791,6 @@ class VisualData {
 					array_unshift( $pathItems, 'schemas' );
 					JsonPointer::add( $jsonData, $pathItems, $v,
 						JsonPointer::TOLERATE_ASSOCIATIVE_ARRAYS | JsonPointer::RECURSIVE_KEY_CREATION );
-				}
-			}
-
-			if ( $value['options']['action'] === 'edit' ) {
-				if ( $title ) {
-					$editTitle = $title;
-				}
-
-				if ( !empty( $value['options']['edit-page'] ) ) {
-					// $editTitle = self::getTitleIfKnown( $value['options']['edit-page'] );
-					// can be unknown
-					$editTitle = Title::newFromText( $value['options']['edit-page'] );
-				}
-
-				if ( $editTitle ) {
-					$pageForms[$formID]['options']['edit-page'] = $editTitle->getFullText();
-
-					if ( empty( $jsonData ) ) {
-						$jsonData = self::getJsonData( $editTitle );
-					}
-
-					if ( empty( $targetSlot ) ) {
-						$targetSlot = self::getTargetSlot( $editTitle, 'jsondata' );
-					}
 				}
 			}
 
