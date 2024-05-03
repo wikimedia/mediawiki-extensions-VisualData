@@ -43,7 +43,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var RecordedSchemas = Form.schemas.slice();
 	var Fields;
 	var DialogName = 'dialogForm';
-	var StoredJsonData;
+	var StoredJsonData = VisualDataFunctions.deepCopy( Form.jsonData );
 	var ModelFlatten = [];
 	var SelectedSchema;
 	var PreviousSchemas = {};
@@ -896,11 +896,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			inputWidget.on( 'change', upload.uploadFiles.bind( upload ) );
 		}
 
-		var helpMessage = ( 'help-message' in schema.wiki ? schema.description : '' );
+		// schema.description is removed if wiki['help-message'] was ""
+		var helpMessage = ( 'help-message' in schema.wiki && 'description' in schema ? schema.description : '' );
 
 		var fieldLayout = new OO.ui.FieldLayout(
 			!config.model.isFile ? inputWidget : fileUploadGroupWidget, {
-				label: new OO.ui.HtmlSnippet( 'label' in schema.wiki ? schema.title : '' ),
+				label: new OO.ui.HtmlSnippet( 'label' in schema.wiki && 'title' in schema ? schema.title : '' ),
 				align: fieldAlign,
 				helpInline: helpMessage ? helpInline : true,
 				help: new OO.ui.HtmlSnippet( helpMessage )
@@ -1447,10 +1448,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				// contain the wikitext, not the parsed output
 
 				this.fieldset = new OO.ui.FieldsetLayout( {
-					label: new OO.ui.HtmlSnippet( 'title' in data.schema.wiki ? data.schema.title : '' )
+					label: new OO.ui.HtmlSnippet( 'title' in data.schema.wiki && 'title' in data.schema ? data.schema.title : '' )
 				} );
 
-				if ( 'description' in data.schema.wiki ) {
+				if ( 'description' in data.schema.wiki && 'description' in data.schema ) {
 					this.fieldset.addItems( [
 						new OO.ui.Element( {
 							content: [
@@ -2118,6 +2119,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return this;
 	};
 
+	function schemaHasData( schemaName ) {
+		return VisualDataFunctions.getNestedProp( [ 'schemas', schemaName ], StoredJsonData ) &&
+			Object.keys( StoredJsonData.schemas[ schemaName ] ).length;
+	}
+
 	// @FIXME store for each separate schema
 	function applyUntransformed( data, i, path ) {
 		if (
@@ -2179,7 +2185,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		if (
 			Array.isArray( item.default ) &&
 			( !Array.isArray( data ) || !data.length ) &&
-			( isNewSchema( schemaName ) || Form.options.action === 'create' )
+			( isNewSchema( schemaName ) || !schemaHasData( schemaName ) )
 		) {
 			data = item.default;
 		}
@@ -2298,7 +2304,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		if (
 			!newItem &&
 			!isNewSchema( schemaName ) &&
-			Form.options.action !== 'create'
+			schemaHasData( schemaName )
 		) {
 			return ret;
 		}
@@ -3079,9 +3085,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 				editButton.on( 'click', function () {
 					initializePropertiesStack();
-					StoredJsonData = VisualDataFunctions.deepCopy(
-						Form.jsonData
-					);
 
 					var thisClasses = [];
 					if ( 'css-class' in Form.options && Form.options[ 'css-class' ] !== '' ) {
@@ -3144,9 +3147,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			popupButton.on( 'click', function () {
 				initializePropertiesStack();
-				StoredJsonData = VisualDataFunctions.deepCopy(
-					Form.jsonData
-				);
 
 				var thisClasses = [];
 				if ( 'css-class' in Form.options && Form.options[ 'css-class' ] !== '' ) {
@@ -3186,7 +3186,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		var panels = initializePropertiesStack();
-		StoredJsonData = VisualDataFunctions.deepCopy( Form.jsonData );
 
 		SubmitButton = new OO.ui.ButtonInputWidget( {
 			label:
