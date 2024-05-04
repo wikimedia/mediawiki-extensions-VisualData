@@ -107,6 +107,10 @@
 	"visualdata-parserfunction-form-action-description": "A label message",
 	"visualdata-parserfunction-form-action-example": "A label message",
 
+	"visualdata-parserfunction-form-overwrite-existing-article-on-create-label": "A label message",
+	"visualdata-parserfunction-form-overwrite-existing-article-on-create-description": "A label message",
+	"visualdata-parserfunction-form-overwrite-existing-article-on-create-example": "A label message",
+
 	"visualdata-parserfunction-form-view-label": "A label message",
 	"visualdata-parserfunction-form-view-description": "A label message",
 	"visualdata-parserfunction-form-view-example": "A label message",

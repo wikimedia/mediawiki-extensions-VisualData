@@ -173,6 +173,14 @@ class VisualData {
 			'default' => 'create',
 			'example' => 'visualdata-parserfunction-form-action-example'
 		],
+		'overwrite-existing-article-on-create' => [
+			'label' => 'visualdata-parserfunction-form-overwrite-existing-article-on-create-label',
+			'description' => 'visualdata-parserfunction-form-overwrite-existing-article-on-create-description',
+			'type' => 'boolean',
+			'required' => false,
+			'default' => false,
+			'example' => 'visualdata-parserfunction-form-overwrite-existing-article-on-create-example'
+		],
 		'view' => [
 			'label' => 'visualdata-parserfunction-form-view-label',
 			'description' => 'visualdata-parserfunction-form-view-description',
@@ -1527,29 +1535,6 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
-	 * @param ParserOutput $parserOutput
-	 */
-	public static function setCategories( $title, $parserOutput ) {
-		$jsonData = self::getJsonData( $title );
-		$categories = [];
-		if ( !empty( $jsonData['categories'] ) ) {
-			foreach ( $jsonData['categories'] as $category ) {
-				if ( !empty( $category ) ) {
-					$categories[str_replace( ' ', '_', $category )] = ( version_compare( MW_VERSION, '1.38', '<' )
-						? $parserOutput->getProperty( 'defaultsort' ) : null );
-				}
-			}
-		}
-
-		if ( version_compare( MW_VERSION, '1.38', '<' ) ) {
-			$parserOutput->mCategories = $categories;
-		} else {
-			$parserOutput->setCategories( $categories );
-		}
-	}
-
-	/**
 	 * @param User $user
 	 * @param Title $title
 	 * @param Content $content
@@ -1612,9 +1597,9 @@ class VisualData {
 	 * @param User $user
 	 * @param WikiPage $wikiPage
 	 * @param RevisionRecord $revisionRecord
-	 * @param bool $rebuild
+	 * @param int|null $revertMethod
 	 */
-	public static function onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $rebuild ) {
+	public static function onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $revertMethod ) {
 		$databaseManager = new DatabaseManager();
 		$title = $wikiPage->getTitle();
 
@@ -1653,11 +1638,14 @@ class VisualData {
 			}
 		}
 
-		if ( !$rebuild ) {
-			return;
-		}
 		// rebuild article data on undelete
 		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
+
+			// rebuild only if restoring a revision
+			if ( $revertMethod === null ) {
+				return;
+			}
+
 			$slot = $slots[SLOT_ROLE_VISUALDATA_JSONDATA];
 
 		// rebuild only if main slot contains json data

@@ -360,9 +360,7 @@ class VisualDataHooks {
 	) {
 		$title = $wikiPage->getTitle();
 		$revertMethod = $editResult->getRevertMethod();
-		// rebuild only if restoring a revision
-		$rebuild = $revertMethod !== null;
-		\VisualData::onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $rebuild );
+		\VisualData::onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $revertMethod );
 	}
 
 	/**
