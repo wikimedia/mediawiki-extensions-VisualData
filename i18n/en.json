@@ -115,6 +115,10 @@
 	"visualdata-parserfunction-form-action-description": "form action, can be create or edit",
 	"visualdata-parserfunction-form-action-example": "",
 
+	"visualdata-parserfunction-form-overwrite-existing-article-on-create-label": "overwrite existing article on create",
+	"visualdata-parserfunction-form-overwrite-existing-article-on-create-description": "boolean",
+	"visualdata-parserfunction-form-overwrite-existing-article-on-create-example": "",
+
 	"visualdata-parserfunction-form-view-label": "view",
 	"visualdata-parserfunction-form-view-description": "display mode of the form, can be inline or popup",
 	"visualdata-parserfunction-form-view-example": "",

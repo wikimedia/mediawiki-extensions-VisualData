@@ -482,7 +482,7 @@ class SubmitForm {
 				if ( !count( $errors ) ) {
 					$this->createEmptyRevision( $targetTitle );
 				}
-			} elseif ( empty( $editTitle ) ) {
+			} elseif ( empty( $editTitle ) && empty( $data['options']['overwrite-existing-article-on-create'] ) ) {
 				$errors[] = $this->context->msg( 'visualdata-special-submit-article-exists' )->text();
 			}
 
@@ -630,7 +630,7 @@ class SubmitForm {
 		}
 
 		// success, run hook
-		MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnEditDataSave', [
+		MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnFormSubmit', [
 			$this->user,
 			$targetTitle,
 			$jsonData,
