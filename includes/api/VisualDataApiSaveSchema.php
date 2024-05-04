@@ -99,10 +99,17 @@ class VisualDataApiSaveSchema extends ApiBase {
 			return true;
 		}
 
-		$label = $schema['wiki']['name'];
-		$pageTitle = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $label );
+		$label_ = $schema['wiki']['name'];
+		$pageTitle = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $label_ );
 
 		$label = $pageTitle->getText();
+
+		if ( ucfirst( str_replace( ' ', '_', $label_ ) )
+			!== ucfirst( str_replace( ' ', '_', $label ) ) ) {
+			$result->addValue( [ $this->getModuleName() ], 'result-action', 'error' );
+			$result->addValue( [ $this->getModuleName() ], 'error', 'invalid title' );
+			return true;
+		}
 
 		$resultAction = ( !empty( $previousLabel ) ? 'update' : 'create' );
 
