@@ -152,6 +152,11 @@ class RebuildData extends Maintenance {
 				// or ParserOptions::newFromAnon()
 				$parserOptions = ParserOptions::newFromUser( $this->user );
 				$parserOutput = $wikiPage->getParserOutput( $parserOptions, null, true );
+
+				if ( ( $parserOutput instanceof ParserOutput ) === false ) {
+					echo 'no parser output' . PHP_EOL;
+					continue;
+				}
 			} catch ( Exception $e ) {
 				echo $e->getMessage() . PHP_EOL;
 				continue;
