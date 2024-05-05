@@ -675,7 +675,13 @@ class VisualData {
 		foreach ( $unknownNamed as $key => $val ) {
 			if ( strpos( $key, 'preload-data?' ) === 0 ) {
 				if ( preg_match( '/^preload-data(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
-					$preloadDataOverride[$match[2]] = $match[3];
+					[ $field_, $option_ ] = explode( '+', $match[2] ) + [ null, null ];
+					switch ( $option_ ) {
+						case 'base64':
+							$match[3] = base64_decode( $match[3] );
+							break;
+					}
+					$preloadDataOverride[$field_] = $match[3];
 				}
 			}
 		}

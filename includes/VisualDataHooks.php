@@ -56,6 +56,7 @@ class VisualDataHooks {
 			'template' => 'TemplateResultPrinter',
 			'templates' => 'TemplateResultPrinter',
 			'raw' => 'TemplateResultPrinter',
+			'base64' => 'Base64ResultPrinter',
 			'query' => 'QueryResultPrinter',
 			'json-raw' => 'JsonRawResultPrinter',
 		];

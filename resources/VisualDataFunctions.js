@@ -268,8 +268,11 @@ VisualDataFunctions = ( function () {
 			config.required = false;
 		}
 
-		if ( isMultiselect( inputName ) && !( 'selected' in config ) ) {
+		if ( isMultiselect( inputName ) && !( 'selected' in config ) && config.value ) {
 			config.selected = config.value;
+			if ( !Array.isArray( config.value ) ) {
+				config.selected = [ config.value ];
+			}
 		}
 
 		switch ( inputName ) {
