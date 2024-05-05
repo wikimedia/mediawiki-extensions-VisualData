@@ -1408,6 +1408,10 @@ class VisualData {
 	 */
 	private static function recordSlots( $user, $title, $slotsData, $doNullEdit = false ) {
 		$wikiPage = self::getWikiPage( $title );
+		if ( !$wikiPage ) {
+			self::$Logger->error( 'recordSlots: no wikiPage for ' . $title->getFullText() );
+			return false;
+		}
 		$services = MediaWikiServices::getInstance();
 		$oldRevisionRecord = $wikiPage->getRevisionRecord();
 		$slotRoleRegistry = $services->getSlotRoleRegistry();
@@ -1773,7 +1777,7 @@ class VisualData {
 							array_unshift( $pathItems, $value['schemas'][0] );
 						}
 					} elseif ( !in_array( $pathItems[0], $value['schemas'] ) ) {
-						self::$Logger->error( 'schema must be indicated' );
+						self::$Logger->error( 'schema must be specified' );
 						continue;
 					}
 					array_unshift( $pathItems, 'schemas' );
