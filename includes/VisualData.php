@@ -1783,7 +1783,8 @@ class VisualData {
 							array_unshift( $pathItems, $value['schemas'][0] );
 						}
 					} elseif ( !in_array( $pathItems[0], $value['schemas'] ) ) {
-						self::$Logger->error( 'schema must be specified' );
+						// @FIXME $Logger is undefined when called from the api
+						// self::$Logger->error( 'schema must be specified' );
 						continue;
 					}
 					array_unshift( $pathItems, 'schemas' );

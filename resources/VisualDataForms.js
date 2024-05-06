@@ -3120,7 +3120,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			button.on( 'click', function () {
 				var args = [ Form.options.value ];
 
-				if ( Form.options.schema !== '' ) {
+				if ( Form.options.schema !== '' && schemaHasData( Form.options.schema ) ) {
 					// initializePropertiesStack();
 					// ProcessModel.getModel( 'schema', Form.options.schema ).then( async function ( res ) {
 					// 	if ( typeof res === 'boolean' && res === false ) {
@@ -3129,7 +3129,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					// 	args.push( res.data );
 					// 	VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
 					// } );
-					args.push( Form.jsonData.schemas[ Form.options.schema ] );
+					args.push( StoredJsonData.schemas[ Form.options.schema ] );
 				}
 				VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
 			} );
