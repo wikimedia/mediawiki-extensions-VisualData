@@ -2185,7 +2185,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		if (
 			Array.isArray( item.default ) &&
 			( !Array.isArray( data ) || !data.length ) &&
-			( isNewSchema( schemaName ) || !schemaHasData( schemaName ) )
+			( isNewSchema( schemaName ) || Form.emptyData )
 		) {
 			data = item.default;
 		}
@@ -2304,7 +2304,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		if (
 			!newItem &&
 			!isNewSchema( schemaName ) &&
-			schemaHasData( schemaName )
+			!Form.emptyData
 		) {
 			return ret;
 		}
