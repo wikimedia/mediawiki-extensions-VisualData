@@ -1751,7 +1751,13 @@ class VisualData {
 				}
 			}
 
-			$emptyData = empty( $jsonData );
+			// for the jsonData are considered empty
+			// the json data related to the schemas contained
+			// in the form have to be empty
+			$emptyData = empty( $jsonData['schemas'] )
+				|| !count( array_intersect_key( $jsonData['schemas'],
+					array_fill_keys( $value['schemas'], null ) ) );
+
 			if ( $emptyData && !empty( $value['options']['preload-data'] ) ) {
 				$jsonData = self::getPreloadData( $value['options']['preload-data'] );
 
@@ -1807,6 +1813,7 @@ class VisualData {
 
 			$formData = &$pageForms[$formID];
 
+			$formData['emptyData'] = $emptyData;
 			$formData['jsonData'] = ( !empty( $jsonData ) ? $jsonData : [] );
 			$formData['categories'] = $categories;
 			$formData['freetext'] = $freetext;
