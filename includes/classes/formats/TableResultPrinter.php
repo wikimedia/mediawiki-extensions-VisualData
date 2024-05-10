@@ -50,7 +50,7 @@ class TableResultPrinter extends ResultPrinter {
 		$this->htmlTable->row();
 
 		if ( !empty( $this->params['pagetitle'] ) ) {
-			$this->headers['_'] = $this->params['pagetitle-name'];
+			$this->headers['_'] = $this->params['pagetitle'];
 			$formatted = Linker::link( $title, $title->getText() );
 			$this->htmlTable->cell( $formatted );
 		}
@@ -63,11 +63,20 @@ class TableResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $schema, $key, $properties, $path ) {
-		$value = parent::processChild( $schema, $key, $properties, $path );
+	public function processChild( $title, $schema, $key, $properties, $path ) {
+		// skip printouts as "a="
+		if ( empty( $this->printouts[$path] ) ) {
+			return '';
+		}
 
-		// retrieve label
-		if ( array_key_exists( 'title', $schema )
+		$value = parent::processChild( $title, $schema, $key, $properties, $path );
+
+		// label from printout (|?a=b)
+		if ( $this->printouts[$path] !== $path ) {
+			$key = $this->printouts[$path];
+
+		// label from schema title
+		} elseif ( array_key_exists( 'title', $schema )
 			&& !empty( $schema['title'] ) ) {
 			$key = $schema['title'];
 		}
@@ -86,6 +95,7 @@ class TableResultPrinter extends ResultPrinter {
 	public function getResults() {
 		$this->htmlTable = new htmlTable();
 		$results = $this->queryProcessor->getResults();
+		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -97,7 +107,6 @@ class TableResultPrinter extends ResultPrinter {
 		foreach ( $this->headers as $header ) {
 			$this->htmlTable->header( $header, $attributes );
 		}
-
 		$tableAttrs = [];
 		$tableAttrs['width'] = '100%';
 		$tableAttrs['class'] = ' wikitable display dataTable';

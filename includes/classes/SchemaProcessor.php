@@ -1239,9 +1239,22 @@ class SchemaProcessor {
 			'schema' => $wiki['askquery-schema'],
 			'format' => 'query'
 		];
-		$printouts = $wiki['askquery-printouts'];
-		$templates = [];
 
+		$printouts_ = $wiki['askquery-printouts'];
+		$printouts = [];
+		foreach ( $printouts_ as $val ) {
+			// *** this does not seem really necessary,
+			// but we do this for consistenty with
+			// parserFunctionQuery
+			if ( strpos( $val, '=' ) !== false ) {
+				$arr_ = explode( '=', $val ) + [ null, null ];
+				$printouts[$arr_[0]] = $arr_[1];
+			} else {
+				$printouts[$val] = $val;
+			}
+		}
+
+		$templates = [];
 		$resultPrinter = \VisualData::getResults(
 			$parser,
 			$this->context,
@@ -1257,12 +1270,13 @@ class SchemaProcessor {
 
 		$results = $resultPrinter->getResults();
 
+		// rename to options-value-formula
 		if ( !empty( $wiki['options-query-formula'] ) ) {
 			$defaultValue = $wiki['options-query-formula'];
 		} else {
 			$defaultValue = implode( ' - ', array_map( static function ( $value ) {
 				return "<$value>";
-			}, $printouts ) );
+			}, array_keys( $printouts ) ) );
 		}
 
 		$ret = [];

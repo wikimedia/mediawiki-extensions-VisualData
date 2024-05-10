@@ -420,27 +420,11 @@ class VisualData {
 		'pagetitle' => [
 			'label' => 'visualdata-parserfunction-query-pagetitle-label',
 			'description' => 'visualdata-parserfunction-query-pagetitle-description',
-			'type' => 'boolean',
+			'type' => 'string',
 			'required' => false,
-			'default' => '1',
+			'default' => 'page title',
 			'example' => 'visualdata-parserfunction-query-pagetitle-example'
 		],
-		'pagetitle-name' => [
-			'label' => 'visualdata-parserfunction-query-pagetitle-name-label',
-			'description' => 'visualdata-parserfunction-query-pagetitle-name-description',
-			'type' => 'string',
-			'required' => false,
-			'default' => 'pagetitle',
-			'example' => 'visualdata-parserfunction-query-pagetitle-name-example'
-		],
-		'articleid-name' => [
-			'label' => 'visualdata-parserfunction-query-articleid-name-label',
-			'description' => 'visualdata-parserfunction-query-articleid-name-description',
-			'type' => 'string',
-			'required' => false,
-			'default' => 'articleid',
-			'example' => 'visualdata-parserfunction-query-articleid-name-example'
-		]
 	];
 
 	/**
@@ -890,12 +874,16 @@ class VisualData {
 
 		foreach ( $values as $val ) {
 			if ( strpos( $val, '?' ) === 0 ) {
-				$printouts[substr( $val, 1 )] = null;
+				// the rationale for this is the following:
+				// |?name is equal to |?name=name, where name is replaced
+				// with the corresponding schema title if is set
+				// |?name= is processed in templates but not rendered
+				// |?name=abc abc is the field name
+				$printouts[substr( $val, 1 )] = substr( $val, 1 );
 			}
 		}
 
 		foreach ( $unknownNamed as $key => $val ) {
-			// $templates
 			if ( strpos( $key, 'template?' ) === 0 ) {
 				if ( preg_match( '/^template(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
 					$templates[$match[2]] = $match[3];
@@ -904,10 +892,22 @@ class VisualData {
 			}
 
 			if ( strpos( $key, '?' ) === 0 ) {
-				// @TODO implement custom column name
-				$printouts[substr( $key, 1 )] = null;
+				$printouts[substr( $key, 1 )] = $val;
 			}
 		}
+
+		// resort printouts based on parser function
+		uksort( $printouts, static function ( $a, $b ) use ( $argv ) {
+			foreach ( $argv as $value ) {
+				if ( $value === "?$a" || strpos( $value, "?$a=" ) === 0 ) {
+					return -1;
+				}
+				if ( $value === "?$b" || strpos( $value, "?$b=" ) === 0 ) {
+					return 1;
+				}
+			}
+			return 0;
+		} );
 
 		$returnError = static function ( $error ) {
 			return [ $error,
@@ -940,7 +940,6 @@ class VisualData {
 			return $returnError( 'schema does not exist' );
 		}
 
-		$printouts = array_keys( $printouts );
 		$context = RequestContext::getMain();
 
 		$resultPrinter = self::getResults(

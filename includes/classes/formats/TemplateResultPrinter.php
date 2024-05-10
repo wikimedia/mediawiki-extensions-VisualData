@@ -46,6 +46,7 @@ class TemplateResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
+		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return $this->processResults( $results, $this->schema );
 	}
 

@@ -246,16 +246,8 @@
 	"visualdata-parserfunction-query-format-example": "",
 
 	"visualdata-parserfunction-query-pagetitle-label": "pagetitle",
-	"visualdata-parserfunction-query-pagetitle-description": "show/hide pagetitle",
+	"visualdata-parserfunction-query-pagetitle-description": "",
 	"visualdata-parserfunction-query-pagetitle-example": "",
-
-	"visualdata-parserfunction-query-pagetitle-name-label": "pagetitle-name",
-	"visualdata-parserfunction-query-pagetitle-name-description": "",
-	"visualdata-parserfunction-query-pagetitle-name-example": "",
-
-	"visualdata-parserfunction-query-articleid-name-label": "articleid-name",
-	"visualdata-parserfunction-query-articleid-name-description": "",
-	"visualdata-parserfunction-query-articleid-name-example": "",
 
 	"visualdata-special-browse-data-description": "Here you can browse all pages with json data filtered by schema",
 	"visualdata-special-browse-queries-description": "Here you can browse all pages with visualdata queries filtered by schema",

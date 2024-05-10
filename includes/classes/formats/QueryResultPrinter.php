@@ -50,12 +50,9 @@ class QueryResultPrinter extends ResultPrinter {
 			$this->fields = [];
 		}
 
-		if ( !empty( $this->params['pagetitle'] ) ) {
-			$this->fields[$this->params['pagetitle-name']] = $title->getFullText();
-			$this->fields[$this->params['articleid-name']] = $title->getArticleID();
-		}
-
 		$path = '';
+		$this->fields = $this->getTemplateParams( $title, $path, $this->fields );
+
 		$pathNoIndex = '';
 		return $this->processSchemaRec( $title, $this->schema, $value, $path, $pathNoIndex );
 	}
@@ -63,7 +60,7 @@ class QueryResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $schema, $key, $properties, $path ) {
+	public function processChild( $title, $schema, $key, $properties, $path ) {
 		$this->fields[$path] = $properties[$key];
 	}
 
@@ -72,6 +69,7 @@ class QueryResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
+		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return $this->processResults( $results, $this->schema );
 	}
 

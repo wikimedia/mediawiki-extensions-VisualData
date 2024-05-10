@@ -240,14 +240,6 @@
 	"visualdata-parserfunction-query-pagetitle-description": "A label message",
 	"visualdata-parserfunction-query-pagetitle-example": "A label message",
 
-	"visualdata-parserfunction-query-pagetitle-name-label": "A label message",
-	"visualdata-parserfunction-query-pagetitle-name-description": "A label message",
-	"visualdata-parserfunction-query-pagetitle-name-example": "A label message",
-
-	"visualdata-parserfunction-query-articleid-name-label": "A label message",
-	"visualdata-parserfunction-query-articleid-name-description": "A label message",
-	"visualdata-parserfunction-query-articleid-name-example": "A label message",
-
 	"visualdata-special-browse-data-description": "A label message",
 	"visualdata-special-browse-queries-description": "A label message",
 	"visualdata-special-browse-forms-description": "A label message",

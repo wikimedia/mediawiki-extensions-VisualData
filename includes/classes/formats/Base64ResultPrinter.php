@@ -38,6 +38,7 @@ class Base64ResultPrinter extends TemplateResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
+		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return base64_encode( $this->processResults( $results, $this->schema ) );
 	}
 

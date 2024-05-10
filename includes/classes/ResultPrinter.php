@@ -59,6 +59,9 @@ class ResultPrinter {
 	/** @var array */
 	public $templates;
 
+	/** @var array */
+	public $validPrintouts;
+
 	/**
 	 * @param Parser $parser
 	 * @param Output $output
@@ -77,9 +80,7 @@ class ResultPrinter {
 			'separator' => [ '', 'string' ],
 			'values-separator' => [ ', ', 'string' ],
 			'template' => [ '', 'string' ],
-			'pagetitle' => [ true, 'bool' ],
-			'pagetitle-name' => [ 'pagetitle', 'string' ],
-			'articleid-name' => [ 'articleid', 'string' ],
+			'pagetitle' => [ 'page title', 'string' ]
 		];
 
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
@@ -107,6 +108,7 @@ class ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
+		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -240,17 +242,33 @@ class ResultPrinter {
 
 	/**
 	 * @param Title $title
+	 * @param string $path
 	 * @param array $arr
 	 * @return array
 	 */
-	protected function getTemplateParams( $title, $arr ) {
+	protected function getTemplateParams( $title, $path, $arr ) {
 		$ret = array_filter( $arr, static function ( $value ) {
 			return !is_array( $value );
 		} );
-		return array_merge( $ret, [
-			$this->params['pagetitle-name'] => $title->getFullText(),
-			$this->params['articleid-name'] => $title->getArticleID()
-		] );
+
+		$keys = [
+			'_pagetitle' => $title->getFullText(),
+			'_articleid' => $title->getArticleID()
+		];
+
+		$keys['pagetitle'] = $keys['_pagetitle'];
+		$keys['articleid'] = $keys['_articleid'];
+
+		// if "pagetitle" is not a valid printout
+		// it won't be overwritten, and _pagetitle should
+		// be used instead
+		foreach ( $keys as $k => $v ) {
+			if ( !in_array( $path ? "$path/$k" : $k, $this->validPrintouts ) ) {
+				$ret[$k] = $v;
+			}
+		}
+
+		return $ret;
 	}
 
 	/**
@@ -298,9 +316,10 @@ class ResultPrinter {
 
 			} else {
 				$ret[$key] = $this->processChild(
+					$title,
 					$subschema,
 					$key,
-					$this->getTemplateParams( $title, $arr ),
+					$arr,
 					$currentPathNoIndex,
 					$path === ''
 				);
@@ -310,7 +329,7 @@ class ResultPrinter {
 		}
 
 		$res = [
-			$this->processParent( $schema, $this->getTemplateParams( $title, $ret ), $pathNoIndex, $recPaths ),
+			$this->processParent( $title, $schema, $ret, $pathNoIndex, $recPaths ),
 			$recPaths
 		];
 
@@ -356,47 +375,52 @@ class ResultPrinter {
 				$ret[$key] = $this->processSchemaRec( $title, $subschema, $value, $currentPath );
 			} else {
 				$ret[$key] = $this->processChild(
+					$title,
 					$subschema,
 					$key,
-					$this->getTemplateParams( $title, $arr ),
+					$arr,
 					$currentPath
 				);
 			}
 		}
 
 		return $this->processParent(
+			$title,
 			$schema,
-			$this->getTemplateParams( $title, $ret ),
+			$ret,
 			$path
 		);
 	}
 
 	/**
+	 * @param Title $title
 	 * @param array $schema
-	 * @param array $value
+	 * @param array $properties
 	 * @param string $path
 	 * @param array $recPaths []
 	 * @return string
 	 */
-	public function processParent( $schema, $value, $path, $recPaths = [] ) {
+	public function processParent( $title, $schema, $properties, $path, $recPaths = [] ) {
 		$isArray = ( $schema['type'] === 'array' );
 		$isRoot = ( $path === '' );
 
 		if ( $isArray ) {
-			unset( $value[$this->params['pagetitle-name']] );
-			unset( $value[$this->params['articleid-name']] );
 			return implode( !$this->hasTemplate( $path ) ?
-				$this->valuesSeparator : '', $value );
+				$this->valuesSeparator : '', $properties );
 		}
 
-		$value = array_merge( $value, $recPaths );
+		$properties = array_merge( $properties, $recPaths );
 		$ret = '';
 		if ( $this->hasTemplate( $path ) ) {
-			$ret = $this->processTemplate( $this->templates[$path], $value );
+			$ret = $this->processTemplate( $this->templates[$path],
+				$this->getTemplateParams( $title, $path, $properties ) );
 
 		} else {
-			$value = array_intersect_key( $value, array_fill_keys( $this->printouts, '' ) );
-			$ret = implode( $this->separator ?? '', $value );
+			// *** the cleaning here has no effect
+			// for TableResultPrinter since the columns
+			// are added to the table from the children
+			$properties = array_intersect_key( $properties, array_filter( $this->printouts ) );
+			$ret = implode( $this->separator ?? '', $properties );
 		}
 
 		if ( $this->isHtml() && $isRoot ) {
@@ -416,29 +440,29 @@ class ResultPrinter {
 	}
 
 	/**
+	 * @param Title $title
 	 * @param array|null $schema
 	 * @param string $key
 	 * @param array $properties
 	 * @param string $path
 	 * @return string
 	 */
-	public function processChild( $schema, $key, $properties, $path ) {
+	public function processChild( $title, $schema, $key, $properties, $path ) {
 		$value = $properties[$key];
+
 		// apply template
 		if ( $this->hasTemplate( $path ) ) {
-			$value = $this->processTemplate( $this->templates[$path], $properties, false );
+			$value = $this->processTemplate( $this->templates[$path],
+				$this->getTemplateParams( $title, $path, $properties ), false );
 		}
-
-		// retrieve label
-		// if ( array_key_exists( 'title', $schema )
-		//	&& !empty( $schema['title'] ) ) {
-		// 	$key = $schema['title'];
-		// }
 
 		$value = (string)$value;
 
-		if ( empty( $value ) && $key === $this->params['pagetitle-name'] ) {
-			$value = $properties[$this->params['pagetitle-name']];
+		// disable pagetitle and render in different column
+		// ?pagetitle
+		// pagetitle=
+		if ( empty( $value ) && $key === 'pagetitle' ) {
+			$value = $title->getFullText();
 		}
 
 		return $value;
