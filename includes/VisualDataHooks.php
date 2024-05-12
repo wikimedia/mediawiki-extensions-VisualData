@@ -79,8 +79,6 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * Register any render callbacks with the parser
-	 *
 	 * @param Parser $parser
 	 */
 	public static function onParserFirstCallInit( Parser $parser ) {
@@ -89,6 +87,9 @@ class VisualDataHooks {
 		$parser->setFunctionHook( 'visualdataform', [ \VisualData::class, 'parserFunctionForm' ] );
 		$parser->setFunctionHook( 'visualdatabutton', [ \VisualData::class, 'parserFunctionButton' ] );
 		$parser->setFunctionHook( 'visualdataquerylink', [ \VisualData::class, 'parserFunctionQueryLink' ] );
+		$parser->setFunctionHook( 'visualdataqueryurl', [ \VisualData::class, 'parserFunctionQueryUrl' ] );
+		$parser->setFunctionHook( 'visualdatabase64encode', [ \VisualData::class, 'parserFunctionBase64Encode' ] );
+		$parser->setFunctionHook( 'visualdatabase64decode', [ \VisualData::class, 'parserFunctionBase64Decode' ] );
 	}
 
 	/**

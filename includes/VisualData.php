@@ -237,6 +237,14 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-form-return-page-example'
 		],
+		'return-url' => [
+			'label' => 'visualdata-parserfunction-form-return-url-label',
+			'description' => 'visualdata-parserfunction-form-return-url-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-form-return-url-example'
+		],
 		'popup-size' => [
 			'label' => 'visualdata-parserfunction-form-popup-size-label',
 			'description' => 'visualdata-parserfunction-form-popup-size-description',
@@ -547,6 +555,8 @@ class VisualData {
 |class=
 |class-attr-name=class
 |a=b
+|c=d
+|...
 }}
 */
 		// unnamed parameters, recognized options,
@@ -593,6 +603,73 @@ class VisualData {
 			$ret,
 			'noparse' => true,
 			'isHTML' => true
+		];
+	}
+
+	/**
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
+	public static function parserFunctionQueryUrl( Parser $parser, ...$argv ) {
+		$parserOutput = $parser->getOutput();
+
+/*
+{{#querylink: pagename
+|a=b
+|c=d
+|...
+}}
+*/
+		// unnamed parameters, recognized options,
+		// named parameters
+		[ $values, $options, $query ] = self::parseParameters( $argv );
+
+		if ( !count( $values ) || empty( $values[0] ) ) {
+			return 'no page name';
+		}
+
+		if ( !count( $query ) ) {
+			return 'no query';
+		}
+
+		$title_ = Title::newFromText( $values[0] );
+		$url = $title_->getLinkURL( $query );
+
+		$url = wfAppendQuery( $url, $query );
+
+		return [
+			$url,
+			'noparse' => true,
+			'isHTML' => true
+		];
+	}
+
+	/**
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
+	public static function parserFunctionBase64Encode( Parser $parser, ...$argv ) {
+		$parserOutput = $parser->getOutput();
+		return [
+			base64_encode( $argv[0] ),
+			'noparse' => true,
+			'isHTML' => false
+		];
+	}
+
+	/**
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
+	public static function parserFunctionBase64Decode( Parser $parser, ...$argv ) {
+		$parserOutput = $parser->getOutput();
+		return [
+			base64_decode( $argv[0] ),
+			'noparse' => true,
+			'isHTML' => false
 		];
 	}
 
@@ -656,9 +733,11 @@ class VisualData {
 		// @see https://wikisphere.org/wiki/User:Filburt/Nested_Schemas_and_Templates_Example
 		// @see https://www.mediawiki.org/wiki/Extension_talk:VisualData
 		$preloadDataOverride = [];
+
 		foreach ( $unknownNamed as $key => $val ) {
 			if ( strpos( $key, 'preload-data?' ) === 0 ) {
-				if ( preg_match( '/^preload-data(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
+				// *** attention !! (.+)$ may contain an = symbol
+				if ( preg_match( '/^preload-data(\?(.+?))?=(.+)$/', "$key=$val", $match ) ) {
 					[ $field_, $option_ ] = explode( '+', $match[2] ) + [ null, null ];
 					switch ( $option_ ) {
 						case 'base64':
@@ -1090,10 +1169,10 @@ class VisualData {
 
 	/**
 	 * @param array $parameters
-	 * @param array $defaultParameters
+	 * @param array $defaultParameters []
 	 * @return array
 	 */
-	public static function parseParameters( $parameters, $defaultParameters ) {
+	public static function parseParameters( $parameters, $defaultParameters = [] ) {
 		// unnamed parameters
 		$a = [];
 
@@ -1811,7 +1890,6 @@ class VisualData {
 			}
 
 			$formData = &$pageForms[$formID];
-
 			$formData['emptyData'] = $emptyData;
 			$formData['jsonData'] = ( !empty( $jsonData ) ? $jsonData : [] );
 			$formData['categories'] = $categories;

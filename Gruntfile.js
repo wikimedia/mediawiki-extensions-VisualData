@@ -20,7 +20,8 @@ module.exports = function ( grunt ) {
 				'!resources/papaparse/**',
 				'!resources/promise-polyfill/**',
 				'!resources/ajv-validator/**',
-				'!resources/Maptiler/**'
+				'!resources/Maptiler/**',
+				'!resources/tinymce/**'
 			]
 		},
 		stylelint: {
@@ -33,7 +34,8 @@ module.exports = function ( grunt ) {
 				'!resources/papaparse/**',
 				'!resources/promise-polyfill/**',
 				'!resources/ajv-validator/**',
-				'!resources/Maptiler/**'
+				'!resources/Maptiler/**',
+				'!resources/tinymce/**'
 			]
 		},
 		banana: conf.MessagesDirs

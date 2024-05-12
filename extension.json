@@ -1,7 +1,7 @@
 {
 	"name": "VisualData",
 	"author": "thomas-topway-it",
-	"version": "1.0.6",
+	"version": "1.0.8",
 	"url": "https://www.mediawiki.org/wiki/Extension:VisualData",
 	"descriptionmsg": "visualdata-extension-desc",
 	"license-name": "GPL-2.0-or-later",
@@ -257,6 +257,7 @@
 				"Widgets/VisualDataRatingWidget.js",
 				"Widgets/VisualDataDropdownWidget.js",
 				"Widgets/VisualDataVisualEditor.js",
+				"Widgets/VisualDataTinyMCE.js",
 				"Widgets/VisualDataMaptiler.js",
 				"VisualDataUpload.js",
 				"VisualDataProcessModel.js",

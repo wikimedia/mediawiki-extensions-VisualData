@@ -761,6 +761,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		var inputWidget = getInputWidget( config );
 
 		inputWidget.on( 'change', function () {
+			updateFieldsVisibility( config.model );
 			clearDependentFields( config.model.pathNoIndex );
 		} );
 

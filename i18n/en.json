@@ -147,6 +147,10 @@
 	"visualdata-parserfunction-form-return-page-description": "return page",
 	"visualdata-parserfunction-form-return-page-example": "",
 
+	"visualdata-parserfunction-form-return-url-label": "return-page",
+	"visualdata-parserfunction-form-return-url-description": "return page",
+	"visualdata-parserfunction-form-return-url-example": "",
+
 	"visualdata-parserfunction-form-popup-size-label": "popup-size",
 	"visualdata-parserfunction-form-popup-size-description": "popup-size, possible values: small, medium, large, larger full",
 	"visualdata-parserfunction-form-popup-size-example": "",

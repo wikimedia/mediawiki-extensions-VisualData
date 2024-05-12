@@ -106,8 +106,13 @@ VisualDataFunctions = ( function () {
 			case 'integer':
 				value = parseInt( value );
 				break;
+
 			case 'boolean':
-				value = !!value;
+				if ( typeof value === 'string' ) {
+					value = [ 'true', 't', '1', 'on', 'yes', 'y' ].indexOf( value ) !== -1;
+				} else {
+					value = !!value;
+				}
 				break;
 		}
 
@@ -190,7 +195,8 @@ VisualDataFunctions = ( function () {
 						if ( config.VEForAll ) {
 							ret.push( 'VisualEditor' );
 						}
-						break;
+						ret.push( 'TinyMCE' );
+						return ret;
 					case 'time':
 						ret = [ 'mw.widgets.datetime.DateTimeInputWidget' ];
 						break;
@@ -318,6 +324,9 @@ VisualDataFunctions = ( function () {
 				break;
 			case 'VisualEditor':
 				constructor = VisualDataVisualEditor;
+				break;
+			case 'TinyMCE':
+				constructor = VisualDataTinyMCE;
 				break;
 			case 'mw.widgets.CategoryMultiselectWidget':
 				// ***prevents error "Cannot read properties of undefined (reading 'apiUrl')"

@@ -139,6 +139,10 @@
 	"visualdata-parserfunction-form-return-page-description": "A label message",
 	"visualdata-parserfunction-form-return-page-example": "A label message",
 
+	"visualdata-parserfunction-form-return-url-label": "A label message",
+	"visualdata-parserfunction-form-return-url-description": "A label message",
+	"visualdata-parserfunction-form-return-url-example": "A label message",
+
 	"visualdata-parserfunction-form-popup-size-label": "A label message",
 	"visualdata-parserfunction-form-popup-size-description": "A label message",
 	"visualdata-parserfunction-form-popup-size-example": "A label message",

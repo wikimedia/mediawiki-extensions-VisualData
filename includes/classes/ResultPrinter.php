@@ -247,10 +247,17 @@ class ResultPrinter {
 	 * @return array
 	 */
 	protected function getTemplateParams( $title, $path, $arr ) {
-		$ret = array_filter( $arr, static function ( $value ) {
-			return !is_array( $value );
-		} );
-
+		$ret = [];
+		$flattenRec = static function ( $arr, $path = '' ) use ( &$ret, &$flattenRec ) {
+			foreach ( $arr as $key => $value ) {
+				if ( is_array( $value ) ) {
+					$flattenRec( $value, $key );
+				} else {
+					$ret[$path ? "$path/$key" : $key] = $value;
+				}
+			}
+		};
+		$flattenRec( $arr );
 		$keys = [
 			'_pagetitle' => $title->getFullText(),
 			'_articleid' => $title->getArticleID()
