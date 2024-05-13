@@ -789,10 +789,21 @@ class VisualData {
 			)
 		);
 
+		// @TODO display client-side ?
+		$errorMessage = '';
+		if ( count( $preloadDataOverride ) && !class_exists( 'Swaggest\JsonDiff\JsonPointer' ) ) {
+			$errorMessage = wfMessage( 'visualdata-jsmodule-missing-json-diff-library-preload-data' )->text();
+		}
+
+		if ( !empty( $errorMessage ) ) {
+			$errorMessage = '<div style="color:red;font-weight:bold">' . $errorMessage . '</div>';
+		}
+
 		if ( !$isButton ) {
 			return [
 				// . $spinner
-				'<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
+				$errorMessage
+				. '<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
 					. wfMessage( 'visualdata-parserfunction-form-placeholder' )->text() . '</div>',
 				'noparse' => true,
 				'isHTML' => true
@@ -800,7 +811,8 @@ class VisualData {
 		}
 
 		return [
-			'<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
+			$errorMessage
+			. '<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
 				. wfMessage( "visualdata-parserfunction-$function-placeholder" )->text() . '</div>',
 			'noparse' => true,
 			'isHTML' => true

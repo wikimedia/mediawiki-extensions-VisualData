@@ -9,7 +9,8 @@
 	"apierror-visualdata-permissions-error": "Permissions error",
 	"visualdata-sidepanel-section": "VisualData",
 	"visualdata-sidepanel-manageschemas": "Manage Schemas",
-	"visualdata-jsmodule-missing-json-diff-library": "Required json-diff library is not installed. Please ask a sysadmin to run composer in the extension folder to enable synchronization between schemas and articles data",
+	"visualdata-jsmodule-missing-json-diff-library": "Required json-diff library is not installed. Run composer in the extension folder to enable synchronization between schemas and articles data",
+	"visualdata-jsmodule-missing-json-diff-library-preload-data": "Required json-diff library is not installed. Run composer in the extension folder to enable preload-data",
 
 	"visualdata-slot-label-jsondata": "Data",
 	"visualdata-slot-label-pageproperties": "Data",

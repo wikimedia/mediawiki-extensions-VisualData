@@ -260,6 +260,7 @@
 	"visualdata-jsmodule-outdated-version": "A label message",
 	"manageschemas": "A label message",
 	"visualdata-jsmodule-missing-json-diff-library": "A label message",
+	"visualdata-jsmodule-missing-json-diff-library-preload-data": "A label message",
 
 	"visualdata-jsmodule-formfield-showif": "A label message",
 	"visualdata-jsmodule-formfield-showif-help": "A label message",
