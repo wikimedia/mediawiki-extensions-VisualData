@@ -1903,7 +1903,7 @@ class VisualData {
 
 			// otherwise return-url is the target title
 			// @see SubmitForm
-			if ( !array_key_exists( 'return-url', $value['options'] )
+			if ( empty( $value['options']['return-url'] )
 				&& !empty( $value['options']['return-page'] ) ) {
 				$title_ = self::getTitleIfKnown( $value['options']['return-page'] );
 				$query = '';
