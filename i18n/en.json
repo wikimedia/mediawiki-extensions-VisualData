@@ -386,6 +386,8 @@
 	"visualdata-jsmodule-forms-wiki": "",
 	"visualdata-jsmodule-forms-categories": "Set categories",
 
+	"visualdata-jsmodule-forms-cannot-edit-form": "cannot edit",
+
 	"visualdata-jsmodule-schemas-alert-noname": "no name",
 	"visualdata-jsmodule-schemas-alert-no-properties": "no properties",
 	"visualdata-jsmodule-forms-dialogsearch-selectschemas": "select schemas",

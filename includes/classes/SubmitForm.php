@@ -128,12 +128,18 @@ class SubmitForm {
 	}
 
 	/**
-	 * @param string $str
+	 * @param string|array $value
 	 * @return string
 	 */
-	private	function parseWikitext( $str ) {
+	private	function parseWikitext( $value ) {
 		// return $this->parser->recursiveTagParseFully( $str );
-		return Parser::stripOuterParagraph( $this->output->parseAsContent( $str ) );
+		if ( !is_array( $value ) ) {
+			return Parser::stripOuterParagraph( $this->output->parseAsContent( $value ) );
+		}
+		$self = $this;
+		return array_map( static function ( $v ) use ( $self ) {
+			return Parser::stripOuterParagraph( $self->output->parseAsContent( $v ) );
+		}, $value );
 	}
 
 	/**
@@ -145,8 +151,8 @@ class SubmitForm {
 		$job = new PublishStashedFile( Title::makeTitle( NS_FILE, $filename ), [
 			'filename' => $filename,
 			'filekey' => $filekey,
-			'comment' => "",
-			// 'tags' => "",
+			'comment' => '',
+			// 'tags' => '',
 			'text' => false,
 			'watch' => false,
 			// 'watchlistexpiry' => $watchlistExpiry,
@@ -154,7 +160,7 @@ class SubmitForm {
 		] );
 
 		if ( !$job->run() ) {
-			$errors[] = $this->context->msg( "visualdata-special-submit-publishfilejoberror", $job->getLastError(), $filename )->parse();
+			$errors[] = $this->context->msg( 'visualdata-special-submit-publishfilejoberror', $job->getLastError(), $filename )->parse();
 		}
 	}
 
@@ -199,7 +205,7 @@ class SubmitForm {
 
 		} catch ( \Exception $e ) {
 			// $this->setLastError( get_class( $e ) . ": " . $e->getMessage() );
-			$errors[] = $this->context->msg( "visualdata-special-submit-move-error", $textFrom, $e->getMessage() )->parse();
+			$errors[] = $this->context->msg( 'visualdata-special-submit-move-error', $textFrom, $e->getMessage() )->parse();
 			return false;
 		}
 
@@ -216,9 +222,9 @@ class SubmitForm {
 	private function createEmptyRevision( $title ) {
 		$wikiPage = \VisualData::getWikiPage( $title );
 		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
-		$main_content = ContentHandler::makeContent( "", $title );
+		$main_content = ContentHandler::makeContent( '', $title );
 		$pageUpdater->setContent( SlotRecord::MAIN, $main_content );
-		$comment = CommentStoreComment::newUnsavedComment( "" );
+		$comment = CommentStoreComment::newUnsavedComment( '' );
 		return $pageUpdater->saveRevision( $comment, EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY );
 	}
 
@@ -301,6 +307,12 @@ class SubmitForm {
 	 * @return array
 	 */
 	public function processData( $data ) {
+		// this should happen only if hacked
+		if ( !$this->user->isAllowed( 'visualdata-caneditdata' ) ) {
+			echo $this->context->msg( 'visualdata-jsmodule-forms-cannot-edit-form' )->text();
+			exit();
+		}
+
 		$errors = [];
 		// @TODO implement update content-model
 
@@ -405,18 +417,32 @@ class SubmitForm {
 		$untransformedValues = [];
 		foreach ( $data['flatten'] as $path => $value ) {
 			if ( !empty( $value['schema']['wiki']['value-formula'] ) ) {
-				$data['flatten'][$path]['value'] = $transformedValues[$path] =
-					$this->replaceFormula( $path, $value['value'], $data['flatten'], $value['schema']['wiki']['value-formula'] );
+				if ( !is_array( $value['value'] ) ) {
+					$data['flatten'][$path]['value'] = $transformedValues[$path] =
+						$this->replaceFormula( $path, $value['value'], $data['flatten'], $value['schema']['wiki']['value-formula'] );
+				} else {
+					foreach ( $value['value'] as $v ) {
+						$data['flatten'][$path]['value'][] = $transformedValues[$path][] =
+							$this->replaceFormula( $path, $v, $data['flatten'], $value['schema']['wiki']['value-formula'] );
+					}
+				}
 			}
 
 			if ( !empty( $value['schema']['wiki']['value-prefix'] ) ) {
-				$data['flatten'][$path]['value'] = $transformedValues[$path] =
-					$value['schema']['wiki']['value-prefix'] . $data['flatten'][$path]['value'];
+				if ( !is_array( $data['flatten'][$path]['value'] ) ) {
+					$data['flatten'][$path]['value'] = $transformedValues[$path] =
+						$value['schema']['wiki']['value-prefix'] . $data['flatten'][$path]['value'];
+				} else {
+					foreach ( $data['flatten'][$path]['value'] as $v ) {
+						$data['flatten'][$path]['value'][] = $transformedValues[$path][] =
+							$value['schema']['wiki']['value-prefix'] . $v;
+					}
+				}
 			}
 
 			if ( !empty( $value['schema']['wiki']['value-formula'] )
 				|| !empty( $value['schema']['wiki']['value-prefix'] ) ) {
-				$untransformedValues[$path] = (string)$value['value'];
+				$untransformedValues[$path] = $value['value'];
 			}
 		}
 

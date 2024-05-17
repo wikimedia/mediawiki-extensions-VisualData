@@ -376,6 +376,7 @@
 	"visualdata-jsmodule-forms-freetext": "A label message",
 	"visualdata-jsmodule-forms-wiki": "A label message",
 	"visualdata-jsmodule-forms-categories": "A label message",
+	"visualdata-jsmodule-forms-cannot-edit-form": "A label message",
 	"visualdata-jsmodule-schemas-alert-noname": "A label message",
 	"visualdata-jsmodule-schemas-alert-no-properties": "A label message",
 	"visualdata-jsmodule-forms-dialogsearch-selectschemas": "A label message",

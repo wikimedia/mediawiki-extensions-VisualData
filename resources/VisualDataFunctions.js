@@ -207,7 +207,6 @@ VisualDataFunctions = ( function () {
 						ret = [ 'OO.ui.TextInputWidget' ];
 						break;
 				}
-
 				break;
 
 			case 'number':

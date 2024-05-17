@@ -140,8 +140,11 @@ const VisualDataProcessModel = function (
 			}
 			loopA: for ( var error of AjvErrors ) {
 				var path = `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }`;
+
 				for ( var path_ of Removed ) {
-					if ( path.indexOf( path_ ) === 0 ) {
+					if ( path === path_ ||
+						// @FIXME add specific reference to arrays
+						( /\/\d+$/.test( path_ ) && path.indexOf( path_ ) === 0 ) ) {
 						continue loopA;
 					}
 				}

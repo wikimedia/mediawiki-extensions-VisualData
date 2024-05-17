@@ -3141,6 +3141,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		if ( Form.options.view === 'popup' ) {
+
 			var popupButton = new OO.ui.ButtonWidget( {
 				icon: 'edit',
 				label: Form.options.title
@@ -3460,6 +3461,7 @@ $( function () {
 		var instances = [];
 
 		for ( var formID in pageForms ) {
+
 			var form = pageForms[ formID ];
 
 			form = $.extend(
@@ -3473,6 +3475,12 @@ $( function () {
 				},
 				form
 			);
+
+			if ( !config.caneditdata ) {
+				// form.options.title
+				$( '#visualdataform-wrapper-' + formID ).html( mw.msg( 'visualdata-jsmodule-forms-cannot-edit-form' ) );
+				continue;
+			}
 
 			if ( formID in submissionData ) {
 				form = $.extend(
