@@ -59,7 +59,7 @@ class VisualData {
 	public static $pageButtons = [];
 
 	/** @var Logger */
-	private static $Logger;
+	public static $Logger;
 
 	/** @var int */
 	public static $queryLimit = 500;
