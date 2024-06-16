@@ -68,7 +68,7 @@ class SpecialVisualDataSubmit extends SpecialPage {
 
 		$request = $this->getRequest();
 
-		$data = $request->getVal( 'data' );
+		$data = $request->getVal( 'data', '{}' );
 
 		$this->onFormSubmit( $data );
 	}
