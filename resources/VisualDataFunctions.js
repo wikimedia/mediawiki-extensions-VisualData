@@ -240,6 +240,11 @@ VisualDataFunctions = ( function () {
 	}
 
 	function getInputHelpUrl( inputName ) {
+		// @FIXME the resource loader won't load correctly this function
+		// without the next line
+		// eslint-disable-next-line no-console
+		console.log( '' );
+
 		// @TODO redirect to the extension page for docs on specific inputs
 		if ( inputName.indexOf( 'OO.' ) === -1 && inputName.indexOf( 'mw.' ) === -1 ) {
 			return null;
