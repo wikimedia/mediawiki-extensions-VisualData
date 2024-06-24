@@ -188,7 +188,9 @@ class SchemaProcessor {
 				'name' => $label,
 			]
 		];
-		$this->handleRootFrom( $ret, $schema );
+		if ( is_array( $schema ) ) {
+			$this->handleRootFrom( $ret, $schema );
+		}
 		$this->assignUUID( $ret );
 		return $ret;
 	}
