@@ -45,6 +45,9 @@
 	"right-visualdata-caneditvisualdata": "A label message",
 	"right-visualdata-caneditdata": "A label message",
 	"right-visualdata-canmanageschemas": "A label message",
+	"group-visualdata-admin": "A label message",
+	"group-visualdata-editor": "A label message",
+
 	"action-visualdata-caneditvisualdata": "A label message",
 	"action-visualdata-caneditdata": "A label message",
 	"action-visualdata-canmanageschemas": "A label message",

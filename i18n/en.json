@@ -53,6 +53,9 @@
 	"right-visualdata-caneditdata": "can edit data",
 	"right-visualdata-canmanageschemas": "can manage schemas",
 
+	"group-visualdata-admin": "VisualData admin",
+	"group-visualdata-editor": "VisualData editor",
+
 	"action-visualdata-caneditvisualdata": "edit visualdata",
 	"action-visualdata-caneditdata": "edit data",
 	"action-visualdata-canmanageschemas": "manage schemas",
