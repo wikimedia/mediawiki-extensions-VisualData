@@ -393,6 +393,14 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-query-template-example'
 		],
+		'module' => [
+			'label' => 'visualdata-parserfunction-query-module-label',
+			'description' => 'visualdata-parserfunction-query-module-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-query-module-example'
+		],
 		'limit' => [
 			'label' => 'visualdata-parserfunction-query-limit-label',
 			'description' => 'visualdata-parserfunction-query-limit-description',

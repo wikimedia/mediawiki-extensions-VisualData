@@ -227,6 +227,10 @@
 	"visualdata-parserfunction-query-template-description": "A label message",
 	"visualdata-parserfunction-query-template-example": "A label message",
 
+	"visualdata-parserfunction-query-module-label": "A label message",
+	"visualdata-parserfunction-query-module-description": "A label message",
+	"visualdata-parserfunction-query-module-example": "A label message",
+
 	"visualdata-parserfunction-query-limit-label": "A label message",
 	"visualdata-parserfunction-query-limit-description": "A label message",
 	"visualdata-parserfunction-query-limit-example": "A label message",

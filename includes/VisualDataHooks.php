@@ -59,6 +59,7 @@ class VisualDataHooks {
 			'base64' => 'Base64ResultPrinter',
 			'query' => 'QueryResultPrinter',
 			'json-raw' => 'JsonRawResultPrinter',
+			'lua' => 'LuaResultPrinter',
 		];
 	}
 

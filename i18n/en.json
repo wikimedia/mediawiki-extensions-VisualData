@@ -237,6 +237,10 @@
 	"visualdata-parserfunction-query-template-description": "",
 	"visualdata-parserfunction-query-template-example": "",
 
+	"visualdata-parserfunction-query-module-label": "module",
+	"visualdata-parserfunction-query-module-description": "",
+	"visualdata-parserfunction-query-module-example": "",
+
 	"visualdata-parserfunction-query-limit-label": "limit",
 	"visualdata-parserfunction-query-limit-description": "",
 	"visualdata-parserfunction-query-limit-example": "",

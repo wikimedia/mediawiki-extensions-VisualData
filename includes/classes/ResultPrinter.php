@@ -80,6 +80,7 @@ class ResultPrinter {
 			'separator' => [ '', 'string' ],
 			'values-separator' => [ ', ', 'string' ],
 			'template' => [ '', 'string' ],
+			'module' => [ '', 'string' ],
 			'pagetitle' => [ 'page title', 'string' ]
 		];
 
