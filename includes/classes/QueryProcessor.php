@@ -98,6 +98,7 @@ class QueryProcessor {
 			'order' => [ '', 'string' ],
 			'pagetitle' => [ 'pagetitle', 'string' ],
 			'hierarchical-conditions' => [ true, 'bool' ],
+			'debug' => [ false, 'bool' ],
 		];
 
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
@@ -174,7 +175,7 @@ class QueryProcessor {
 			function ( $matches ) {
 				if ( strpos( $matches[1], '::' ) !== false ) {
 					[ $prop, $value ] = explode( '::', $matches[1] );
-					$this->conditionProperties[$prop] = $value;
+					$this->conditionProperties[$prop][] = $value;
 				} else {
 					$this->conditionSubjects[] = $matches[1];
 				}
@@ -304,17 +305,18 @@ class QueryProcessor {
 	}
 
 	/**
-	 * @param string $value
+	 * @param string $exp
 	 * @param string $field
 	 * @param string|null $dataType string
 	 * @return string
 	 */
-	private function parseCondition( $value, $field, $dataType = 'string' ) {
+	private function parseCondition( $exp, $field, $dataType = 'string' ) {
 		// use $this->dbr->buildLike( $prefix, $this->dbr->anyString() )
 		// if $value contains ~
 		$likeBefore = false;
 		$likeAfter = false;
-		preg_match( '/^(!)?(~)?(.+?)(~)?$/', $value, $match );
+		$value = $exp;
+		preg_match( '/^(!)?(~)?(.+?)(~)?$/', $exp, $match );
 
 		if ( !empty( $match ) ) {
 			$value = $match[3];
@@ -343,20 +345,20 @@ class QueryProcessor {
 					'/^(<)\s*(.+)$/' => '<',
 					// '/^(<<)\s*(.+)$/' => '<',
 					'/^(<=)\s*(.+)$/' => '<=',
-					'/^(!)\s*(.+)$/' => 'NOT',
+					'/^(!)\s*(.+)$/' => '!=',
 				];
 			} else {
 				$patterns = [
-					'/^(!)\s*(.+)$/' => 'NOT',
+					'/^(!)\s*(.+)$/' => '!=',
 				];
 			}
 			foreach ( $patterns as $regex => $sql ) {
-				preg_match( $regex, $value, $match );
-				if ( !empty( $match ) ) {
-					return "$field {$sql} " . $this->dbr->addQuotes( $match[2] );
+				preg_match( $regex, $exp, $match_ );
+
+				if ( !empty( $match_ ) ) {
+					return "$field {$sql} " . $this->dbr->addQuotes( $match_[2] );
 				}
 			}
-
 			return "$field = $quotedVal";
 		}
 
@@ -368,8 +370,28 @@ class QueryProcessor {
 		} elseif ( $likeBefore && $likeAfter ) {
 			$quotedVal = $this->dbr->buildLike( $any, $value, $any );
 		}
-		$not = ( empty( $match[2] ) ) ? '' : ' NOT';
+		$not = ( empty( $match[1] ) ) ? '' : ' NOT';
+
 		return "{$field}{$not}{$quotedVal}";
+	}
+
+	/**
+	 * @param string $pathNoIndex
+	 * @param string $field
+	 * @param string $tablename
+	 * @param array &$conds
+	 */
+	private function getConditions( $pathNoIndex, $field, $tablename, &$conds ) {
+		foreach ( $this->conditionProperties[$pathNoIndex] as $v ) {
+			$values = explode( '||', $v );
+			$conds_ = [];
+			// OR conditions, only within square brackets, e.g. [[prop a::a||b]]
+			foreach ( $values as $vv ) {
+				$conds_[] = $this->parseCondition( $vv, $field, $tablename );
+			}
+			// AND conditions, eg.  [[prop a::!a]] [[prop a::!b]]
+			$conds[] = $this->dbr->makeList( $conds_, LIST_OR );
+		}
 	}
 
 	private function performQuery() {
@@ -551,7 +573,7 @@ class QueryProcessor {
 			}
 
 			if ( array_key_exists( $pathNoIndex, $this->conditionProperties ) ) {
-				$conds[] = $this->parseCondition( $this->conditionProperties[$pathNoIndex], "t$key.value", $tablename );
+				$this->getConditions( $pathNoIndex, "t$key.value", $tablename, $conds );
 			}
 
 			if ( $key > 0 ) {
@@ -644,8 +666,8 @@ class QueryProcessor {
 				. ' ON ' . $this->dbr->makeList( $categories, LIST_OR );
 		}
 
-		// selectSQLText
-		$method = !$this->count ? 'select' : 'selectField';
+		$method = ( !$this->params['debug'] ? ( !$this->count ? 'select' : 'selectField' )
+			: 'selectSQLText' );
 
 		$options = $this->getOptions();
 
@@ -666,6 +688,10 @@ class QueryProcessor {
 			// join
 			$joins
 		);
+
+		if ( $this->params['debug'] ) {
+			return (string)$res;
+		}
 
 		if ( $this->count ) {
 			return (int)$res;
