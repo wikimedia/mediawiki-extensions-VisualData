@@ -311,6 +311,19 @@ class VisualDataHooks {
 	}
 
 	/**
+	 * @param string $engine
+	 * @param array &$extraLibraries
+	 * @return bool
+	 */
+	public static function onScribuntoExternalLibraries( $engine, &$extraLibraries ) {
+		if ( $engine !== 'lua' ) {
+			return true;
+		}
+		$extraLibraries['visualdata'] = \MediaWiki\Extension\VisualData\Scribunto\LuaLibrary::class;
+		return true;
+	}
+
+	/**
 	 * @see https://www.mediawiki.org/wiki/Manual:Hooks/MultiContentSave
 	 * @param RenderedRevision $renderedRevision
 	 * @param UserIdentity $user

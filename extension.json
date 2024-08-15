@@ -83,7 +83,8 @@
 		"SkinBuildSidebar": "VisualDataHooks::onSkinBuildSidebar",
 		"SidebarBeforeOutput": "VisualDataHooks::onSidebarBeforeOutput",
 		"SkinTemplateNavigation::Universal": "VisualDataHooks::onSkinTemplateNavigation",
-		"ParserPreSaveTransformComplete": "VisualDataHooks::onParserPreSaveTransformComplete"
+		"ParserPreSaveTransformComplete": "VisualDataHooks::onParserPreSaveTransformComplete",
+		"ScribuntoExternalLibraries": "VisualDataHooks::onScribuntoExternalLibraries"
 	},
 	"SpecialPages": {
 		"VisualDataSubmit": "SpecialVisualDataSubmit",
