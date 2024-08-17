@@ -596,8 +596,8 @@ class QueryProcessor {
 			}
 
 			$tables_ = [
-				't' => $this->dbr->tableName( "visualdata_$tablename" ),
-				'p' => $this->dbr->tableName( 'visualdata_props' )
+				't' => "visualdata_$tablename",
+				'p' => 'visualdata_props'
 			];
 			$fields_ = [ 't.value', 't.page_id', 'p.path_no_index', 'p.path', 'p.path_parent', 'p.schema_id' ];
 			$conds_ = [];
@@ -640,9 +640,9 @@ class QueryProcessor {
 
 			} else {
 				// something in this form A:A/~
-				$tables['page'] = $this->dbr->tableName( 'page' );
+				$tables['page_alias'] = 'page';
 				// 'USE INDEX' => ( version_compare( MW_VERSION, '1.36', '<' ) ? 'name_title' : 'page_name_title' ),
-				$joins['page'] = [ 'JOIN', [ 'page.page_id = t0.page_id' ] ];
+				$joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
 				// @FIXME replace underscore inside parseCondition
 				$value = str_replace( ' ', '_', $value );
 
@@ -653,7 +653,7 @@ class QueryProcessor {
 					// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
 					if ( ( $nsIndex = array_search( $ns, $this->formattedNamespaces ) ) !== false ) {
 						$value = implode( ':', $arr );
-						$conds[] = "page.page_namespace = $nsIndex";
+						$conds[] = "page_alias.page_namespace = $nsIndex";
 					}
 				}
 

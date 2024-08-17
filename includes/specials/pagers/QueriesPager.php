@@ -147,13 +147,16 @@ class QueriesPager extends TablePager {
 		$dbr = \VisualData::wfGetDB( DB_REPLICA );
 		$ret = [];
 		$conds = [];
-		$join_conds[$dbr->tableName( 'page' ) . ' as page'] = [ 'LEFT JOIN', 'visualdata_links.page_id=page.page_id' ];
+		$join_conds = [];
+		$join_conds['page_alias'] = [ 'LEFT JOIN', 'links_alias.page_id=page_alias.page_id' ];
 		$options = [];
+		$tables = [];
+		$tables['page_alias'] = 'page';
+		$tables['links_alias'] = 'visualdata_links';
 
-		$tables = [ $dbr->tableName( 'page' ) . ' as page', $dbr->tableName( 'visualdata_links' ) . ' as visualdata_links' ];
 		$fields = [ '*', 'page_title' ];
 		$conds[ 'type' ] = 'query';
-		$conds[] = 'visualdata_links.page_id != 0';
+		$conds[] = 'links_alias.page_id != 0';
 
 		$schemaname = $this->request->getVal( 'schemaname' );
 		if ( !empty( $schemaname ) ) {

@@ -147,16 +147,16 @@ class FormsPager extends TablePager {
 
 		$ret = [];
 		$conds = [];
-		$join_conds['page'] = [ 'LEFT JOIN', 'links.page_id=page.page_id' ];
+		$join_conds['page_alias'] = [ 'LEFT JOIN', 'links_alias.page_id=page_alias.page_id' ];
 		$options = [];
 
 		$tables = [
-			'page' => $dbr->tableName( 'page' ),
-			'links' => $dbr->tableName( 'visualdata_links' )
+			'page_alias' => 'page',
+			'links_alias' => 'visualdata_links'
 		];
 		$fields = [ '*', 'page_title' ];
 		$conds[ 'type' ] = 'form';
-		$conds[] = 'links.page_id != 0';
+		$conds[] = 'links_alias.page_id != 0';
 
 		$schemaname = $this->request->getVal( 'schemaname' );
 		if ( !empty( $schemaname ) ) {

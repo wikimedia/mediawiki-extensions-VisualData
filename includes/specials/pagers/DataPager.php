@@ -145,11 +145,12 @@ class DataPager extends TablePager {
 	 */
 	public function getQueryInfo() {
 		$dbr = \VisualData::wfGetDB( DB_REPLICA );
-
-		$join_conds[$dbr->tableName( 'page' ) . ' as page'] = [ 'LEFT JOIN', 'schema_pages.page_id=page.page_id' ];
+		$join_conds = [];
+		$join_conds['page_alias'] = [ 'LEFT JOIN', 'schema_pages.page_id=page_alias.page_id' ];
 		$options = [];
-
-		$tables = [ $dbr->tableName( 'page' ) . ' as page', $dbr->tableName( 'visualdata_schema_pages' ) . ' as schema_pages' ];
+		$tables = [];
+		$tables['page_alias'] = 'page';
+		$tables['schema_pages'] = 'visualdata_schema_pages';
 		$fields = [ '*', 'page_title' ];
 		$conds[] = 'schema_pages.page_id != 0';
 		$schemaname = $this->request->getVal( 'schemaname' );

@@ -157,10 +157,7 @@ class DatabaseManager {
 			return false;
 		}
 
-		$schemaId = $this->getSchemaId( $schema );
-		if ( !$schemaId ) {
-			return;
-		}
+		$schemaId = $this->recordSchema( $schema );
 
 		$tableName = 'visualdata_links_template';
 		$conds = [
@@ -209,10 +206,7 @@ class DatabaseManager {
 		];
 
 		foreach ( $schemas as $schemaName ) {
-			$schemaId = $this->getSchemaId( $schemaName );
-			if ( !$schemaId ) {
-				continue;
-			}
+			$schemaId = $this->recordSchema( $schemaName );
 
 			if ( (bool)$this->dbr->selectField(
 				$tableName,
@@ -603,11 +597,12 @@ class DatabaseManager {
 
 		// @see MediaWiki\Extension\VisualData\Pagers/DataPager
 		$join_conds = [];
-		$join_conds[$dbr->tableName( 'page' ) . ' as page'] = [ 'LEFT JOIN', 'schema_pages.page_id=page.page_id' ];
+		$join_conds['page_alias'] = [ 'LEFT JOIN', 'schema_pages.page_id=page_alias.page_id' ];
 		$options = [];
-
-		$tables = [ $dbr->tableName( 'page' ) . ' as page', $dbr->tableName( 'visualdata_schema_pages' ) . ' as schema_pages' ];
-		$fields = [ 'page_title', 'page.page_id' ];
+		$tables = [];
+		$tables['page_alias'] = 'page';
+		$tables['schema_pages'] = 'visualdata_schema_pages';
+		$fields = [ 'page_title', 'page_alias.page_id' ];
 		$conds[] = 'schema_pages.page_id != 0';
 		$conds[ 'schema_id' ] = $schemaId;
 
@@ -719,6 +714,8 @@ class DatabaseManager {
 		// remove unused entries
 		$this->removeUnusedEntries();
 
+		// @TODO delete schema if VisualDataSchema namespace
+
 		// invalidate cache of pages with queries
 		// involving delete schemas
 		$this->invalidatePagesWithQueries( $schemas );
@@ -733,13 +730,6 @@ class DatabaseManager {
 			$sql = "DELETE FROM $tableNameProps WHERE table_id = $tableId AND id NOT IN (SELECT prop_id FROM $tableName)";
 			$res = $this->dbw->query( $sql, __METHOD__ );
 		}
-
-		// remove unused entries from visualdata_schemas
-		// if visualdata_schema_pages does not contain a given schema
-		$tableNameSchemas = $this->dbr->tableName( 'visualdata_schemas' );
-		$tableNameSchemaPages = $this->dbr->tableName( 'visualdata_schema_pages' );
-		$sql = "DELETE FROM $tableNameSchemas WHERE id NOT IN (SELECT schema_id FROM $tableNameSchemaPages)";
-		$res = $this->dbw->query( $sql, __METHOD__ );
 	}
 
 	/**
@@ -833,10 +823,9 @@ class DatabaseManager {
 
 	/**
 	 * @param string $schemaName
-	 * @param int $articleId
 	 * @return int
 	 */
-	private function recordSchema( $schemaName, $articleId ) {
+	private function recordSchema( $schemaName ) {
 		$tableName = 'visualdata_schemas';
 		$conds = [
 			'name' => $schemaName,
@@ -846,6 +835,17 @@ class DatabaseManager {
 			'created_at' => $this->dateTime
 		] );
 		$schemaId = $this->updateOrInsert( $tableName, $conds, $insert );
+
+		return $schemaId;
+	}
+
+	/**
+	 * @param string $schemaName
+	 * @param int $articleId
+	 * @return int
+	 */
+	private function recordSchemaPage( $schemaName, $articleId ) {
+		$schemaId = $this->recordSchema( $schemaName );
 
 		$tableName = 'visualdata_schema_pages';
 		$conds = [
@@ -1021,7 +1021,7 @@ class DatabaseManager {
 		}
 
 		foreach ( $props as $schemaName => $values ) {
-			$schemaId = $this->recordSchema( $schemaName, $articleId );
+			$schemaId = $this->recordSchemaPage( $schemaName, $articleId );
 
 			// delete all props related to this schema_id
 			// and article
