@@ -2340,8 +2340,22 @@ class VisualData {
 		$services = MediaWikiServices::getInstance();
 
 		if ( version_compare( MW_VERSION, '1.42', '>=' ) ) {
-			// @TODO MW 1.42
-			return null;
+			include_once __DIR__ . '/importer/VisualDataImporter1_42.php';
+
+			// @see WikiImporterFactory.php -> getWikiImporter
+			$performer = RequestContext::getMain()->getAuthority();
+			return new VisualDataImporter1_42(
+				$performer,
+				$services->getMainConfig(),
+				$services->getHookContainer(),
+				$services->getContentLanguage(),
+				$services->getNamespaceInfo(),
+				$services->getTitleFactory(),
+				$services->getWikiPageFactory(),
+				$services->getWikiRevisionUploadImporter(),
+				$services->getContentHandlerFactory(),
+				$services->getSlotRoleRegistry()
+			);
 
 		} elseif ( version_compare( MW_VERSION, '1.37', '>=' ) ) {
 			include_once __DIR__ . '/importer/VisualDataImporter.php';
