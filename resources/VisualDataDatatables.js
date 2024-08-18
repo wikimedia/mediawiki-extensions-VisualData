@@ -46,12 +46,31 @@ $( function () {
 		var preloadData = {};
 
 		var table = $( this );
-		var count = table.data( 'count' );
 		var tableData = table.data();
+		var count = tableData.count;
+		var conf = tableData.conf;
+		var query = tableData.query;
 
-		var conf = {
-			pageLength: 20
-		};
+		if ( conf.searchPanes ) {
+			// https://datatables.net/reference/option/layout
+			// https://datatables.net/examples/layout/ids-and-classes.html
+			conf.layout.top1 = {
+				// whatever class
+				rowClass: 'row-class',
+				features: 'searchPanes'
+			};
+			conf.columnDefs = [
+				{
+					searchPanes: {
+						show: true
+					},
+					targets: '_all'
+				}
+			];
+		}
+
+		// console.log('conf',conf);
+
 		$( this ).DataTable( conf );
 	} );
 } );

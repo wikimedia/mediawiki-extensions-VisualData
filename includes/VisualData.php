@@ -848,7 +848,7 @@ class VisualData {
 					if ( $val === null ) {
 						$val = filter_var( $defaultValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 					}
-					settype( $val, "bool" );
+					settype( $val, 'bool' );
 					break;
 
 				case 'array':
@@ -858,13 +858,13 @@ class VisualData {
 
 				case 'number':
 					$val = filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
-					settype( $val, "float" );
+					settype( $val, 'float' );
 					break;
 
 				case 'int':
 				case 'integer':
 					$val = filter_var( $val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
-					settype( $val, "integer" );
+					settype( $val, 'integer' );
 					break;
 
 				default:
@@ -987,11 +987,13 @@ class VisualData {
 				if ( preg_match( '/^template(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
 					$templates[$match[2]] = $match[3];
 				}
+				unset( $unknownNamed[$key] );
 				continue;
 			}
 
 			if ( strpos( $key, '?' ) === 0 ) {
 				$printouts[substr( $key, 1 )] = $val;
+				unset( $unknownNamed[$key] );
 			}
 		}
 
@@ -1020,6 +1022,18 @@ class VisualData {
 
 		if ( !array_key_exists( $params['format'], $GLOBALS['wgVisualDataResultPrinterClasses'] ) ) {
 			return 'format not supported';
+		}
+
+		// parse format-related parameters
+		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
+		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
+		if ( property_exists( $class, 'parameters' ) ) {
+			$defaultParameters_ = $class::$parameters;
+			array_walk( $defaultParameters_, static function ( &$value, $key ) {
+				$value = [ $value['default'], $value['type'] ];
+			} );
+			$params_ = self::applyDefaultParams( $defaultParameters_, $unknownNamed );
+			$params = array_merge( $params, $params_ );
 		}
 
 		$databaseManager = new DatabaseManager();
@@ -1600,14 +1614,14 @@ class VisualData {
 			$slots = $derivedDataUpdater->getSlots()->getSlots();
 			self::setSlots( $title, $slots );
 		}
-		$summary = "VisualData update";
+		$summary = 'VisualData update';
 		$flags = EDIT_INTERNAL;
 		$comment = CommentStoreComment::newUnsavedComment( $summary );
 		$RevisionRecord = $pageUpdater->saveRevision( $comment, $flags );
 
 		// Perform an additional null-edit if requested
 		if ( $doNullEdit && !$pageUpdater->isUnchanged() ) {
-			$comment = CommentStoreComment::newUnsavedComment( "" );
+			$comment = CommentStoreComment::newUnsavedComment( '' );
 			$pageUpdater = $wikiPage->newPageUpdater( $user );
 			$pageUpdater->saveRevision( $comment, EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY );
 		}

@@ -84,7 +84,11 @@ class ResultPrinter {
 			'pagetitle' => [ 'page title', 'string' ]
 		];
 
-		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
+		// *** do not discard original entries,
+		// only ensure default parameters exist
+		// when internally called from VisualData -> getResults
+		$params = array_merge( $params,
+			\VisualData::applyDefaultParams( $defaultParameters, $params ) );
 
 		$this->format = $params['format'];
 		$this->params = $params;
