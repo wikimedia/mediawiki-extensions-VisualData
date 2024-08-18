@@ -365,6 +365,9 @@ class SubmitForm {
 
 		if ( array_key_exists( 'categories', $data['form'] ) ) {
 			$jsonData['categories'] = $data['form']['categories'];
+		} elseif ( empty( $data['options']['edit-categories'] )
+			&& array_key_exists( 'default-categories', $data['options'] ) ) {
+			$jsonData['categories'] = $data['options']['default-categories'];
 		}
 
 		// *** not used anymore
@@ -571,8 +574,16 @@ class SubmitForm {
 			$jsonData['schemas-data']['untransformed'] = $untransformedValues;
 		}
 
-		$contentModel = array_key_exists( 'content-model', $data['form'] ) ? $data['form']['content-model']
-			: $data['config']['contentModel'];
+		if ( array_key_exists( 'content-model', $data['form'] ) ) {
+			$contentModel = $data['form']['content-model'];
+		} elseif ( $editTitle ) {
+			$contentModel = $editTitle->getContentModel();
+		} elseif ( empty( $data['options']['edit-content-model'] )
+			&& array_key_exists( 'default-content-model', $data['options'] ) ) {
+			$contentModel = $data['options']['default-content-model'];
+		} else {
+			$contentModel = $data['config']['contentModel'];
+		}
 
 		$freetext = array_key_exists( 'freetext', $data['form'] ) ? $data['form']['freetext']
 			: null;
