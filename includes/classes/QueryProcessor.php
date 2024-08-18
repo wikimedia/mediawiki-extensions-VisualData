@@ -109,7 +109,7 @@ class QueryProcessor {
 		$this->printouts = array_keys( $printouts );
 		$this->printoutsOriginal = $this->printouts;
 		$this->params = $params;
-		$this->dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$this->dbr = \VisualData::getDB( DB_REPLICA );
 		$this->formattedNamespaces = MediaWikiServices::getInstance()
 			->getContentLanguage()->getFormattedNamespaces();
 	}

@@ -144,7 +144,7 @@ class QueriesPager extends TablePager {
 	 * @return array
 	 */
 	public function getQueryInfo() {
-		$dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::getDB( DB_REPLICA );
 		$ret = [];
 		$conds = [];
 		$join_conds = [];

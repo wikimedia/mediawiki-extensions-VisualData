@@ -144,7 +144,7 @@ class DataPager extends TablePager {
 	 * @return array
 	 */
 	public function getQueryInfo() {
-		$dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::getDB( DB_REPLICA );
 		$join_conds = [];
 		$join_conds['page_alias'] = [ 'LEFT JOIN', 'schema_pages.page_id=page_alias.page_id' ];
 		$options = [];

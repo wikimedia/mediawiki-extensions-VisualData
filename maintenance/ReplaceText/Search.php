@@ -25,7 +25,7 @@ class Search {
 	) {
 		// global $wgReplaceTextResultsLimit;
 
-		$dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::getDB( DB_REPLICA );
 		$tables = [ 'page', 'revision', 'text', 'slots', 'content' ];
 		$vars = [ 'page_id', 'page_namespace', 'page_title', 'old_text', 'slot_role_id' ];
 		if ( $use_regex ) {
@@ -78,7 +78,7 @@ class Search {
 			return;
 		}
 
-		$dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::getDB( DB_REPLICA );
 		$title = Title::newFromText( $prefix );
 		if ( $title !== null ) {
 			$prefix = $title->getDbKey();
@@ -118,7 +118,7 @@ class Search {
 		$prefix,
 		$use_regex = false
 	) {
-		$dbr = \VisualData::wfGetDB( DB_REPLICA );
+		$dbr = \VisualData::getDB( DB_REPLICA );
 
 		$tables = [ 'page' ];
 		$vars = [ 'page_title', 'page_namespace' ];

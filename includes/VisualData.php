@@ -2465,7 +2465,7 @@ class VisualData {
 	}
 
 	/**
-	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageOwnership/+/7f9723dfd9d7cc3669d8530b8a098c0e13076c6e/includes/PageOwnership.php
+	 * @see MediaWiki\Title -> getLinksTo
 	 * @param Title $title
 	 * @param array $options
 	 * @param string $table
@@ -2474,9 +2474,9 @@ class VisualData {
 	 */
 	public static function getLinksTo( $title, $options = [], $table = 'pagelinks', $prefix = 'pl' ) {
 		if ( count( $options ) > 0 ) {
-			$db = self::wfGetDB( DB_PRIMARY );
+			$db = self::getDB( DB_PRIMARY );
 		} else {
-			$db = self::wfGetDB( DB_REPLICA );
+			$db = self::getDB( DB_REPLICA );
 		}
 
 		$res = $db->select(
@@ -2514,7 +2514,7 @@ class VisualData {
 	 * @return array
 	 */
 	public static function getPagesWithPrefix( $prefix, $namespace = NS_MAIN ) {
-		$dbr = self::wfGetDB( DB_REPLICA );
+		$dbr = self::getDB( DB_REPLICA );
 
 		$conds = [
 			'page_namespace' => $namespace,
@@ -2709,22 +2709,23 @@ class VisualData {
 	}
 
 	/**
-	 * @fixme use the suggested method since MW 1.39
 	 * @param int $db
-	 * @param string|string[] $groups
-	 * @param string|false $wiki
 	 * @return \Wikimedia\Rdbms\DBConnRef
 	 */
-	public static function wfGetDB( $db, $groups = [], $wiki = false ) {
-		if ( $wiki === false ) {
-			return MediaWikiServices::getInstance()
-				->getDBLoadBalancer()
-				->getMaintenanceConnectionRef( $db, $groups, $wiki );
-		} else {
-			return MediaWikiServices::getInstance()
-				->getDBLoadBalancerFactory()
-				->getMainLB( $wiki )
-				->getMaintenanceConnectionRef( $db, $groups, $wiki );
+	public static function getDB( $db ) {
+		if ( !method_exists( MediaWikiServices::class, 'getConnectionProvider' ) ) {
+			// @see https://gerrit.wikimedia.org/r/c/mediawiki/extensions/PageEncryption/+/1038754/comment/4ccfc553_58a41db8/
+			return MediaWikiServices::getInstance()->getDBLoadBalancer()->getConnection( $db );
+		}
+		$connectionProvider = MediaWikiServices::getInstance()->getConnectionProvider();
+		switch ( $db ) {
+			case DB_PRIMARY:
+			// phpcs:ignore MediaWiki.Usage.DeprecatedConstantUsage.DB_MASTER
+			case DB_MASTER:
+				return $connectionProvider->getPrimaryDatabase();
+			case DB_REPLICA:
+			default:
+				return $connectionProvider->getReplicaDatabase();
 		}
 	}
 }
