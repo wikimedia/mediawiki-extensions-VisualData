@@ -83,9 +83,10 @@ class ImportData extends Maintenance {
 			return 'invalid json';
 		}
 
-		// $context = new RequestContext();
 		$context = RequestContext::getMain();
-		// $context->setTitle( Title::makeTitle( NS_MAIN, '' ) );
+
+		// or: SpecialPage::getTitleFor( 'ManageSchemas' );
+		$context->setTitle( SpecialPage::getTitleFor( 'Badtitle' ) );
 
 		$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 
