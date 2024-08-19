@@ -1883,9 +1883,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				}
 
 				if ( data.editFreeText ) {
-					var inputWidget = getFreeTextInput( Config.contentModel === 'wikitext', {
+					var inputWidget = getFreeTextInput( data.contentModel === 'wikitext', {
 						value: Form.freetext,
-						contentModel: Config.contentModel
+						// @FIXME this could be removed
+						contentModel: data.contentModel
 					} );
 
 					freeTextField = new OO.ui.FieldLayout( inputWidget, {
@@ -1928,7 +1929,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						options: VisualDataFunctions.createDropDownOptions(
 							Config.contentModels
 						),
-						value: Config.contentModel
+						value: data.contentModel
 					} );
 
 					contentModelInput.on( 'change', async function ( value ) {
@@ -1946,10 +1947,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						// value === "html" ||
 						if ( value === 'wikitext' ) {
 							thisInputWidget = getFreeTextInput( true, {
+								// @FIXME this could be removed
 								contentModel: value,
 								value: freetextValue
 							} );
-							// // @TODO use TinyMCE for html
+						// @TODO use TinyMCE for html
 						} else {
 							thisInputWidget = getFreeTextInput( false, {
 								value: freetextValue
@@ -2561,6 +2563,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		var categories = [];
 
+		var contentModel = ( Form.options.action === 'create' && ( 'default-content-model' in Form.options ) ?
+			Form.options[ 'default-content-model' ] : Config.contentModel );
+
 		if ( 'edit-content-model' in Form.options ) {
 			editContentModel = Form.options[ 'edit-content-model' ];
 		}
@@ -2634,6 +2639,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				editCategories,
 				editContentModel,
 				editTargetSlot,
+				contentModel,
 				categories,
 				fieldAlign
 			}
