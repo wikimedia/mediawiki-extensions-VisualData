@@ -40,7 +40,7 @@ class ImportData extends Maintenance {
 
 	public function __construct() {
 		parent::__construct();
-		$this->addDescription( 'import json data' );
+		$this->addDescription( 'import data' );
 		$this->requireExtension( 'VisualData' );
 
 		// name,  description, required = false,
@@ -77,16 +77,26 @@ class ImportData extends Maintenance {
 			return 'no schema';
 		}
 
-		$data = json_decode( $contents, true );
+		$ext = pathinfo( $path, PATHINFO_EXTENSION );
+
+		if ( $ext !== 'csv' && $ext !== 'json' ) {
+			return 'file must be csv or json';
+		}
+
+		if ( $ext === 'csv' ) {
+			$data = $this->parseCsv( $contents );
+
+		} else {
+			$data = json_decode( $contents, true );
+		}
 
 		if ( !$data ) {
 			return 'invalid json';
 		}
 
+		// $context = new RequestContext();
 		$context = RequestContext::getMain();
-
-		// or: SpecialPage::getTitleFor( 'ManageSchemas' );
-		$context->setTitle( SpecialPage::getTitleFor( 'Badtitle' ) );
+		// $context->setTitle( Title::makeTitle( NS_MAIN, '' ) );
 
 		$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 
@@ -104,6 +114,18 @@ class ImportData extends Maintenance {
 		$importer->importData( $pagenameFormula, $data, $showMsg );
 	}
 
+	/**
+	 * @param array $contents
+	 * @return array
+	 */
+	private function parseCsv( $contents ) {
+		$csv = preg_split( '/[\n\r]+/', $contents, -1, PREG_SPLIT_NO_EMPTY );
+		$header = str_getcsv( array_shift( $csv ) );
+		return array_map( static function ( $row ) use ( $header ) {
+			$row = array_slice( str_getcsv( $row ), 0, count( $header ) );
+			return array_combine( $header, $row );
+		}, $csv );
+	}
 }
 
 $maintClass = ImportData::class;

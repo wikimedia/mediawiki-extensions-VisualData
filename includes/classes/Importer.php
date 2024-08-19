@@ -115,16 +115,18 @@ class Importer {
 				continue;
 			}
 
+			$showMsg( 'saving article: ' . $title_->getFullText() );
 			$pagename = $this->createArticle( $title_, $value );
-			$showMsg( 'saving article: ' . $pagename );
-			$entries = $databaseManager->recordProperties( 'ImportData', $title_, $flatten, $errors );
 
+			$entries = $databaseManager->recordProperties( 'ImportData', $title_, $flatten, $errors );
 			$showMsg( "$entries entries created for article $pagename" );
 			$n++;
 			if ( $this->options['limit'] !== false && $n === $this->options['limit'] ) {
 				break;
 			}
 		}
+
+		$showMsg( "$n pages imported" );
 		return true;
 	}
 
@@ -173,7 +175,7 @@ class Importer {
 		try {
 			$this->importer->doImportSelf( $pagename, $contents );
 		} catch ( Exception $e ) {
-			$this->showMsg( "error: $pagename " . $e->getMessage() );
+			call_user_func( $this->showMsg, "error: $pagename " . $e->getMessage() );
 		}
 
 		return $pagename;
