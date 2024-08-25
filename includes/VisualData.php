@@ -2720,8 +2720,6 @@ class VisualData {
 		$connectionProvider = MediaWikiServices::getInstance()->getConnectionProvider();
 		switch ( $db ) {
 			case DB_PRIMARY:
-			// phpcs:ignore MediaWiki.Usage.DeprecatedConstantUsage.DB_MASTER
-			case DB_MASTER:
 				return $connectionProvider->getPrimaryDatabase();
 			case DB_REPLICA:
 			default:
