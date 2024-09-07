@@ -956,9 +956,26 @@ class VisualData {
 		$params = self::applyDefaultParams( $defaultParameters, $params );
 
 		$printouts = [];
+		$printoutsOptions = [];
 
 		// root template
 		$templates = [ '' => $params['template'] ];
+
+		$parsePrintoutsOptions = static function ( &$value ) {
+			$pos = strpos( $value, '|+' );
+			if ( $pos === false ) {
+				return [];
+			}
+			$values = preg_split( '/\s*\|\+\s*/', $value, -1, PREG_SPLIT_NO_EMPTY );
+			array_shift( $values );
+			$ret = [];
+			foreach ( $values as $value_ ) {
+				[ $k, $v ] = explode( '=', urldecode( $value_ ), 2 );
+				$ret[trim( $k )] = trim( $v );
+			}
+			$value = trim( substr( $value, 0, $pos ) );
+			return $ret;
+		};
 
 		// default printer format
 		if ( empty( $params['format'] ) ) {
@@ -978,7 +995,9 @@ class VisualData {
 				// with the corresponding schema title if is set
 				// |?name= is processed in templates but not rendered
 				// |?name=abc abc is the field name
-				$printouts[substr( $val, 1 )] = substr( $val, 1 );
+				$value = substr( $val, 1 );
+				$printoutsOptions[$value] = $parsePrintoutsOptions( $value );
+				$printouts[$value] = $value;
 			}
 		}
 
@@ -992,10 +1011,13 @@ class VisualData {
 			}
 
 			if ( strpos( $key, '?' ) === 0 ) {
+				$printoutsOptions[substr( $key, 1 )] = $parsePrintoutsOptions( $val );
 				$printouts[substr( $key, 1 )] = $val;
 				unset( $unknownNamed[$key] );
 			}
 		}
+
+		$printoutsOptions['pagetitle'] = $parsePrintoutsOptions( $params['pagetitle'] );
 
 		// resort printouts based on parser function
 		uksort( $printouts, static function ( $a, $b ) use ( $argv ) {
@@ -1054,14 +1076,14 @@ class VisualData {
 		}
 
 		$context = RequestContext::getMain();
-
 		$resultPrinter = self::getResults(
 			$parser,
 			$context,
 			$query,
 			$templates,
 			$printouts,
-			$params
+			$params,
+			$printoutsOptions
 		);
 
 		$results = ( $resultPrinter ? $resultPrinter->getResults() : '' );
@@ -1140,6 +1162,7 @@ class VisualData {
 	 * @param array $templates
 	 * @param array $printouts
 	 * @param array $params
+	 * @param array $printoutsOptions []
 	 * @return bool|ResultPrinter
 	 */
 	public static function getResults(
@@ -1148,7 +1171,8 @@ class VisualData {
 		$query,
 		$templates,
 		$printouts,
-		$params
+		$params,
+		$printoutsOptions = []
 	) {
 		if ( empty( $params['schema'] ) || empty( $params['format'] ) ) {
 			return false;
@@ -1164,7 +1188,7 @@ class VisualData {
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
 		$queryProcessor = new QueryProcessor( $schema, $query, $printouts, $params );
 
-		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts );
+		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions );
 	}
 
 	/**
@@ -1215,17 +1239,32 @@ class VisualData {
 
 		// unknown named parameters
 		$c = [];
+
+		// preprocess printout options (|+)
+		$prevKey = null;
+		foreach ( $parameters as $key => $value ) {
+			if ( strpos( $value, '+' ) === 0 ) {
+				$parameters[$prevKey] .= ' |' . urlencode( substr( $value, 1 ) );
+				unset( $parameters[$key] );
+			} else {
+				$prevKey = $key;
+			}
+		}
+
 		foreach ( $parameters as $value ) {
 			if ( strpos( $value, '=' ) !== false ) {
 				[ $k, $v ] = explode( '=', $value, 2 );
 				$k = trim( $k );
 				$k_ = str_replace( ' ', '-', $k );
+				$v = trim( $v );
 
 				if ( in_array( $k, $defaultParameters ) || in_array( $k_, $defaultParameters ) ) {
-					$b[$k_] = trim( $v );
+					$b[$k_] = $v;
+					$prevKey = $k_;
 					continue;
 				} else {
-					$c[$k] = trim( $v );
+					$c[$k] = $v;
+					$prevKey = $k;
 					continue;
 				}
 			}

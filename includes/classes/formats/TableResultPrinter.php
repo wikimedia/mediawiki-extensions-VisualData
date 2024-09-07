@@ -33,8 +33,11 @@ class TableResultPrinter extends ResultPrinter {
 	/** @var HtmlTable */
 	protected $htmlTable;
 
-	/** @var headers */
+	/** @var array */
 	protected $headers = [];
+
+	/** @var array */
+	protected $json = [];
 
 	/**
 	 * @inheritDoc
@@ -50,9 +53,11 @@ class TableResultPrinter extends ResultPrinter {
 		$this->htmlTable->row();
 
 		if ( !empty( $this->params['pagetitle'] ) ) {
-			$this->headers['_'] = $this->params['pagetitle'];
+			// main label
+			$this->headers[''] = $this->params['pagetitle'];
 			$formatted = Linker::link( $title, $title->getText() );
 			$this->htmlTable->cell( $formatted );
+			$this->json[count( $this->htmlTable->rows )][''] = $formatted;
 		}
 
 		$path = '';
@@ -82,8 +87,12 @@ class TableResultPrinter extends ResultPrinter {
 		}
 
 		$this->headers[$path] = $key;
+		$this->mapPathSchema[$path] = $schema;
 
-		$value = $this->parser->recursiveTagParseFully( $value );
+		if ( $this->hasTemplate( $path ) ) {
+			$value = $this->parser->recursiveTagParseFully( $value );
+		}
+		$this->json[count( $this->htmlTable->rows )][$path] = $value;
 		$this->htmlTable->cell( $value );
 
 		return $value;

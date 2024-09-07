@@ -57,10 +57,16 @@ class ResultPrinter {
 	public $printouts;
 
 	/** @var array */
+	public $printoutsOptions;
+
+	/** @var array */
 	public $templates;
 
 	/** @var array */
 	public $validPrintouts;
+
+	/** @var array */
+	protected $mapPathSchema = [];
 
 	/**
 	 * @param Parser $parser
@@ -70,8 +76,9 @@ class ResultPrinter {
 	 * @param array $templates
 	 * @param array $params
 	 * @param array $printouts
+	 * @param array $printoutsOptions []
 	 */
-	public function __construct( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts ) {
+	public function __construct( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions = [] ) {
 		$this->queryProcessor = $queryProcessor;
 
 		$defaultParameters = [
@@ -96,6 +103,7 @@ class ResultPrinter {
 		$this->parser = $parser;
 		$this->output = $output;
 		$this->printouts = $printouts;
+		$this->printoutsOptions = $printoutsOptions;
 		$this->templates = $templates;
 		$this->valuesSeparator = $params['values-separator'];
 		$this->separator = $params['separator'];
@@ -238,7 +246,7 @@ class ResultPrinter {
 		// 		'frameId' => $frameId,
 		// 		'frameId' => 'empty',
 		// 		'template' => $finalTitle->getPrefixedDBkey(),
-		// 		'args' => $args
+		// 		'args' => $fargs
 		// 	]
 		// );
 		$text = $newFrame->expand( $dom );
@@ -446,7 +454,7 @@ class ResultPrinter {
 	 * @param string $path
 	 * @return bool
 	 */
-	private function hasTemplate( $path ) {
+	public function hasTemplate( $path ) {
 		return array_key_exists( $path, $this->templates )
 			&& !empty( $this->templates[$path] );
 	}
