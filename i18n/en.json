@@ -27,7 +27,8 @@
 
 	"apihelp-visualdata-load-data-summary": "visualdata load data",
 	"apihelp-visualdata-check-latest-version-summary": "visualdata check latest version",
-	"apihelp-visualdata-askquery-summary": "visualdata askquery",
+	"apihelp-visualdata-queryoptions-summary": "visualdata query",
+	"apihelp-visualdataquery-summary": "visualdata datatables",
 	"apihelp-visualdata-submit-form-summary": "visualdata submit form",
 	"apihelp-visualdata-save-schema-summary": "visualdata save schema",
 	"apihelp-visualdata-get-schemas-summary": "visualdata get schemas",
@@ -35,14 +36,21 @@
 
 	"apihelp-visualdata-get-schemas-example-1": "",
 	"apihelp-visualdata-submit-form-example-1": "",
-	"apihelp-visualdata-askquery-example-1": "",
+	"apihelp-visualdata-queryoptions-example-1": "",
+	"apihelp-visualdataquery-example-1": "",
 
 	"apihelp-visualdata-load-data-param-dataset": "",
 	"apihelp-visualdata-load-data-param-source-page": "",
 	"apihelp-visualdata-save-schema-param-schema": "",
 	"apihelp-visualdata-get-schemas-param-schemas": "",
 	"apihelp-visualdata-submit-form-param-data": "",
-	"apihelp-visualdata-askquery-param-data": "",
+	"apihelp-visualdata-queryoptions-param-data": "",
+	"apihelp-visualdataquery-param-schema": "",
+	"apihelp-visualdataquery-param-query": "",
+	"apihelp-visualdataquery-param-printouts": "",
+	"apihelp-visualdataquery-param-limit": "",
+	"apihelp-visualdataquery-param-offset": "",
+	"apihelp-visualdataquery-param-order": "",
 	"apihelp-visualdata-datatables-param-data": "",
 	"apihelp-visualdata-save-schema-param-source-page": "",
 	"apihelp-visualdata-save-schema-param-previous-label": "",
@@ -377,7 +385,7 @@
 
 	"visualdata-jsmodule-formfield-optionsfrom-values": "as defined",
 	"visualdata-jsmodule-formfield-optionsfrom-wikilist": "wiki list",
-	"visualdata-jsmodule-formfield-optionsfrom-askquery": "ask query",
+	"visualdata-jsmodule-formfield-optionsfrom-query": "query",
 
 	"visualdata-jsmodule-formfield-options-values": "enter one or more values",
 	"visualdata-jsmodule-formfield-options-label-formula": "options label formula",
@@ -429,10 +437,10 @@
 	"visualdata-jsmodule-dialog-close": "close",
 	"visualdata-jsmodule-dialog-done": "done",
 
-	"visualdata-jsmodule-formfield-askquery-schema-label": "schema",
-	"visualdata-jsmodule-formfield-askquery-schema-help": "schema to be queried",
-	"visualdata-jsmodule-formfield-askquery-label": "ask query",
-	"visualdata-jsmodule-formfield-askquery-help": "Enter an ask query (wikitext and parser functions allowed). Use <name> to retrieve the value of other fields in the same form (if a nested property use the complete path separated by slashes and omit array indexes for multiple items) and <value> to use the current value of the input, if the input is editable",
+	"visualdata-jsmodule-formfield-query-schema-label": "schema",
+	"visualdata-jsmodule-formfield-query-schema-help": "schema to be queried",
+	"visualdata-jsmodule-formfield-query-label": "query",
+	"visualdata-jsmodule-formfield-query-help": "Enter a visualdata query (wikitext and parser functions allowed). Use <name> to retrieve the value of other fields in the same form (if a nested property use the complete path separated by slashes and omit array indexes for multiple items) and <value> to use the current value of the input, if the input is editable",
 	"visualdata-jsmodule-formfield-printouts": "printouts",
 	"visualdata-jsmodule-formfield-printouts-help": "Enter the properties to be retrieved by the query (if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items)",
 
@@ -449,7 +457,7 @@
 
 	"visualdata-special-submit-notitle": "title not set or invalid",
 	"visualdata-jsmodule-formfield-message-more-inputs": "Available input widgets depend on the data-type and the multiple toggle",
-	"visualdata-jsmodule-formfield-message-options-askquery": "Selected input widget will show all options at once, use 'LookupElement' or 'MenuTagSearchMultiselect' for lists of arbitrary length",
+	"visualdata-jsmodule-formfield-message-options-query": "Selected input widget will show all options at once, use 'LookupElement' or 'MenuTagSearchMultiselect' for lists of arbitrary length",
 
 	"visualdata-menutagmultiselect-placeholder": "search items",
 

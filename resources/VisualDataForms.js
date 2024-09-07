@@ -459,12 +459,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	function clearDependentFields( pathNoIndex ) {
 		for ( var model of ModelFlatten ) {
 			var field = model.schema.wiki;
-			if ( !( 'options-askquery' in field ) ) {
+			if ( !( 'options-query' in field ) ) {
 				continue;
 			}
-			var askQuery = field[ 'options-askquery' ];
+			var query = field[ 'options-query' ];
 			var regExp = new RegExp( '<' + pathNoIndex + '>' );
-			if ( regExp.test( askQuery ) ) {
+			if ( regExp.test( query ) ) {
 				model.input.setValue( !model.multiselect ? '' : [] );
 			}
 		}
@@ -486,13 +486,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				continue;
 			}
 			var field = model.schema.wiki;
-			if ( !( 'options-askquery' in field ) ) {
+			if ( !( 'options-query' in field ) ) {
 				continue;
 			}
 
-			var askQuery = field[ 'options-askquery' ];
+			var query = field[ 'options-query' ];
 			var regExp = new RegExp( '<' + sourceModel.pathNoIndex + '>' );
-			if ( regExp.test( askQuery ) ) {
+			if ( regExp.test( query ) ) {
 				ProcessModel.getModel( 'schema', sourceModel.schemaName ).then( function ( res ) {
 					for ( var i in res.flatten ) {
 
@@ -540,12 +540,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	async function performQuery( model, value ) {
 		var field = model.schema.wiki;
-		var askQuery = field[ 'options-askquery' ];
+		var query = field[ 'options-query' ];
 		var matches = [];
 
 		var re = /<([^<>]+)>/g;
 		while ( true ) {
-			var match = re.exec( askQuery );
+			var match = re.exec( query );
 			if ( !match ) {
 				break;
 			}
@@ -554,11 +554,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		function doQuery() {
 			var payload = {
-				action: 'visualdata-askquery',
+				action: 'visualdata-queryoptions',
 				data: JSON.stringify( {
-					query: askQuery,
-					properties: field[ 'askquery-printouts' ],
-					schema: field[ 'askquery-schema' ],
+					query,
+					properties: field[ 'query-printouts' ],
+					schema: field[ 'query-schema' ],
 					'options-query-formula': field[ 'options-query-formula' ],
 					'options-label-formula': field[ 'options-label-formula' ]
 				} )
@@ -576,7 +576,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					} )
 					.fail( function ( thisRes ) {
 						// eslint-disable-next-line no-console
-						console.error( 'visualdata-askquery', thisRes );
+						console.error( 'visualdata-queryoptions', thisRes );
 						reject( thisRes );
 					} );
 			} ).catch( ( err ) => {
@@ -592,7 +592,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			for ( var match of matches ) {
 				for ( var i in res.flatten ) {
 					if ( match[ 1 ] === 'value' ) {
-						askQuery = askQuery.replace(
+						query = query.replace(
 							match[ 0 ],
 							// value of lookupElement
 							value
@@ -604,7 +604,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					var fullPath = parent + '/' + match[ 1 ];
 
 					if ( fullPath in res.flatten ) {
-						askQuery = askQuery.replace( match[ 0 ], res.flatten[ fullPath ].value );
+						query = query.replace( match[ 0 ], res.flatten[ fullPath ].value );
 						continue;
 					}
 
@@ -614,7 +614,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					// }
 
 					if ( res.flatten[ i ].pathNoIndex === fullPath ) {
-						askQuery = askQuery.replace( match[ 0 ], res.flatten[ i ].value );
+						query = query.replace( match[ 0 ], res.flatten[ i ].value );
 					}
 				}
 			}

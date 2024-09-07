@@ -1195,16 +1195,17 @@ class VisualData {
 	 * @param string $schema
 	 * @param string $query
 	 * @param array $printouts []
-	 * @param string $format json-raw
+	 * @param array $params []
 	 * @return null|array
 	 */
-	public static function getQueryResults( $schema, $query, $printouts = [], $format = 'json-raw' ) {
+	public static function getQueryResults( $schema, $query, $printouts = [], $params = [] ) {
 		$context = RequestContext::getMain();
 
-		$params = [
+		// limit, offset, order
+		$params = array_merge( $params, [
 			'schema' => $schema,
-			'format' => $format
-		];
+			'format' => 'json-raw'
+		] );
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		$templates = [];

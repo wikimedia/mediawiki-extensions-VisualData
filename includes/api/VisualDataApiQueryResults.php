@@ -22,9 +22,7 @@
  * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\SchemaProcessor;
-
-class VisualDataApiAskQuery extends ApiBase {
+class VisualDataApiQueryResults extends ApiBase {
 
 	/**
 	 * @inheritDoc
@@ -37,7 +35,7 @@ class VisualDataApiAskQuery extends ApiBase {
 	 * @inheritDoc
 	 */
 	public function mustBePosted(): bool {
-		return true;
+		return false;
 	}
 
 	/**
@@ -50,32 +48,44 @@ class VisualDataApiAskQuery extends ApiBase {
 		$result = $this->getResult();
 		$params = $this->extractRequestParams();
 
-		$data = json_decode( $params['data'], true );
-
-		$wiki = [
-			'options-askquery' => $data['query'],
-			'askquery-schema' => $data['schema'],
-			'askquery-printouts' => $data['properties'],
-			'options-query-formula' => $data['options-query-formula'],
-			'options-label-formula' => $data['options-label-formula']
-		];
-
-		$context = RequestContext::getMain();
-		$schemaProcessor = new SchemaProcessor( $context );
-		$optionsValues = $schemaProcessor->askQueryResults( $wiki );
-
-		$result->addValue( [ $this->getModuleName() ], 'result', json_encode( $optionsValues ) );
+		$printouts = explode( '|', $params['printouts'] );
+		$query = '[[name::' . ( $mailboxName ?? '+' ) . ']]';
+		$params_ = [];
+		foreach ( [ 'limit', 'offset', 'order' ] as $value ) {
+			if ( !empty( $params[$value] ) ) {
+				$params_[$value] = $params[$value];
+			}
+		}
+		$results = \VisualData::getQueryResults( $params['schema'], $params['query'], $printouts, $params_ );
+		$result->addValue( [ $this->getModuleName() ], 'result', $results );
 	}
 
-	/**
-	 * @inheritDoc
-	 */
 	public function getAllowedParams() {
 		return [
-			'data' => [
+			'schema' => [
 				ApiBase::PARAM_TYPE => 'string',
 				ApiBase::PARAM_REQUIRED => true
 			],
+			'query' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_REQUIRED => true
+			],
+			'printouts' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_REQUIRED => true
+			],
+			'limit' => [
+				ApiBase::PARAM_TYPE => 'integer',
+				ApiBase::PARAM_REQUIRED => false
+			],
+			'offset' => [
+				ApiBase::PARAM_TYPE => 'integer',
+				ApiBase::PARAM_REQUIRED => false
+			],
+			'order' => [
+				ApiBase::PARAM_TYPE => 'string',
+				ApiBase::PARAM_REQUIRED => false
+			]
 		];
 	}
 
@@ -83,7 +93,7 @@ class VisualDataApiAskQuery extends ApiBase {
 	 * @inheritDoc
 	 */
 	public function needsToken() {
-		return 'csrf';
+		return false;
 	}
 
 	/**
@@ -91,8 +101,8 @@ class VisualDataApiAskQuery extends ApiBase {
 	 */
 	protected function getExamplesMessages() {
 		return [
-			'action=visualdata-askquery'
-			=> 'apihelp-visualdata-askquery-example-1'
+			'action=visualdataquery'
+			=> 'apihelp-visualdataquery-example-1'
 		];
 	}
 }

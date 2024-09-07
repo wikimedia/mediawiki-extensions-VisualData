@@ -41,10 +41,11 @@ class LuaLibrary extends \Scribunto_LuaLibraryBase {
 	 * @param string $schema
 	 * @param string $query
 	 * @param array $printouts []
+	 * @param array $params []
 	 * @return array
 	 */
-	public function query( $schema, $query, $printouts = [] ) {
-		$result = \VisualData::getQueryResults( $schema, $query, $printouts ?? [] );
+	public function query( $schema, $query, $printouts = [], $params = [] ) {
+		$result = \VisualData::getQueryResults( $schema, $query, $printouts ?? [], $params ?? [] );
 		return [ $this->convertToLuaTable( $result ) ];
 	}
 

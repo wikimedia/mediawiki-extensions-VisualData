@@ -123,8 +123,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		if ( !optionsValues.length ) {
 			if ( wikilistValue ) {
 				selectOptionsFromValue = 'options-wikilist';
-			} else if ( getPropertyValue( 'options-askquery' ) ) {
-				selectOptionsFromValue = 'options-askquery';
+			} else if ( getPropertyValue( 'options-query' ) ) {
+				selectOptionsFromValue = 'options-query';
 			}
 		}
 
@@ -143,9 +143,9 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 					)
 				},
 				{
-					data: 'options-askquery',
+					data: 'options-query',
 					label: mw.msg(
-						'visualdata-jsmodule-formfield-optionsfrom-askquery'
+						'visualdata-jsmodule-formfield-optionsfrom-query'
 					)
 				}
 			],
@@ -165,7 +165,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		items.push( fieldNullValue );
 
-		// used to clear "options-values", "options-wikilist", "options-askquery"
+		// used to clear "options-values", "options-wikilist", "options-query"
 		// Model.selectOptionsFrom = selectOptionsFrom;
 
 		var fieldSelectOptionsFrom = new OO.ui.FieldLayout( selectOptionsFrom, {
@@ -177,14 +177,14 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		items.push( fieldSelectOptionsFrom );
 
-		var messageWidgetOptionsAskQuery = new OO.ui.MessageWidget( {
+		var messageWidgetOptionsQuery = new OO.ui.MessageWidget( {
 			type: 'info',
-			label: mw.msg( 'visualdata-jsmodule-formfield-message-options-askquery' ),
+			label: mw.msg( 'visualdata-jsmodule-formfield-message-options-query' ),
 			invisibleLabel: false,
 			classes: [ 'VisualDataFormFieldMessage' ]
 		} );
 
-		items.push( messageWidgetOptionsAskQuery );
+		items.push( messageWidgetOptionsQuery );
 
 		var optionsValuesInput = new OO.ui.TagMultiselectWidget( {
 			selected: optionsValues.filter( ( x ) => x !== '' ),
@@ -251,8 +251,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		selectOptionsFrom.on( 'change', function ( value ) {
 			fieldOptionsValues.toggle( value === 'options-values' );
 			fieldWikilist.toggle( value === 'options-wikilist' );
-			fieldOptionsLabelFormula.toggle( value !== 'options-askquery' );
-			messageWidgetOptionsAskQuery.toggle( value === 'options-askquery' );
+			fieldOptionsLabelFormula.toggle( value !== 'options-query' );
+			messageWidgetOptionsQuery.toggle( value === 'options-query' );
 		} );
 
 		var modelMap = {
@@ -280,7 +280,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 			fieldSelectOptionsFrom.toggle( optionInput );
 
-			messageWidgetOptionsAskQuery.toggle( optionInput && thisSelectOptionsFromValue === 'options-wikilist' );
+			messageWidgetOptionsQuery.toggle( optionInput && thisSelectOptionsFromValue === 'options-wikilist' );
 			fieldNullValue.toggle( optionInput );
 
 			fieldOptionsValues.toggle(
@@ -291,7 +291,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			fieldWikilist.toggle( optionInput && thisSelectOptionsFromValue === 'options-wikilist' );
 
 			fieldOptionsLabelFormula.toggle(
-				thisSelectOptionsFromValue !== 'options-askquery' &&
+				thisSelectOptionsFromValue !== 'options-query' &&
 				inArray( availableInputsValue, VisualDataFunctions.labelFormulaInputs ) &&
 				!inArray( availableInputsValue, VisualDataFunctions.lookupInputs )
 			);
@@ -332,39 +332,39 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		parentItems.push( layout );
 
-		var askqueryInput = new OO.ui.TextInputWidget( {
-			value: getPropertyValue( 'options-askquery' )
+		var queryInput = new OO.ui.TextInputWidget( {
+			value: getPropertyValue( 'options-query' )
 		} );
 
-		var fieldAskquery = new OO.ui.FieldLayout( askqueryInput, {
-			label: mw.msg( 'visualdata-jsmodule-formfield-askquery-label' ),
-			help: mw.msg( 'visualdata-jsmodule-formfield-askquery-help' ),
+		var fieldQuery = new OO.ui.FieldLayout( queryInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-query-label' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-query-help' ),
 			helpInline: true,
 			align: 'top'
 		} );
 
-		items.push( fieldAskquery );
+		items.push( fieldQuery );
 
 		var schemaInput = new OO.ui.DropdownInputWidget( {
 			options: VisualDataFunctions.createDropDownOptions(
 				Object.keys( Schemas ),
 				{ key: 'value' }
 			),
-			value: getPropertyValue( 'askquery-schema' )
+			value: getPropertyValue( 'query-schema' )
 		} );
 
 		var fieldSchema = new OO.ui.FieldLayout( schemaInput, {
 			label: mw.msg(
-				'visualdata-jsmodule-formfield-askquery-schema-label'
+				'visualdata-jsmodule-formfield-query-schema-label'
 			),
-			help: mw.msg( 'visualdata-jsmodule-formfield-askquery-schema-help' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-query-schema-help' ),
 			helpInline: true,
 			align: 'top'
 		} );
 
 		items.push( fieldSchema );
 
-		var printoutsInputValue = getPropertyValue( 'askquery-printouts' ) || [];
+		var printoutsInputValue = getPropertyValue( 'query-printouts' ) || [];
 
 		// var printoutsInput = new mw.widgets.TitlesMultiselectWidget({
 		// 	selected: printoutsInputValue,
@@ -426,9 +426,9 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		// ///////////////////////////
 
 		var modelMap = {
-			'options-askquery': askqueryInput,
-			'askquery-schema': schemaInput,
-			'askquery-printouts': printoutsInput,
+			'options-query': queryInput,
+			'query-schema': schemaInput,
+			'query-printouts': printoutsInput,
 			'options-query-formula': optionFormulaInput,
 			'options-label-formula': optionsLabelFormulaInput
 		};
@@ -456,13 +456,13 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			var availableInputsValue = availableInputsInput.getValue();
 			var selectOptionsFromValue = selectOptionsFrom.getValue();
 
-			var optionInput = ( selectOptionsFromValue === 'options-askquery' &&
+			var optionInput = ( selectOptionsFromValue === 'options-query' &&
 				inArray( availableInputsValue, VisualDataFunctions.optionsInputs ) );
 			var lookupInput = inArray( availableInputsValue, VisualDataFunctions.lookupInputs );
-			var labelFormulaInput = ( selectOptionsFromValue === 'options-askquery' &&
+			var labelFormulaInput = ( selectOptionsFromValue === 'options-query' &&
 				inArray( availableInputsValue, VisualDataFunctions.labelFormulaInputs ) );
 
-			fieldAskquery.toggle( lookupInput || optionInput );
+			fieldQuery.toggle( lookupInput || optionInput );
 			fieldPrintouts.toggle( lookupInput || optionInput );
 			fieldSchema.toggle( lookupInput || optionInput );
 			fieldOptionFormula.toggle( lookupInput || optionInput );

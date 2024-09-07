@@ -49,8 +49,9 @@
 		"VisualDataApiSaveSchema": "includes/api/VisualDataApiSaveSchema.php",
 		"VisualDataApiGetSchemas": "includes/api/VisualDataApiGetSchemas.php",
 		"VisualDataApiSubmitForm": "includes/api/VisualDataApiSubmitForm.php",
-		"VisualDataApiAskQuery": "includes/api/VisualDataApiAskQuery.php",
-		"VisualDataApiDatatables": "includes/api/VisualDataApiDatatables.php"
+		"VisualDataApiQueryOptions": "includes/api/VisualDataApiQueryOptions.php",
+		"VisualDataApiDatatables": "includes/api/VisualDataApiDatatables.php",
+		"VisualDataApiQueryResults": "includes/api/VisualDataApiQueryResults.php"
 	},
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\VisualData\\": "includes/classes/",
@@ -102,8 +103,9 @@
 		"visualdata-save-schema": "VisualDataApiSaveSchema",
 		"visualdata-get-schemas": "VisualDataApiGetSchemas",
 		"visualdata-submit-form": "VisualDataApiSubmitForm",
-		"visualdata-askquery": "VisualDataApiAskQuery",
-		"visualdata-datatables": "VisualDataApiDatatables"
+		"visualdata-queryoptions": "VisualDataApiQueryOptions",
+		"visualdata-datatables": "VisualDataApiDatatables",
+		"visualdataquery": "VisualDataApiQueryResults"
 	},
 	"namespaces": [
 		{
@@ -422,7 +424,7 @@
 				"visualdata-jsmodule-formfield-options-from",
 				"visualdata-jsmodule-formfield-optionsfrom-values",
 				"visualdata-jsmodule-formfield-optionsfrom-wikilist",
-				"visualdata-jsmodule-formfield-optionsfrom-askquery",
+				"visualdata-jsmodule-formfield-optionsfrom-query",
 				"visualdata-jsmodule-formfield-options-values",
 				"visualdata-jsmodule-formfield-options-label-formula",
 				"visualdata-jsmodule-formfield-options-label-formula-help",
@@ -432,17 +434,17 @@
 				"visualdata-jsmodule-formfield-valueformula-help",
 				"visualdata-jsmodule-formfield-visibility-create-only",
 				"visualdata-jsmodule-formfield-visibility-hidden",
-				"visualdata-jsmodule-formfield-askquery-schema-label",
-				"visualdata-jsmodule-formfield-askquery-schema-help",
-				"visualdata-jsmodule-formfield-askquery-label",
-				"visualdata-jsmodule-formfield-askquery-help",
+				"visualdata-jsmodule-formfield-query-schema-label",
+				"visualdata-jsmodule-formfield-query-schema-help",
+				"visualdata-jsmodule-formfield-query-label",
+				"visualdata-jsmodule-formfield-query-help",
 				"visualdata-jsmodule-formfield-printouts",
 				"visualdata-jsmodule-formfield-printouts-help",
 				"visualdata-jsmodule-formfield-optionformula",
 				"visualdata-jsmodule-formfield-optionformula-help",
 				"visualdata-jsmodule-formfield-nullvalue",
 				"visualdata-jsmodule-formfield-message-more-inputs",
-				"visualdata-jsmodule-formfield-message-options-askquery",
+				"visualdata-jsmodule-formfield-message-options-query",
 				"visualdata-jsmodule-formfield-message-schemapage",
 
 				"visualdata-jsmodule-inputconfig-dialog-label",

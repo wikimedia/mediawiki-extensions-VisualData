@@ -101,9 +101,9 @@ class SchemaProcessor {
 		// 'selectOptionsFrom',
 		// 'options-values',		// harcoded options
 		// 'options-wikilist',		// page with wiki-list
-		// 'options-askquery',		// askquery
-		// 'askquery-printouts',	// printouts to retrieve (property names)
-		// 'askquery-subject',		// include subject (true, false)
+		// 'options-query',		// query
+		// 'query-printouts',	// printouts to retrieve (property names)
+		// 'query-subject',		// include subject (true, false)
 		// 'options-query-formula',		// replacement formula
 		// 'options-value-formula',		// replacement formula (currently not used)
 		// 'options-label-formula',		// replacement formula
@@ -393,9 +393,9 @@ class SchemaProcessor {
 		if ( array_key_exists( 'selectOptionsFrom', $properties )
 			&& $properties['selectOptionsFrom'] === 'options-values' ) {
 			unset( $properties['options-wikilist'] );
-			unset( $properties['options-askquery'] );
-			unset( $properties['askquery-schema'] );
-			unset( $properties['askquery-printouts'] );
+			unset( $properties['options-query'] );
+			unset( $properties['query-schema'] );
+			unset( $properties['query-printouts'] );
 			unset( $properties['options-query-formula'] );
 		}
 
@@ -791,7 +791,7 @@ class SchemaProcessor {
 					// will further parse the options
 					if ( empty( $properties['wiki']['options-wikilist'] )
 						&& empty( $properties['wiki']['options-values'] )
-						&& empty( $properties['wiki']['options-askquery'] )
+						&& empty( $properties['wiki']['options-query'] )
 						&& is_array( $value ) && count( $value ) ) {
 
 						// @FIXME we are not distinguishing between "" and NULL
@@ -1150,10 +1150,10 @@ class SchemaProcessor {
 		$wiki = $ret['wiki'];
 
 		if ( in_array( $wiki['preferred-input'], $this->optionsInputs )
-			&& !empty( $wiki['options-askquery'] )
-			// && !preg_match( '/\<.+?\>/', $wiki['options-askquery'] )
+			&& !empty( $wiki['options-query'] )
+			// && !preg_match( '/\<.+?\>/', $wiki['options-query'] )
 			) {
-			$values = $this->askQueryResults( $wiki );
+			$values = $this->queryResults( $wiki );
 
 			if ( array_key_exists( 'options-allow-null', $wiki ) && $wiki['options-allow-null'] ) {
 				$values = array_merge( [ '' => '' ], $values );
@@ -1225,8 +1225,8 @@ class SchemaProcessor {
 	 * @param string $wiki
 	 * @return array
 	 */
-	public function askQueryResults( $wiki ) {
-		$query = $wiki['options-askquery'];
+	public function queryResults( $wiki ) {
+		$query = $wiki['options-query'];
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 
 		// *** credits WikiTeQ
@@ -1238,11 +1238,11 @@ class SchemaProcessor {
 		// -------------->
 
 		$params = [
-			'schema' => $wiki['askquery-schema'],
+			'schema' => $wiki['query-schema'],
 			'format' => 'query'
 		];
 
-		$printouts_ = $wiki['askquery-printouts'];
+		$printouts_ = $wiki['query-printouts'];
 		$printouts = [];
 		foreach ( $printouts_ as $val ) {
 			// *** this does not seem really necessary,
