@@ -45,6 +45,7 @@ class VisualDataApiDatatables extends ApiBase {
 	 */
 	public function execute() {
 		$user = $this->getUser();
+		$context = RequestContext::getMain();
 
 		\VisualData::initialize();
 		$result = $this->getResult();
@@ -56,9 +57,12 @@ class VisualDataApiDatatables extends ApiBase {
 		$cacheKey = $data['cacheKey'];
 		$settings = $data['settings'];
 		$columnDefs = $data['columnDefs'];
-		$printouts = $data['query']['printouts'];
+		$printouts = $data['printouts'];
 		$query = $data['query']['query'];
+		// $params_ = $data['params'];
+		$templates = $data['templates'];
 		$params_ = $data['query']['params'];
+		$sourcePage = $data['sourcePage'];
 
 		// filter the query
 		$queryConjunction = [];
@@ -96,7 +100,6 @@ class VisualDataApiDatatables extends ApiBase {
 
 		// $results = \VisualData::getQueryResults( $params_['schema'], $query, $printouts, $params_ );
 		$schema = $params_['schema'];
-		$context = RequestContext::getMain();
 
 		// limit, offset, order
 		$params_ = array_merge( $params_, [
@@ -105,7 +108,12 @@ class VisualDataApiDatatables extends ApiBase {
 		] );
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
-		$templates = [];
+		// $templates = [];
+
+		// @see ApiExpandTemplates
+		$parserOptions = ParserOptions::newFromContext( $context );
+		$titleObj = Title::newFromText( $sourcePage );
+		$parser->startExternalParse( $titleObj, $parserOptions, Parser::OT_PREPROCESS );
 
 		if ( \VisualData::isList( $printouts ) ) {
 			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );

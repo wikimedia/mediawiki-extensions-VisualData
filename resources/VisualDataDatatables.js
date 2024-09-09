@@ -57,6 +57,11 @@ const VisualDataDatatables = function () {
 		searchPanesOptions,
 		displayLog
 	) {
+		if ( displayLog ) {
+			// eslint-disable-next-line no-console
+			console.log( 'payload data', data );
+		}
+
 		var payload = {
 			action: 'visualdata-datatables',
 			data: JSON.stringify( data )
@@ -120,7 +125,9 @@ const VisualDataDatatables = function () {
 			var propName = match[ 1 ];
 			var sort = match[ 2 ] ? match[ 2 ] : 'ASC';
 			var index = Object.keys( headers ).indexOf( propName );
-			ret.push( [ index, sort.toLowerCase() ] );
+			if ( index !== -1 ) {
+				ret.push( [ index, sort.toLowerCase() ] );
+			}
 		}
 		if ( ret.length > 0 ) {
 			table.data( 'order', ret );
@@ -305,7 +312,9 @@ const VisualDataDatatables = function () {
 		var ret = {};
 		for ( var i in searchPanesOptions ) {
 			var index = indexFromPrintout( i );
-			ret[ index ] = searchPanesOptions[ i ];
+			if ( index !== -1 ) {
+				ret[ index ] = searchPanesOptions[ i ];
+			}
 		}
 
 		var div = document.createElement( 'div' );
@@ -359,12 +368,19 @@ $( function () {
 		var query = tableData.query;
 		var data = tableData.json;
 		var printouts = tableData.printouts;
+		var templates = tableData.templates;
+		// var params = tableData.params;
+		var mapPathSchema = tableData.mapPathSchema;
 		var headers = tableData.headers;
 		var printoutsOptions = tableData.printoutsOptions;
 		var searchPanesOptions = tableData.searchPanesOptions;
 		var useAjax = count > data.length;
 
-		// console.log('tableData', tableData);
+		var displayLog = false;
+		if ( displayLog ) {
+			// eslint-disable-next-line no-console
+			console.log( 'tableData', tableData );
+		}
 		visualdataDatatables.initColumnSort( table, query.params.order, headers );
 		var order = table.data( 'order' );
 
@@ -437,16 +453,16 @@ html-num-fmt
 			var columnType;
 			// mainlabel
 			if ( key !== '' ) {
-				columnType = printouts[ key ].type;
-				switch ( printouts[ key ].type ) {
+				columnType = mapPathSchema[ key ].type;
+				switch ( mapPathSchema[ key ].type ) {
 					case 'boolean':
 						datatablesFormat = 'string';
 						columnType = 'boolean';
 						break;
 
 					case 'string':
-						columnType = printouts[ key ].format;
-						switch ( printouts[ key ].format ) {
+						columnType = mapPathSchema[ key ].format;
+						switch ( mapPathSchema[ key ].format ) {
 							case 'color':
 
 							case 'date':
@@ -571,10 +587,14 @@ html-num-fmt
 				data,
 				count: count
 			};
-			var displayLog = false;
+
 			var payloadData = {
 				query,
 				columnDefs,
+				printouts,
+				// params,
+				templates,
+				sourcePage: mw.config.get( 'wgPageName' ),
 				settings: { count, displayLog }
 			};
 
@@ -644,8 +664,10 @@ html-num-fmt
 				}
 			} );
 		}
-
-		// console.log('conf', conf);
+		if ( displayLog ) {
+			// eslint-disable-next-line no-console
+			console.log( 'conf', conf );
+		}
 		$( this ).DataTable( conf );
 	} );
 } );

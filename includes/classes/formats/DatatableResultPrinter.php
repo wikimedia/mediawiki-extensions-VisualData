@@ -369,7 +369,10 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$this->conf = $this->getConf();
 
 		$tableAttrs['data-printouts-options'] = json_encode( $formattedPrintoutsOptions );
-		$tableAttrs['data-printouts'] = json_encode( $this->mapPathSchema );
+		$tableAttrs['data-map-path-schema'] = json_encode( $this->mapPathSchema );
+		$tableAttrs['data-printouts'] = json_encode( $this->printouts );
+		$tableAttrs['data-templates'] = json_encode( $this->templates );
+		// $tableAttrs['data-params'] = json_encode( $this->params );
 		$tableAttrs['data-headers'] = json_encode( $this->headers );
 		$tableAttrs['data-conf'] = json_encode( $this->conf );
 		$tableAttrs['data-count'] = $this->count;
@@ -561,7 +564,10 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$params = $this->query['params'];
 		$params['count-printout'] = true;
 		$params['count-printout-min'] = $this->conf['searchPanes']['minCount'];
-		foreach ( $this->query['printouts'] as $printout ) {
+		foreach ( $this->printouts as $printout => $label ) {
+			if ( empty( $label ) ) {
+				continue;
+			}
 			$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
 			$results_ = $queryProcessor->getResults();
 			$binLength = count( $results_ );

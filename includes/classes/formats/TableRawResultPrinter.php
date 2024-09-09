@@ -45,10 +45,10 @@ class TableRawResultPrinter extends ResultPrinter {
 	 */
 	public function processRow( $title, $value ) {
 		if ( !empty( $this->params['pagetitle'] ) ) {
-			// main label
-			$this->headers[''] = $this->params['pagetitle'];
 			$formatted = Linker::link( $title, $title->getText() );
 			$this->json[][] = $formatted;
+		} else {
+			$this->json[] = [];
 		}
 
 		$path = '';

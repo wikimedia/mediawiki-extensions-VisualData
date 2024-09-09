@@ -240,7 +240,7 @@ class QueryProcessor {
 	 * @return array
 	 */
 	private function getOptions() {
-		if ( $this->count ) {
+		if ( $this->count || $this->params['count-printout'] ) {
 			return [];
 		}
 

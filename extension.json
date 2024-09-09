@@ -457,6 +457,7 @@
 			"scripts": [
 				"datatables/object_hash.js",
 				"datatables/datatables.min.js",
+				"VisualDataFunctions.js",
 				"VisualDataDatatables.js"
 			],
 			"styles": [
