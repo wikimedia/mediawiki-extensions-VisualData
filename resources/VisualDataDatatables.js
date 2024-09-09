@@ -122,6 +122,9 @@ const VisualDataDatatables = function () {
 		// @see QueryProcessor -> getOptions
 		for ( var i in values ) {
 			var match = values[ i ].match( /^\s*(.+?)\s*(ASC|DESC)?\s*$/i );
+			if ( !match ) {
+				continue;
+			}
 			var propName = match[ 1 ];
 			var sort = match[ 2 ] ? match[ 2 ] : 'ASC';
 			var index = Object.keys( headers ).indexOf( propName );

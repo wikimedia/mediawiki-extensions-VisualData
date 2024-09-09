@@ -559,8 +559,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					query,
 					properties: field[ 'query-printouts' ],
 					schema: field[ 'query-schema' ],
-					'options-query-formula': field[ 'options-query-formula' ],
-					'options-label-formula': field[ 'options-label-formula' ]
+					'options-query-formula': field[ 'options-query-formula' ] || null,
+					'options-label-formula': field[ 'options-label-formula' ] || null
 				} )
 			};
 
@@ -570,7 +570,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					.done( function ( thisRes ) {
 						if ( payload.action in thisRes ) {
 							var thisData = thisRes[ payload.action ];
-							thisData = JSON.parse( thisData.result );
+							thisData = thisData.result;
 							resolve( thisData );
 						}
 					} )

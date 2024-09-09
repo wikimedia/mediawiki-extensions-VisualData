@@ -46,6 +46,9 @@ class QueryProcessor {
 	private $conditionProperties = [];
 
 	/** @var array */
+	private $conditionSubjects = [];
+
+	/** @var array */
 	private $printouts = [];
 
 	/** @var array */
@@ -104,7 +107,7 @@ class QueryProcessor {
 		];
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
 
-		$this->debug = $params['debug'];
+		$this->debug = &$params['debug'];
 		$this->databaseManager = new DatabaseManager();
 		$this->schema = $schema;
 		$this->query = $query;
@@ -123,6 +126,10 @@ class QueryProcessor {
 		$this->count = true;
 		$this->treeFormat = false;
 		$this->performQuery();
+		if ( count( $this->errors ) ) {
+			$this->debug = true;
+			return implode( ', ', $this->errors );
+		}
 		return (int)$this->result;
 	}
 
@@ -140,6 +147,10 @@ class QueryProcessor {
 		$this->count = true;
 		$this->treeFormat = true;
 		$this->performQuery();
+		if ( count( $this->errors ) ) {
+			$this->debug = true;
+			return implode( ', ', $this->errors );
+		}
 		return (int)$this->result;
 	}
 
@@ -150,10 +161,10 @@ class QueryProcessor {
 		$this->count = false;
 		$this->treeFormat = false;
 		$this->performQuery();
-		// @TODO set params['debug'] to true as reference
-		// if ( count( $this->errors ) ) {
-		// 	return implode( ', ', $this->errors );
-		// }
+		if ( count( $this->errors ) ) {
+			$this->debug = true;
+			$this->result = implode( ', ', $this->errors );
+		}
 		return $this->result;
 	}
 
@@ -164,6 +175,10 @@ class QueryProcessor {
 		$this->count = false;
 		$this->treeFormat = true;
 		$this->performQuery();
+		if ( count( $this->errors ) ) {
+			$this->debug = true;
+			$this->result = implode( ', ', $this->errors );
+		}
 		return $this->result;
 	}
 
@@ -191,6 +206,7 @@ class QueryProcessor {
 					if ( strpos( $value, '::' ) === false ) {
 						// $orConditionsSubjects[] = $value;
 						$orConditions['page_title'][] = $value;
+						$this->conditionSubjects[] = $value;
 					} else {
 						[ $prop, $value ] = explode( '::', $value );
 						$orConditions[$prop][] = $value;
@@ -207,6 +223,7 @@ class QueryProcessor {
 			$title_ = Title::newFromText( trim( $this->query ) );
 			if ( $title_ && $title_->isKnown() ) {
 				$this->AndConditions[]['page_title'] = $title_->getFullText();
+				$this->conditionSubjects[] = $title_->getFullText();
 			}
 		}
 	}
@@ -459,7 +476,7 @@ class QueryProcessor {
 						$this->processTitle( $v, $orConds, $tables, $joins );
 					}
 
-				} else {
+				} elseif ( array_key_exists( $printout, $mapConds ) ) {
 					$field = "t{$mapConds[$printout]['key']}.value";
 					$tablename = $mapConds[$printout]['tablename'];
 
@@ -469,7 +486,9 @@ class QueryProcessor {
 					}
 				}
 			}
-			$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
+			if ( count( $orConds ) ) {
+				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
+			}
 		}
 	}
 
@@ -500,7 +519,8 @@ class QueryProcessor {
 		);
 
 		if ( !$res->numRows() ) {
-			return 'no matched schema';
+			$this->errors[] = 'no matched schema';
+			return;
 		}
 
 		$mapPathNoIndexTable = [];
@@ -579,6 +599,11 @@ class QueryProcessor {
 		} );
 
 		$this->conditionProperties = array_intersect( $this->conditionProperties, array_keys( $mapPathNoIndexTable ) );
+
+		if ( !count( $this->conditionProperties ) && !count( $this->conditionSubjects ) ) {
+			$this->errors[] = 'no valid conditions';
+			return;
+		}
 
 		$arr = [];
 		foreach ( $this->conditionProperties as $pathNoIndex ) {
@@ -771,11 +796,12 @@ class QueryProcessor {
 			return;
 		}
 
+		$this->result = [];
+
 		if ( !$res->numRows() ) {
 			return;
 		}
 
-		$this->result = [];
 		$separator = chr( hexdec( '0x1E' ) );
 		$titles = [];
 		foreach ( $res as $row ) {

@@ -64,7 +64,7 @@ class VisualDataApiQueryOptions extends ApiBase {
 		$schemaProcessor = new SchemaProcessor( $context );
 		$optionsValues = $schemaProcessor->queryResults( $wiki );
 
-		$result->addValue( [ $this->getModuleName() ], 'result', json_encode( $optionsValues ) );
+		$result->addValue( [ $this->getModuleName() ], 'result', $optionsValues );
 	}
 
 	/**
