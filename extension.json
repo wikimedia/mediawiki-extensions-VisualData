@@ -455,6 +455,7 @@
 		"ext.VisualData.PrintResults": {
 			"position": "top",
 			"scripts": [
+				"datatables/object_hash.js",
 				"datatables/datatables.min.js",
 				"VisualDataDatatables.js"
 			],

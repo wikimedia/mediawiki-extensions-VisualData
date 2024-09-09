@@ -441,6 +441,14 @@ class VisualData {
 			'default' => 'page title',
 			'example' => 'visualdata-parserfunction-query-pagetitle-example'
 		],
+		'debug' => [
+			'label' => 'visualdata-parserfunction-query-debug-label',
+			'description' => 'visualdata-parserfunction-query-debug-description',
+			'type' => 'bool',
+			'required' => false,
+			'default' => false,
+			'example' => 'visualdata-parserfunction-query-pagetitle-example'
+		],
 	];
 
 	/**
@@ -1186,7 +1194,7 @@ class VisualData {
 		}
 		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
-		$queryProcessor = new QueryProcessor( $schema, $query, $printouts, $params );
+		$queryProcessor = new QueryProcessor( $schema, $query, array_keys( $printouts ), $params );
 
 		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions );
 	}
@@ -1209,6 +1217,10 @@ class VisualData {
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		$templates = [];
+
+		if ( self::isList( $printouts ) ) {
+			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
+		}
 
 		$resultPrinter = self::getResults(
 			$parser,

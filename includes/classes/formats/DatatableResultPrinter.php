@@ -24,10 +24,31 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
+use MediaWiki\Extension\VisualData\QueryProcessor;
+
 class DatatableResultPrinter extends TableResultPrinter {
+
+	/** @var int */
+	private $count;
+
+	/** @var array */
+	private $query;
+
+	/** @var array */
+	private $conf;
+
+	/** @var array */
+	private $formattedPrintoutsOptions;
 
 	/** @var array */
 	public static $parameters = [
+
+		// 'defer-each' => [
+		// 	'type' => 'integer',
+		// 	'required' => false,
+		// 	'default' => 100,
+		// ],
+
 		// https://datatables.net/reference/option/layout
 		'datatables-layout.topStart' => [
 			'type' => 'string',
@@ -257,6 +278,13 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'required' => false,
 			'default' => false,
 		],
+
+		'datatables-searchPanes.emptyMessage' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => ''
+		],
+
 		'datatables-searchPanes.initCollapsed' => [
 			'type' => 'boolean',
 			'required' => false,
@@ -282,6 +310,12 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'type' => 'integer',
 			'required' => false,
 			'default' => 1
+		],
+		// ***custom parameter
+		'datatables-searchPanes.showEmpty' => [
+			'type' => 'bool',
+			'required' => false,
+			'default' => false
 		],
 		// ***custom parameter
 		'datatables-searchPanes.htmlLabels' => [
@@ -312,27 +346,39 @@ class DatatableResultPrinter extends TableResultPrinter {
 	 * @inheritDoc
 	 */
 	public function processRoot( $row ) {
+		// avoid error "Constant expression contains invalid operations"
+		if ( empty( $this->params['datatables-searchPanes.emptyMessage'] ) ) {
+			$this->params['datatables-searchPanes.emptyMessage'] = wfMessage( 'visualdata-datatatables-searchpanes-empty-message' )->text();
+		}
+
 		$attributes = [];
 		foreach ( $this->headers as $header ) {
 			$this->htmlTable->header( $header, $attributes );
 		}
 
 		$tableAttrs = [];
-		$printoutsOptions = [];
+		$formattedPrintoutsOptions = [];
 		foreach ( $this->printoutsOptions as $printout => $options ) {
-			$printoutsOptions[$printout] = $this->getPrintoutsOptions( $options );
+			$formattedPrintoutsOptions[$printout] = $this->getPrintoutsOptions( $options );
 		}
 
-		$tableAttrs['data-printouts-options'] = json_encode( $printoutsOptions );
+		$this->formattedPrintoutsOptions = $formattedPrintoutsOptions;
+		$this->count = $this->getCount();
+
+		$this->query = $this->queryProcessor->getQueryData();
+		$this->conf = $this->getConf();
+
+		$tableAttrs['data-printouts-options'] = json_encode( $formattedPrintoutsOptions );
 		$tableAttrs['data-printouts'] = json_encode( $this->mapPathSchema );
 		$tableAttrs['data-headers'] = json_encode( $this->headers );
-		$tableAttrs['data-conf'] = json_encode( $this->getConf() );
+		$tableAttrs['data-conf'] = json_encode( $this->conf );
+		$tableAttrs['data-count'] = $this->count;
+		$tableAttrs['data-search-panes-options'] = json_encode( $this->getSearchPanesOptions() );
 
 		// *** attention !!! "data-data" will conflict with
 		// datatables internal conf
 		$tableAttrs['data-json'] = json_encode( $this->json );
-		// $tableAttrs['data-count'] = $this->queryProcessor->getCount();
-		$tableAttrs['data-query'] = json_encode( $this->queryProcessor->getQueryData() );
+		$tableAttrs['data-query'] = json_encode( $this->query );
 		$tableAttrs['width'] = '100%';
 		$tableAttrs['class'] = 'visualdata datatable display dataTable';
 
@@ -495,6 +541,48 @@ class DatatableResultPrinter extends TableResultPrinter {
 			$t = &$t[$k];
 			if ( $key === count( $arr ) - 1 ) {
 				$t = $value;
+			}
+		}
+		return $ret;
+	}
+
+	/**
+	 * @return array
+	 */
+	private function getSearchPanesOptions() {
+		if ( $this->count <= count( $this->json ) ) {
+			return [];
+		}
+		if ( empty( $this->conf['searchPanes'] ) ) {
+			return [];
+		}
+
+		$ret = [];
+		$params = $this->query['params'];
+		$params['count-printout'] = true;
+		$params['count-printout-min'] = $this->conf['searchPanes']['minCount'];
+		foreach ( $this->query['printouts'] as $printout ) {
+			$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
+			$results_ = $queryProcessor->getResults();
+			$binLength = count( $results_ );
+			$uniqueRatio = $binLength / $this->count;
+
+			$threshold = ( !empty( $this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] ) ?
+				$this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] : $this->conf['searchPanes']['threshold'] );
+
+			if ( $uniqueRatio > $threshold ) {
+				continue;
+			}
+
+			foreach ( $results_ as $k => $v ) {
+				if ( empty( $k ) && empty( $this->conf['searchPanes']['showEmpty'] ) ) {
+					continue;
+				}
+				$ret[$printout][] = [
+					'label' => ( $k !== '' ? $k : "<i>{$this->conf['searchPanes']['emptyMessage']}</i>" ),
+					'value' => $k,
+					'count' => $v
+				];
 			}
 		}
 		return $ret;

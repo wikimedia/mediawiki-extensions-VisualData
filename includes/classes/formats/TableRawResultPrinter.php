@@ -26,16 +26,9 @@ namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
 use Linker;
 use MediaWiki\Extension\VisualData\ResultPrinter;
-use MediaWiki\Extension\VisualData\Utils\HtmlTable;
 use Parser;
 
-class TableResultPrinter extends ResultPrinter {
-
-	/** @var HtmlTable */
-	protected $htmlTable;
-
-	/** @var array */
-	protected $headers = [];
+class TableRawResultPrinter extends ResultPrinter {
 
 	/** @var array */
 	protected $json = [];
@@ -44,21 +37,18 @@ class TableResultPrinter extends ResultPrinter {
 	 * @inheritDoc
 	 */
 	public function isHtml() {
-		return true;
+		return false;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function processRow( $title, $value ) {
-		$this->htmlTable->row();
-
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			// main label
 			$this->headers[''] = $this->params['pagetitle'];
 			$formatted = Linker::link( $title, $title->getText() );
-			$this->htmlTable->cell( $formatted );
-			$this->json[count( $this->htmlTable->rows )][] = $formatted;
+			$this->json[][] = $formatted;
 		}
 
 		$path = '';
@@ -77,26 +67,12 @@ class TableResultPrinter extends ResultPrinter {
 
 		$value = parent::processChild( $title, $schema, $key, $properties, $path );
 
-		// label from printout (|?a=b)
-		if ( $this->printouts[$path] !== $path ) {
-			$key = $this->printouts[$path];
-
-		// label from schema title
-		} elseif ( array_key_exists( 'title', $schema )
-			&& !empty( $schema['title'] ) ) {
-			$key = $schema['title'];
-		}
-
-		$this->headers[$path] = $key;
-		$this->mapPathSchema[$path] = $schema;
-
 		if ( $this->hasTemplate( $path ) ) {
 			$value = Parser::stripOuterParagraph(
 				$this->parser->recursiveTagParseFully( $value )
 			);
 		}
-		$this->json[count( $this->htmlTable->rows )][] = $value;
-		$this->htmlTable->cell( $value );
+		$this->json[count( $this->json ) - 1][] = $value;
 
 		return $value;
 	}
@@ -109,26 +85,8 @@ class TableResultPrinter extends ResultPrinter {
 		if ( $this->params['debug'] ) {
 			return (string)$results;
 		}
-		$this->htmlTable = new htmlTable();
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
-		return $this->processResults( $results, $this->schema );
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	public function processRoot( $row ) {
-		$attributes = [];
-		foreach ( $this->headers as $header ) {
-			$this->htmlTable->header( $header, $attributes );
-		}
-		$tableAttrs = [];
-		$tableAttrs['width'] = '100%';
-		$tableAttrs['class'] = ' wikitable display dataTable';
-
-		return $this->htmlTable->table(
-			$tableAttrs
-		);
+		$this->processResults( $results, $this->schema );
+		return $this->json;
 	}
 
 }

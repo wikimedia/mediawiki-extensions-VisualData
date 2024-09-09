@@ -26,6 +26,7 @@ namespace MediaWiki\Extension\VisualData;
 
 use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine;
 use MediaWiki\MediaWikiServices;
+use Parser;
 
 class ResultPrinter {
 
@@ -88,7 +89,8 @@ class ResultPrinter {
 			'values-separator' => [ ', ', 'string' ],
 			'template' => [ '', 'string' ],
 			'module' => [ '', 'string' ],
-			'pagetitle' => [ 'page title', 'string' ]
+			'pagetitle' => [ 'page title', 'string' ],
+			'debug' => [ false, 'bool' ]
 		];
 
 		// *** do not discard original entries,
@@ -121,6 +123,9 @@ class ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
+		if ( $this->params['debug'] ) {
+			return (string)$results;
+		}
 		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return $this->processResults( $results, $this->schema );
 	}
@@ -444,7 +449,9 @@ class ResultPrinter {
 		}
 
 		if ( $this->isHtml() && $isRoot ) {
-			return $this->parser->recursiveTagParseFully( $ret );
+			return Parser::stripOuterParagraph(
+				$this->parser->recursiveTagParseFully( $ret )
+			);
 		}
 
 		return $ret;
@@ -488,4 +495,10 @@ class ResultPrinter {
 		return $value;
 	}
 
+	/**
+	 * @return int
+	 */
+	public function getCount() {
+		return $this->queryProcessor->getCount();
+	}
 }

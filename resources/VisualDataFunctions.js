@@ -806,6 +806,16 @@ VisualDataFunctions = ( function () {
 		return str.replace( /~/g, '~0' ).replace( /\//g, '~1' );
 	}
 
+	function objectEntries( obj ) {
+		var keys = Object.keys( obj ),
+			i = keys.length,
+			ret = new Array( i );
+		while ( i-- ) {
+			ret[ i ] = [ keys[ i ], obj[ keys[ i ] ] ];
+		}
+		return ret;
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -841,6 +851,7 @@ VisualDataFunctions = ( function () {
 		getInputHelpUrl,
 		loadScripts,
 		isNaN,
-		escapeJsonPtr
+		escapeJsonPtr,
+		objectEntries
 	};
 }() );

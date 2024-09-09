@@ -49,6 +49,7 @@ class VisualDataHooks {
 
 		$GLOBALS['wgVisualDataResultPrinterClasses'] = [
 			'table' => 'TableResultPrinter',
+			'table-raw' => 'TableRawResultPrinter',
 			'datatable' => 'DatatableResultPrinter',
 			'datatables' => 'DatatableResultPrinter',
 			// 'list' => 'ListResultPrinter',
@@ -59,7 +60,7 @@ class VisualDataHooks {
 			'base64' => 'Base64ResultPrinter',
 			'query' => 'QueryResultPrinter',
 			'json-raw' => 'JsonRawResultPrinter',
-			'lua' => 'LuaResultPrinter',
+			'lua' => 'LuaResultPrinter'
 		];
 	}
 

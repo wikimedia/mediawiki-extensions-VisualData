@@ -22,6 +22,8 @@
  * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
+use MediaWiki\MediaWikiServices;
+
 class VisualDataApiDatatables extends ApiBase {
 
 	/**
@@ -50,41 +52,64 @@ class VisualDataApiDatatables extends ApiBase {
 		// $output = $this->getContext()->getOutput();
 
 		$data = json_decode( $params['data'], true );
-
-		// @see https://datatables.net/reference/option/ajax
 		$datatableData = $data['datatableData'];
-		// $settings = $data['settings'];
-		$tableData = $data['tableData'];
-		$params_ = $tableData['querydata']['params'];
-		$query = $tableData['querydata']['query'];
-		$printouts = $tableData['querydata']['printouts'];
-		$cacheKey = $tableData['querydata']['cachekey'];
+		$cacheKey = $data['cacheKey'];
+		$settings = $data['settings'];
+		$columnDefs = $data['columnDefs'];
+		$printouts = $data['query']['printouts'];
+		$query = $data['query']['query'];
+		$params_ = $data['query']['params'];
 
-		$tableData['defer-each'] = 100;
+		// filter the query
+		$queryConjunction = [];
 
-		if ( empty( $datatableData['length'] ) ) {
-			$datatableData['length'] = $tableData['defer-each'];
+		if ( !empty( $datatableData['search']['value'] ) ) {
+			$queryDisjunction = [];
+			foreach ( $columnDefs as $key => $value ) {
+				$printout = $value['name'];
+				$queryDisjunction[] = ( $printout !== '' ? $printout . '::' : '' ) . '~' . $datatableData['search']['value'] . '~';
+			}
+			$queryConjunction[] = '[[' . implode( '||', $queryDisjunction ) . ']]';
 		}
 
-		// add/set specific parameters for this call
-		$params_ = array_merge(
-			$params_,
-			[
-				// @see https://datatables.net/manual/server-side
-				// array length will be sliced client side if greater
-				// than the required datatables length
-				"limit" => max( $datatableData['length'], $tableData['defer-each'] ),
-				"offset" => $datatableData['start'],
+		foreach ( $datatableData['searchPanes'] as $key => $values ) {
+			$printout = $datatableData['columns'][$key]['name'];
+			// @TODO consider combiner
+			// https://www.semantic-mediawiki.org/wiki/Help:Unions_of_results#User_manual
+			$queryConjunction[] = '[[' . ( $printout !== '' ? $printout . '::' : '' ) . implode( '||', $values ) . ']]';
+		}
 
-				// @TODO
-				// "order" => $datatableData['order'],
+		$query .= implode( '', $queryConjunction );
 
-			]
-		);
+		$order = [];
+		foreach ( $datatableData['order'] as $value ) {
+			if ( $value['name'] === '' ) {
+				$value['name'] = 'pagetitle';
+			}
+			$order[] = $value['name'] . " " . $value['dir'];
+		}
 
+		// $params_['format'] = 'json-raw';
+		$params_['limit'] = max( $datatableData['length'], $params_['limit'] );
+		$params_['offset'] = $datatableData['start'];
+		$params_['order'] = implode( ' ', $order );
+
+		// $results = \VisualData::getQueryResults( $params_['schema'], $query, $printouts, $params_ );
+		$schema = $params_['schema'];
 		$context = RequestContext::getMain();
-		$templates = [];
+
+		// limit, offset, order
+		$params_ = array_merge( $params_, [
+			'schema' => $schema,
+			'format' => 'table-raw'
+		] );
+
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
+		$templates = [];
+
+		if ( \VisualData::isList( $printouts ) ) {
+			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
+		}
 
 		$resultPrinter = \VisualData::getResults(
 			$parser,
@@ -94,24 +119,35 @@ class VisualDataApiDatatables extends ApiBase {
 			$printouts,
 			$params_
 		);
-		$results = ( $resultPrinter ? $resultPrinter->getResults() : [] );
 
-		$rows = [];
-		foreach ( $results as $row ) {
-			$rows[] = array_values( $row );
+		if ( !$resultPrinter ) {
+			return null;
 		}
 
+		$rows = $resultPrinter->getResults();
+
+		if ( !empty( $datatableData['search']['value'] ) || count( $queryConjunction ) ) {
+			$count = $resultPrinter->getCount();
+		} else {
+			$count = $settings['count'];
+		}
+
+		$log = [
+			'query' => $query,
+			'params' => $params_
+		];
 		// @see https://datatables.net/extensions/scroller/examples/initialisation/server-side_processing.html
 		$ret = [
 			'draw' => $datatableData['draw'],
 			'data' => $rows,
-			'recordsTotal' => $tableData['count'],
-			'recordsFiltered' => $tableData['count'],
+			'recordsTotal' => $settings['count'],
+			'recordsFiltered' => $count,
 			'cacheKey' => $cacheKey,
-			'datalength' => $datatableData['length']
+			'datalength' => $datatableData['length'],
 		];
 
-		$result->addValue( [ $this->getModuleName() ], 'result', json_encode( $ret ) );
+		$result->addValue( [ $this->getModuleName() ], 'result', $ret );
+		$result->addValue( [ $this->getModuleName() ], 'log', $log );
 	}
 
 	/**
