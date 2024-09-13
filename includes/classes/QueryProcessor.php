@@ -434,9 +434,10 @@ class QueryProcessor {
 	 */
 	private function processTitle( $value, &$orConds, &$tables, &$joins, &$categories ) {
 		$title = Title::newFromText( $value );
-		// load article id, but consider also unexisting
-		$isKnown = $title->isKnown();
-		if ( $title ) {
+
+		if ( $title &&
+			( $title->isKnown() || $title->getNamespace() === NS_CATEGORY )
+		) {
 			if ( $title->getNamespace() !== NS_CATEGORY ) {
 				$orConds[] = 't0.page_id = ' . $title->getArticleID();
 
@@ -456,9 +457,9 @@ class QueryProcessor {
 			// check if is a registered namespace
 			$arr = explode( ':', $value );
 			if ( count( $arr ) > 1 ) {
-				$ns = array_shift( $arr );
+				$nameSpace = array_shift( $arr );
 				// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
-				if ( ( $nsIndex = array_search( $ns, $this->formattedNamespaces ) ) !== false ) {
+				if ( ( $nsIndex = array_search( $nameSpace, $this->formattedNamespaces ) ) !== false ) {
 					$value = implode( ':', $arr );
 					$orConds_[] = "page_alias.page_namespace = $nsIndex";
 				}

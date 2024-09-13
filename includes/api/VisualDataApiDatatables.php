@@ -81,11 +81,13 @@ class VisualDataApiDatatables extends ApiBase {
 			$queryConjunction[] = '[[' . implode( '||', $queryDisjunction ) . ']]';
 		}
 
-		foreach ( $datatableData['searchPanes'] as $key => $values ) {
-			$printout = $datatableData['columns'][$key]['name'];
-			// @TODO consider combiner
-			// https://www.semantic-mediawiki.org/wiki/Help:Unions_of_results#User_manual
-			$queryConjunction[] = '[[' . ( $printout !== '' ? $printout . '::' : '' ) . implode( '||', $values ) . ']]';
+		if ( !empty( $datatableData['searchPanes'] ) ) {
+			foreach ( $datatableData['searchPanes'] as $key => $values ) {
+				$printout = $datatableData['columns'][$key]['name'];
+				// @TODO consider combiner
+				// https://www.semantic-mediawiki.org/wiki/Help:Unions_of_results#User_manual
+				$queryConjunction[] = '[[' . ( $printout !== '' ? $printout . '::' : '' ) . implode( '||', $values ) . ']]';
+			}
 		}
 
 		$query .= implode( '', $queryConjunction );
@@ -94,7 +96,7 @@ class VisualDataApiDatatables extends ApiBase {
 		foreach ( $datatableData['order'] as $value ) {
 			if ( $value['name'] === '' ) {
 				foreach ( ResultPrinter::$titleAliases as $alias ) {
-					if ( !array_key_exists( $printouts, $alias ) ) {
+					if ( !array_key_exists( $alias, $printouts ) ) {
 						$value['name'] = $alias;
 						break;
 					}

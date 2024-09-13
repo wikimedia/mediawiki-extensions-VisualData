@@ -298,7 +298,7 @@ class ResultPrinter {
 				$ret[$text] = $title->getFullText();
 			}
 		}
-		foreach ( self::pageidAliases as $text ) {
+		foreach ( self::$pageidAliases as $text ) {
 			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
 				$ret[$text] = $title->getArticleID();
 			}
@@ -500,7 +500,7 @@ class ResultPrinter {
 		// ?pagetitle
 		// pagetitle=page title
 		if ( empty( $value ) && !in_array( $key, $this->getValidPrintouts() )
-			&& in_array( $key, self::titleAliases )
+			&& in_array( $key, self::$titleAliases )
 		) {
 			$value = $title->getFullText();
 		}
