@@ -46,7 +46,6 @@ class TemplateResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -54,6 +53,12 @@ class TemplateResultPrinter extends ResultPrinter {
 	 * @inheritDoc
 	 */
 	public function processResults( $results, $schema ) {
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return implode( ', ', $this->queryProcessorErrors() );
+		}
+		if ( $this->params['debug'] ) {
+			return $results;
+		}
 		$ret = [];
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;

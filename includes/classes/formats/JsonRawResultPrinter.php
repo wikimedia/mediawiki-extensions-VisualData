@@ -37,7 +37,12 @@ class JsonRawResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return [ 'errors' => $this->queryProcessorErrors() ];
+		}
+		if ( $this->params['debug'] ) {
+			return [ 'sql' => $results ];
+		}
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -51,11 +56,12 @@ class JsonRawResultPrinter extends ResultPrinter {
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;
 			$ret[] = [
-				$this->params['pagetitle'] => $title_->getText(),
+				'title' => $title_->getText(),
+				'pageid' => $title_->getArticleID(),
 				'data' => $row
 			];
 		}
 
-		return $ret;
+		return $this->returnRawResult( $ret );
 	}
 }

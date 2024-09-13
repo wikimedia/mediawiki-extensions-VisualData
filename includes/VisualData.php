@@ -901,22 +901,20 @@ class VisualData {
 |separator=<br>
 }}
 */
+
+		// title or id
 		$text = array_shift( $argv );
 
-		$title_ = Title::newFromText( $text );
-		if ( !$title_ || !$title_->isKnown() ) {
+		$title_ = ( is_numeric( $text ) ? Title::newFromId( $text )
+			: Title::newFromText( $text ) );
 
-			// check if is an article id
-			$title_ = Title::newfromid( $text );
-			if ( !$title_ || !$title_->isKnown() ) {
-				$title_ = $title;
-			}
+		// invalid title
+		if ( !$title_ ) {
+			return 'invalid title';
 		}
 
 		$argv[] = 'function=print';
-
-		$query = '[[' . $title_->getFullText() . ']]';
-		// array_unshift( $argv, $query );
+		$query = $title_->getArticleID();
 
 		return self::parserFunctionQuery( $parser, ...[ $query, ...$argv ] );
 		// return forward_static_call_array(
@@ -1025,7 +1023,8 @@ class VisualData {
 			}
 		}
 
-		$printoutsOptions['pagetitle'] = $parsePrintoutsOptions( $params['pagetitle'] );
+		// @FIXME double-check if this is correct
+		$printoutsOptions[''] = $parsePrintoutsOptions( $params['pagetitle'] );
 
 		// resort printouts based on parser function
 		uksort( $printouts, static function ( $a, $b ) use ( $argv ) {

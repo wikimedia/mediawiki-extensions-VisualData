@@ -37,7 +37,12 @@ class JsonResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return implode( ', ', $this->queryProcessorErrors() );
+		}
+		if ( $this->params['debug'] ) {
+			return $results;
+		}
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -54,7 +59,8 @@ class JsonResultPrinter extends ResultPrinter {
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;
 			$ret[] = [
-				$this->params['pagetitle'] => $title_->getText(),
+				'title' => $title_->getText(),
+				'pageid' => $title_->getArticleID(),
 				'data' => $row
 			];
 		}

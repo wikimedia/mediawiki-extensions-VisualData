@@ -358,6 +358,8 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 		$tableAttrs = [];
 		$formattedPrintoutsOptions = [];
+
+		// pagetitle is ''
 		foreach ( $this->printoutsOptions as $printout => $options ) {
 			$formattedPrintoutsOptions[$printout] = $this->getPrintoutsOptions( $options );
 		}
@@ -570,6 +572,13 @@ class DatatableResultPrinter extends TableResultPrinter {
 			}
 			$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
 			$results_ = $queryProcessor->getResults();
+			if ( count( $queryProcessor->getErrors() ) ) {
+				continue;
+			}
+			if ( $params['debug'] ) {
+				$ret[$printout][] = $results_;
+				continue;
+			}
 			$binLength = count( $results_ );
 			$uniqueRatio = $binLength / $this->count;
 

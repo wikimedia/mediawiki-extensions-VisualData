@@ -69,6 +69,9 @@ class QueryProcessor {
 	/** @var array */
 	private $AndConditions = [];
 
+	/** @var int */
+	private $conditionId = null;
+
 	/** @var string */
 	private $query;
 
@@ -107,7 +110,7 @@ class QueryProcessor {
 		];
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
 
-		$this->debug = &$params['debug'];
+		$this->debug = $params['debug'];
 		$this->databaseManager = new DatabaseManager();
 		$this->schema = $schema;
 		$this->query = $query;
@@ -126,11 +129,17 @@ class QueryProcessor {
 		$this->count = true;
 		$this->treeFormat = false;
 		$this->performQuery();
-		if ( count( $this->errors ) ) {
-			$this->debug = true;
-			return implode( ', ', $this->errors );
+		if ( !count( $this->errors ) ) {
+			return (int)$this->result;
 		}
-		return (int)$this->result;
+		return -1;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getErrors() {
+		return $this->errors;
 	}
 
 	/**
@@ -141,17 +150,23 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @return array
+	 */
+	public function isPrintCondition() {
+		return !empty( $this->conditionId );
+	}
+
+	/**
 	 * @return int
 	 */
 	public function getCountTree() {
 		$this->count = true;
 		$this->treeFormat = true;
 		$this->performQuery();
-		if ( count( $this->errors ) ) {
-			$this->debug = true;
-			return implode( ', ', $this->errors );
+		if ( !count( $this->errors ) ) {
+			return (int)$this->result;
 		}
-		return (int)$this->result;
+		return -1;
 	}
 
 	/**
@@ -161,11 +176,10 @@ class QueryProcessor {
 		$this->count = false;
 		$this->treeFormat = false;
 		$this->performQuery();
-		if ( count( $this->errors ) ) {
-			$this->debug = true;
-			$this->result = implode( ', ', $this->errors );
+		if ( !count( $this->errors ) ) {
+			return $this->result;
 		}
-		return $this->result;
+		return [];
 	}
 
 	/**
@@ -175,11 +189,10 @@ class QueryProcessor {
 		$this->count = false;
 		$this->treeFormat = true;
 		$this->performQuery();
-		if ( count( $this->errors ) ) {
-			$this->debug = true;
-			$this->result = implode( ', ', $this->errors );
+		if ( !count( $this->errors ) ) {
+			return $this->result;
 		}
-		return $this->result;
+		return [];
 	}
 
 	/**
@@ -194,6 +207,12 @@ class QueryProcessor {
 	}
 
 	private function parseQuery() {
+		// pageid
+		if ( is_numeric( $this->query ) ) {
+			$this->conditionId = (int)trim( $this->query );
+			return;
+		}
+
 		// e.g. [[new_property::+]][[~*ab*||new_property::~*ab*||new_property_2::~*ab*]]
 		preg_replace_callback( '/\[\[(.+?)\]\]/',
 			function ( $matches ) {
@@ -217,15 +236,6 @@ class QueryProcessor {
 					$this->AndConditions[] = $orConditions;
 				}
 			}, $this->query );
-
-		// check if is a title
-		if ( empty( $this->AndConditions ) ) {
-			$title_ = Title::newFromText( trim( $this->query ) );
-			if ( $title_ && $title_->isKnown() ) {
-				$this->AndConditions[]['page_title'] = $title_->getFullText();
-				$this->conditionSubjects[] = $title_->getFullText();
-			}
-		}
 	}
 
 	/**
@@ -281,9 +291,10 @@ class QueryProcessor {
 							$propName = $match_[1];
 							$sort = $match_[2] ?? 'ASC';
 							$index = array_search( $propName, $this->mapKeyToPrintout );
+
 							if ( $index !== false ) {
 								$arr[] = "v$index $sort";
-							} elseif ( $propName === 'pagetitle' || $propName === '_pagetitle' ) {
+							} elseif ( in_array( $propName, ResultPrinter::$titleAliases ) ) {
 								$arr[] = "page_title $sort";
 							}
 						}
@@ -419,17 +430,18 @@ class QueryProcessor {
 	 * @param array &$orConds
 	 * @param array &$tables
 	 * @param array &$joins
+	 * @param array &$categories
 	 */
-	private function processTitle( $value, &$orConds, &$tables, &$joins ) {
+	private function processTitle( $value, &$orConds, &$tables, &$joins, &$categories ) {
 		$title = Title::newFromText( $value );
-		if ( $title && $title->isKnown() ) {
+		// load article id, but consider also unexisting
+		$isKnown = $title->isKnown();
+		if ( $title ) {
 			if ( $title->getNamespace() !== NS_CATEGORY ) {
 				$orConds[] = 't0.page_id = ' . $title->getArticleID();
 
 			} else {
-				// @TODO ...
-				// $categories[] = 'cl_to = ' . $this->dbr->addQuotes( $title->getDbKey() )
-				// 	. ' AND cl_from = t0.page_id';
+				$categories[] = $title;
 			}
 
 		} else {
@@ -442,23 +454,17 @@ class QueryProcessor {
 
 			// @TODO ...
 			// check if is a registered namespace
-			// $arr = explode( ':', $value );
-			// if ( count( $arr ) > 1 ) {
-			// 	$ns = array_shift( $arr );
-			// 	// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
-			// if ( ( $nsIndex = array_search( $ns, $this->formattedNamespaces ) ) !== false ) {
-			// 		$value = implode( ':', $arr );
-			// 		$orConds_[] = "page_alias.page_namespace = $nsIndex";
-			// 	}
-			// }
+			$arr = explode( ':', $value );
+			if ( count( $arr ) > 1 ) {
+				$ns = array_shift( $arr );
+				// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
+				if ( ( $nsIndex = array_search( $ns, $this->formattedNamespaces ) ) !== false ) {
+					$value = implode( ':', $arr );
+					$orConds_[] = "page_alias.page_namespace = $nsIndex";
+				}
+			}
 			$orConds[] = $this->parseCondition( $value, 'page_title' );
 		}
-
-		// @TODO ...
-		// if ( count( $categories ) ) {
-		// 	$joins[] = 'JOIN ' . $this->dbr->tableName( 'categorylinks' )
-		// 		. ' ON ' . $this->dbr->makeList( $categories, LIST_OR );
-		// }
 	}
 
 	/**
@@ -468,12 +474,13 @@ class QueryProcessor {
 	 * @param array &$joins
 	 */
 	private function getConditions( $mapConds, &$conds, &$tables, &$joins ) {
-		foreach ( $this->AndConditions as $value ) {
+		foreach ( $this->AndConditions as $i => $value ) {
 			$orConds = [];
+			$categories = [];
 			foreach ( $value as $printout => $values ) {
 				if ( !array_key_exists( $printout, $mapConds ) && $printout === 'page_title' ) {
 					foreach ( $values as $v ) {
-						$this->processTitle( $v, $orConds, $tables, $joins );
+						$this->processTitle( $v, $orConds, $tables, $joins, $categories );
 					}
 
 				} elseif ( array_key_exists( $printout, $mapConds ) ) {
@@ -486,6 +493,15 @@ class QueryProcessor {
 					}
 				}
 			}
+			if ( count( $categories ) ) {
+				$categoryConds = [];
+				foreach ( $categories as $title_ ) {
+					$categoryConds[] = "categorylinks_$i.cl_to = " . $this->dbr->addQuotes( $title_->getDbKey() )
+						. " AND categorylinks_$i.cl_from = t0.page_id";
+				}
+				$tables["categorylinks_$i"] = 'categorylinks';
+				$joins["categorylinks_$i"] = [ 'JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
+			}
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
 			}
@@ -495,7 +511,7 @@ class QueryProcessor {
 	private function performQuery() {
 		$this->parseQuery();
 
-		if ( empty( $this->AndConditions ) ) {
+		if ( !$this->conditionId && empty( $this->AndConditions ) ) {
 			$this->errors[] = 'no query';
 			return;
 		}
@@ -542,7 +558,8 @@ class QueryProcessor {
 				unset( $this->printouts[$key] );
 				foreach ( $mapPathNoIndexTable as $k => $v ) {
 					if ( preg_match( "/^$pattern$/", $k )
-						|| preg_match( "/^$pattern\//", $k ) ) {
+						|| preg_match( "/^$pattern\//", $k )
+					) {
 						$this->printouts[] = $k;
 					}
 				}
@@ -600,7 +617,7 @@ class QueryProcessor {
 
 		$this->conditionProperties = array_intersect( $this->conditionProperties, array_keys( $mapPathNoIndexTable ) );
 
-		if ( !count( $this->conditionProperties ) && !count( $this->conditionSubjects ) ) {
+		if ( !$this->conditionId && !count( $this->conditionProperties ) && !count( $this->conditionSubjects ) ) {
 			$this->errors[] = 'no valid conditions';
 			return;
 		}
@@ -651,6 +668,10 @@ class QueryProcessor {
 
 		$fields['page_id'] = 't0.page_id';
 		$conds['t0.schema_id'] = $schemaId;
+
+		if ( $this->conditionId ) {
+			$conds[] = 't0.page_id = ' . $this->conditionId;
+		}
 
 		$mapConds = [];
 		foreach ( $combined as $key => $v ) {
@@ -847,6 +868,10 @@ class QueryProcessor {
 				\VisualData::plainToNested( $row_, true )
 			];
 		}
+
+		// if ( $this->conditionId && count( $this->result ) ) {
+		// 	$this->result = $this->result[0];
+		// }
 	}
 
 }

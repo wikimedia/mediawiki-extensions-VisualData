@@ -49,7 +49,6 @@ class VisualDataApiQueryResults extends ApiBase {
 		$params = $this->extractRequestParams();
 
 		$printouts = explode( '|', $params['printouts'] );
-		$query = '[[name::' . ( $mailboxName ?? '+' ) . ']]';
 		$params_ = [];
 		foreach ( [ 'limit', 'offset', 'order' ] as $value ) {
 			if ( !empty( $params[$value] ) ) {

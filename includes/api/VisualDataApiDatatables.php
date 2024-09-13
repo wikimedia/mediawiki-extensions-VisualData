@@ -22,6 +22,7 @@
  * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\ResultPrinter;
 use MediaWiki\MediaWikiServices;
 
 class VisualDataApiDatatables extends ApiBase {
@@ -64,6 +65,10 @@ class VisualDataApiDatatables extends ApiBase {
 		$params_ = $data['query']['params'];
 		$sourcePage = $data['sourcePage'];
 
+		if ( \VisualData::isList( $printouts ) ) {
+			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
+		}
+
 		// filter the query
 		$queryConjunction = [];
 
@@ -88,7 +93,12 @@ class VisualDataApiDatatables extends ApiBase {
 		$order = [];
 		foreach ( $datatableData['order'] as $value ) {
 			if ( $value['name'] === '' ) {
-				$value['name'] = 'pagetitle';
+				foreach ( ResultPrinter::$titleAliases as $alias ) {
+					if ( !array_key_exists( $printouts, $alias ) ) {
+						$value['name'] = $alias;
+						break;
+					}
+				}
 			}
 			$order[] = $value['name'] . " " . $value['dir'];
 		}
@@ -114,10 +124,6 @@ class VisualDataApiDatatables extends ApiBase {
 		$parserOptions = ParserOptions::newFromContext( $context );
 		$titleObj = Title::newFromText( $sourcePage );
 		$parser->startExternalParse( $titleObj, $parserOptions, Parser::OT_PREPROCESS );
-
-		if ( \VisualData::isList( $printouts ) ) {
-			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
-		}
 
 		$resultPrinter = \VisualData::getResults(
 			$parser,

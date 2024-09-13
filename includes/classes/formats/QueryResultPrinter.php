@@ -69,7 +69,12 @@ class QueryResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return [ 'errors' => $this->queryProcessorErrors() ];
+		}
+		if ( $this->params['debug'] ) {
+			return [ 'sql' => $results ];
+		}
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -80,7 +85,7 @@ class QueryResultPrinter extends ResultPrinter {
 		if ( count( $this->fields ) > 0 ) {
 			$this->rows[] = $this->fields;
 		}
-		return $this->rows;
+		return $this->returnRawResult( $this->rows );
 	}
 
 }

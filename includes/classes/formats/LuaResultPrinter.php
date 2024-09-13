@@ -38,7 +38,12 @@ class LuaResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return implode( ', ', $this->queryProcessorErrors() );
+		}
+		if ( $this->params['debug'] ) {
+			return $results;
+		}
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -69,10 +74,12 @@ class LuaResultPrinter extends ResultPrinter {
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;
 			$rows[] = [
-				$this->params['pagetitle'] => $title_->getText(),
+				'title' => $title_->getText(),
+				'pageid' => $title_->getArticleID(),
 				'data' => $row
 			];
 		}
+		$rows = $this->returnRawResult( $rows );
 		return $this->processModule( json_encode( $rows ) );
 	}
 }

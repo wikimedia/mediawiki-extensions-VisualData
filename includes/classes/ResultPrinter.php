@@ -64,10 +64,23 @@ class ResultPrinter {
 	public $templates;
 
 	/** @var array */
-	public $validPrintouts;
+	protected $mapPathSchema = [];
 
 	/** @var array */
-	protected $mapPathSchema = [];
+	public static $titleAliases = [
+		'_title',
+		'title',
+		'_pagetitle',
+		'pagetitle'
+	];
+
+	/** @var array */
+	public static $pageidAliases = [
+		'_pageid',
+		'pageid',
+		'articleid',
+		'_articleid',
+	];
 
 	/**
 	 * @param Parser $parser
@@ -80,8 +93,6 @@ class ResultPrinter {
 	 * @param array $printoutsOptions []
 	 */
 	public function __construct( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions = [] ) {
-		$this->queryProcessor = $queryProcessor;
-
 		$defaultParameters = [
 			'format' => [ 'json', 'string' ],
 			'schema' => [ '', 'string' ],
@@ -99,6 +110,7 @@ class ResultPrinter {
 		$params = array_merge( $params,
 			\VisualData::applyDefaultParams( $defaultParameters, $params ) );
 
+		$this->queryProcessor = $queryProcessor;
 		$this->format = $params['format'];
 		$this->params = $params;
 		$this->schema = $schema;
@@ -123,10 +135,12 @@ class ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
-		if ( $this->params['debug'] ) {
-			return (string)$results;
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return implode( ', ', $this->queryProcessorErrors() );
 		}
-		$this->validPrintouts = $this->queryProcessor->getValidPrintouts();
+		if ( $this->params['debug'] ) {
+			return $results;
+		}
 		return $this->processResults( $results, $this->schema );
 	}
 
@@ -276,20 +290,17 @@ class ResultPrinter {
 			}
 		};
 		$flattenRec( $arr );
-		$keys = [
-			'_pagetitle' => $title->getFullText(),
-			'_articleid' => $title->getArticleID()
-		];
 
-		$keys['pagetitle'] = $keys['_pagetitle'];
-		$keys['articleid'] = $keys['_articleid'];
-
-		// if "pagetitle" is not a valid printout
-		// it won't be overwritten, and _pagetitle should
-		// be used instead
-		foreach ( $keys as $k => $v ) {
-			if ( !in_array( $path ? "$path/$k" : $k, $this->validPrintouts ) ) {
-				$ret[$k] = $v;
+		// use the title and pageid aliases only
+		// when do not conflict with printout names
+		foreach ( self::$titleAliases as $text ) {
+			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
+				$ret[$text] = $title->getFullText();
+			}
+		}
+		foreach ( self::pageidAliases as $text ) {
+			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
+				$ret[$text] = $title->getArticleID();
 			}
 		}
 
@@ -487,12 +498,39 @@ class ResultPrinter {
 
 		// disable pagetitle and render in different column
 		// ?pagetitle
-		// pagetitle=
-		if ( empty( $value ) && $key === 'pagetitle' ) {
+		// pagetitle=page title
+		if ( empty( $value ) && !in_array( $key, $this->getValidPrintouts() )
+			&& in_array( $key, self::titleAliases )
+		) {
 			$value = $title->getFullText();
 		}
 
 		return $value;
+	}
+
+	/**
+	 * @param array $result
+	 * @return array
+	 */
+	public function returnRawResult( $result ) {
+		if ( !count( $result ) ) {
+			return [];
+		}
+		return ( !$this->queryProcessor->isPrintCondition() ? $result : $result[0] );
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getValidPrintouts() {
+		return $this->queryProcessor->getValidPrintouts();
+	}
+
+	/**
+	 * @return array
+	 */
+	public function queryProcessorErrors() {
+		return $this->queryProcessor->getErrors();
 	}
 
 	/**

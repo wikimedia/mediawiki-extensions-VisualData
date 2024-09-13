@@ -82,11 +82,14 @@ class TableRawResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
+		if ( count( $this->queryProcessorErrors() ) ) {
+			return [ 'errors' => $this->queryProcessorErrors() ];
+		}
 		if ( $this->params['debug'] ) {
-			return (string)$results;
+			return [ 'sql' => $results ];
 		}
 		$this->processResults( $results, $this->schema );
-		return $this->json;
+		return $this->returnRawResult( $this->json );
 	}
 
 }
