@@ -19,7 +19,6 @@
  * @copyright Copyright © 2024, https://wikisphere.org
  */
 
-/* eslint-disable no-tabs */
 /* eslint-disable no-unused-vars */
 
 ( function () {

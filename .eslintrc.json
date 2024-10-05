@@ -21,7 +21,11 @@
 		"no-jquery/no-parse-html-literal": "warn",
 		"no-jquery/no-sizzle": "warn",
 		"no-jquery/variable-pattern": "warn",
-		"es-x/no-async-functions": "off"
+		"es-x/no-async-functions": "off",
+		"arrow-body-style": "off",
+		"implicit-arrow-linebreak": "off",
+		"no-jquery/no-extend": "off",
+		"prefer-arrow-callback": "off"
 	},
 	"parserOptions": {
 		"ecmaVersion": 8
