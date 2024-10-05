@@ -119,7 +119,7 @@ class TableResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processRoot( $row ) {
+	public function processRoot( $rows ) {
 		$attributes = [];
 		foreach ( $this->headers as $header ) {
 			$this->htmlTable->header( $header, $attributes );

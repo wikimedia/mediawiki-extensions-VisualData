@@ -816,6 +816,19 @@ VisualDataFunctions = ( function () {
 		return ret;
 	}
 
+	function sort( arr ) {
+		return arr.sort( ( a, b ) => {
+			var ret = a.localeCompare( b );
+			if ( ret > 0 ) {
+				return 1;
+			}
+			if ( ret < 0 ) {
+				return -1;
+			}
+			return 0;
+		} );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -852,6 +865,7 @@ VisualDataFunctions = ( function () {
 		loadScripts,
 		isNaN,
 		escapeJsonPtr,
-		objectEntries
+		objectEntries,
+		sort
 	};
 }() );

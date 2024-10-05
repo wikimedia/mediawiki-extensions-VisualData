@@ -947,7 +947,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 				);
 			}
 
-			return values.map( ( x ) => {
+			return VisualDataFunctions.sort( values ).map( ( x ) => {
 				var menuOptionWidget = new OO.ui.MenuOptionWidget( {
 					data: x,
 					label: x,

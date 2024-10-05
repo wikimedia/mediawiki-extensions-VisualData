@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
@@ -345,11 +345,13 @@ class DatatableResultPrinter extends TableResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processRoot( $row ) {
+	public function processRoot( $rows ) {
 		// avoid error "Constant expression contains invalid operations"
 		if ( empty( $this->params['datatables-searchPanes.emptyMessage'] ) ) {
 			$this->params['datatables-searchPanes.emptyMessage'] = wfMessage( 'visualdata-datatatables-searchpanes-empty-message' )->text();
 		}
+
+		$this->modules[] = 'ext.VisualData.Datatables';
 
 		$attributes = [];
 		foreach ( $this->headers as $header ) {

@@ -946,7 +946,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				);
 			}
 
-			return values.map( ( x ) => {
+			return VisualDataFunctions.sort( values ).map( ( x ) => {
 				var menuOptionWidget = new OO.ui.MenuOptionWidget( {
 					data: x,
 					label: x,

@@ -30,6 +30,9 @@ use Parser;
 
 class ResultPrinter {
 
+	/** @var array */
+	protected $modules = [];
+
 	/** @var Output */
 	protected $output;
 
@@ -538,5 +541,12 @@ class ResultPrinter {
 	 */
 	public function getCount() {
 		return $this->queryProcessor->getCount();
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getModules() {
+		return $this->modules;
 	}
 }

@@ -347,7 +347,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var schemaInput = new OO.ui.DropdownInputWidget( {
 			options: VisualDataFunctions.createDropDownOptions(
-				Object.keys( Schemas ),
+				VisualDataFunctions.sort( Object.keys( Schemas ) ),
 				{ key: 'value' }
 			),
 			value: getPropertyValue( 'query-schema' )

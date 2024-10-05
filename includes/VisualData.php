@@ -1093,8 +1093,16 @@ class VisualData {
 			$printoutsOptions
 		);
 
-		$results = ( $resultPrinter ? $resultPrinter->getResults() : '' );
-		$isHtml = ( $resultPrinter ? $resultPrinter->isHtml() : false );
+		if ( !$resultPrinter ) {
+			return [ '', 'isHTML' => false ];
+		}
+
+		$results = $resultPrinter->getResults();
+		$isHtml = $resultPrinter->isHtml();
+
+		if ( count( $resultPrinter->getModules() ) ) {
+			$parserOutput->addModules( $resultPrinter->getModules() );
+		}
 
 		return [ $results, 'isHTML' => $isHtml ];
 	}

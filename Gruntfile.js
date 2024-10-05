@@ -16,12 +16,14 @@ module.exports = function ( grunt ) {
 				'!node_modules/**',
 				'!vendor/**',
 				'!resources/datatables/**',
+				'!resources/datatables-lite/**',
 				'!resources/intl-tel-input/**',
 				'!resources/papaparse/**',
 				'!resources/promise-polyfill/**',
 				'!resources/ajv-validator/**',
 				'!resources/Maptiler/**',
-				'!resources/tinymce/**'
+				'!resources/tinymce/**',
+				'!resources/slick/lib/**'
 			]
 		},
 		stylelint: {
@@ -30,12 +32,14 @@ module.exports = function ( grunt ) {
 				'!node_modules/**',
 				'!vendor/**',
 				'!resources/datatables/**',
+				'!resources/datatables-lite/**',
 				'!resources/intl-tel-input/**',
 				'!resources/papaparse/**',
 				'!resources/promise-polyfill/**',
 				'!resources/ajv-validator/**',
 				'!resources/Maptiler/**',
-				'!resources/tinymce/**'
+				'!resources/tinymce/**',
+				'!resources/slick/lib/**'
 			]
 		},
 		banana: conf.MessagesDirs

@@ -312,7 +312,7 @@
 		"ext.VisualData.ManageSchemas": {
 			"position": "top",
 			"scripts": [
-				"datatables/datatables.min.js",
+				"datatables-lite/datatables.min.js",
 				"VisualDataInputConfig.js",
 				"VisualDataContentBlock.js",
 				"VisualDataGeolocation.js",
@@ -320,7 +320,7 @@
 				"VisualDataSchemas.js"
 			],
 			"styles": [
-				"datatables/datatables.min.css"
+				"datatables-lite/datatables.min.css"
 			],
 			"dependencies": [
 				"mediawiki.widgets",
@@ -455,17 +455,27 @@
 		"ext.VisualData.PrintResults": {
 			"position": "top",
 			"scripts": [
-				"datatables/object_hash.js",
-				"datatables/datatables.min.js",
-				"VisualDataFunctions.js",
-				"VisualDataDatatables.js"
+				"VisualDataFunctions.js"
 			],
 			"styles": [
-				"datatables/datatables.min.css",
 				"style.css"
 			],
 			"dependencies": [
 				"mediawiki.content.json"
+			]
+		},
+		"ext.VisualData.Datatables": {
+			"position": "top",
+			"scripts": [
+				"datatables/object_hash.js",
+				"datatables/datatables.min.js",
+				"VisualDataDatatables.js"
+			],
+			"styles": [
+				"datatables/datatables.min.css"
+			],
+			"dependencies": [
+				"ext.VisualData.PrintResults"
 			]
 		},
 		"ext.VisualData.Maptiler": {
@@ -477,6 +487,21 @@
 				"Maptiler/style.css"
 			],
 			"dependencies": []
+		},
+		"ext.VisualData.Slick": {
+			"position": "top",
+			"scripts": [
+				"slick/lib/slick.min.js",
+				"slick/main.js"
+			],
+			"styles": [
+				"slick/lib/slick.css",
+				"slick/lib/slick-theme.css",
+				"slick/style.css"
+			],
+			"dependencies": [
+				"ext.VisualData.PrintResults"
+			]
 		}
 	},
 	"config": {
