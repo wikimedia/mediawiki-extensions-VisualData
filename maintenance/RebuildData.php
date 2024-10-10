@@ -43,9 +43,6 @@ class RebuildData extends Maintenance {
 	/** @var User */
 	private $user;
 
-	/** @var int */
-	private $limit;
-
 	/** @var services */
 	private $services;
 
@@ -58,9 +55,6 @@ class RebuildData extends Maintenance {
 	/** @var array */
 	private $onlySchemas;
 
-	/** @var bool */
-	private $rebuildLinks;
-
 	public function __construct() {
 		parent::__construct();
 		$this->addDescription( 'rebuild data' );
@@ -70,33 +64,38 @@ class RebuildData extends Maintenance {
 		//	withArg = false, shortName = false, multiOccurrence = false
 		//	$this->addOption( 'format', 'import format (csv or json)', true, true );
 
-		$this->addOption( 'limit', 'limit', false, true );
 		$this->addOption( 'exclude-prefix', 'exclude prefix', false, true );
-		$this->addOption( 'exclude-schemas', 'exclude schemas', false, true );
-		$this->addOption( 'only-schemas', 'only schemas', false, true );
-		$this->addOption( 'rebuild-links', 'rebuild links', false, false );
+
+		// @TODO this require selective deletion of data
+		// in tables instead than dropping / creating them
+		// $this->addOption( 'exclude-schemas', 'exclude schemas', false, true );
+		// $this->addOption( 'only-schemas', 'only schemas', false, true );
 	}
 
 	/**
 	 * inheritDoc
 	 */
 	public function execute() {
-		$limit = $this->getOption( 'limit' ) ?? false;
-		$this->excludePrefix = $this->getOption( 'exclude-prefix' ) ?? '';
-		$this->excludeSchemas = $this->getOption( 'exclude-schemas' ) ?? '';
-		$this->onlySchemas = $this->getOption( 'only-schemas' ) ?? '';
-		$this->rebuildLinks = (bool)$this->getOption( 'rebuild-links' ) ?? false;
-
-		$this->excludePrefix = preg_split( '/\s*,\s*/', $this->excludePrefix, -1, PREG_SPLIT_NO_EMPTY );
-		$this->excludeSchemas = preg_split( '/\s*,\s*/', $this->excludeSchemas, -1, PREG_SPLIT_NO_EMPTY );
-		$this->onlySchemas = preg_split( '/\s*,\s*/', $this->onlySchemas, -1, PREG_SPLIT_NO_EMPTY );
+		$excludePrefix = $this->getOption( 'exclude-prefix' ) ?? '';
+		// $excludeSchemas = $this->getOption( 'exclude-schemas' ) ?? '';
+		// $onlySchemas = $this->getOption( 'only-schemas' ) ?? '';
+		$excludeSchemas = '';
+		$onlySchemas = '';
+		$this->excludePrefix = preg_split( '/\s*,\s*/', $excludePrefix, -1, PREG_SPLIT_NO_EMPTY );
+		$this->excludeSchemas = preg_split( '/\s*,\s*/', $excludeSchemas, -1, PREG_SPLIT_NO_EMPTY );
+		$this->onlySchemas = preg_split( '/\s*,\s*/', $onlySchemas, -1, PREG_SPLIT_NO_EMPTY );
 
 		$this->services = MediaWikiServices::getInstance();
 		$this->db = \VisualData::getDB( DB_PRIMARY );
 		$this->user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 
-		$this->dropTables();
-		$this->createTables();
+		if ( !count( $this->excludeSchemas ) && !count( $this->onlySchemas ) ) {
+			$this->dropTables();
+			$this->createTables();
+		} else {
+			// @TODO ...
+		}
+
 		$this->rebuildData();
 
 		// *** unfortunately we cannot rely on tracking categories
@@ -202,11 +201,37 @@ class RebuildData extends Maintenance {
 				continue;
 			}
 
+			$content = $slotData->getContent();
+
+			if ( empty( $content ) ) {
+				continue;
+			}
+
+			$data = json_decode( $content->getNativeData(), true );
+
+			if ( empty( $data ) ) {
+				continue;
+			}
+
+			if ( count( $this->excludeSchemas ) || count( $this->onlySchemas ) ) {
+				if ( empty( $data['schemas'] ) ) {
+					continue;
+				}
+				$schemas_ = array_keys( $data['schemas'] );
+				if ( count( $schemas_ ) === 1 ) {
+					if ( count( $this->onlySchemas ) && !in_array( $schemas_, $this->onlySchemas ) ) {
+						continue;
+					}
+					if ( count( $this->excludeSchemas ) && in_array( $schemas_, $this->excludeSchemas ) ) {
+						continue;
+					}
+				}
+			}
+
 			echo 'rebuilding data for ' . $title->getFullText() . PHP_EOL;
 
-			$content = $slotData->getContent();
 			$errors = [];
-			\VisualData::rebuildArticleDataFromSlot( $this->user, $title, $content, $errors );
+			\VisualData::rebuildArticleData( $this->user, $title, $data, $errors );
 		}
 	}
 
