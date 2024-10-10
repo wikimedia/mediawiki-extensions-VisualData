@@ -533,10 +533,20 @@ html-num-fmt
 			index++;
 		}
 
+		// default layout
+		// https://datatables.net/reference/option/layout
+		if ( conf.buttons.length &&
+			conf.layout.topStart !== 'buttons' &&
+			conf.layout.topEnd !== 'buttons' &&
+			conf.layout.bottomStart !== 'buttons' &&
+			conf.layout.bottomEnd !== 'buttons'
+		) {
+			conf.layout.top1Start = 'buttons';
+		}
+
 		if ( searchPanes ) {
-			// https://datatables.net/reference/option/layout
 			// https://datatables.net/examples/layout/ids-and-classes.html
-			conf.layout.top1 = {
+			conf.layout.top2 = {
 				// whatever class
 				rowClass: 'row-class',
 				features: 'searchPanes'
