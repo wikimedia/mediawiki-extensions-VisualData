@@ -20,9 +20,30 @@
  */
 
 ( function () {
+	$( window ).on( 'resize', function () {
+		$( '.slick-slider' ).each( function () {
+			$( '.slick-slider .slick-slide' ).each( function () {
+				if ( $( window ).width() < 800 && !$( '.slick-slide-content.caption-title', $( this ) ).length ) {
+					$( '.slick-slide-content.caption', $( this ) ).hide();
+				} else {
+					$( '.slick-slide-content.caption', $( this ) ).show();
+				}
+			} );
+		} );
+	} );
+
 	function init( $slide ) {
 		$slide.slick( $slide.data().slick );
+
 		$( '.slick-slider .slick-slide' ).each( function () {
+			// hide caption frame if title is empty
+			// and screen < 800px
+			if ( $( window ).width() < 800 && !$( '.slick-slide-content.caption-title', $( this ) ).length ) {
+				$( '.slick-slide-content.caption', $( this ) ).hide();
+			} else {
+				$( '.slick-slide-content.caption', $( this ) ).show();
+			}
+
 			if ( $( this ).attr( 'data-url' ) ) {
 				// $(this).attr('title', $(this).attr('data-title') )
 				$( this ).css( 'cursor', 'pointer' );

@@ -22,6 +22,7 @@
 
 /* stylelint-disable declaration-property-unit-disallowed-list */
 /* stylelint-disable color-named */
+/* stylelint-disable declaration-no-important */
 
 .slick-slider {
 	overflow: hidden;
@@ -43,10 +44,6 @@
 	z-index: 10;
 }
 
-.slick-slide {
-	position: relative;
-}
-
 .slick-slide .slick-slide-content.caption {
 	bottom: 0;
 	position: absolute;
@@ -59,11 +56,33 @@
 
 .slick-slide .slick-slide-content.caption-title {
 	font-size: larger;
+	padding: 0 4px;
+}
+
+.slick-slide .slick-slide-content.caption-text {
+	padding: 0 4px;
 }
 
 .slick-slide .slick-slide-content.caption-text a {
 	color: white;
 	text-decoration: underline;
+}
+
+.slick-list,
+.slick-track,
+.slick-slide {
+	height: inherit !important;
+}
+
+.slick-track {
+	display: flex !important;
+}
+
+.slick-slide {
+	position: relative;
+	display: flex !important;
+	justify-content: center;
+	align-items: center;
 }
 
 @media screen and ( max-width: 800px ) {
