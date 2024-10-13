@@ -533,6 +533,10 @@ html-num-fmt
 			index++;
 		}
 
+		if ( conf.cards ) {
+			conf.responsive = false;
+		}
+
 		// default layout
 		// https://datatables.net/reference/option/layout
 		if ( conf.buttons.length &&
@@ -674,6 +678,25 @@ html-num-fmt
 						searchPanesOptions,
 						displayLog
 					);
+				},
+				drawCallback: function ( settings ) {
+					if ( table.hasClass( 'cards' ) ) {
+						var labels = VisualDataFunctions.objectValues( headers );
+
+						// Add data-label attribute to each cell
+						// (will be used by .visualdata.datatable.cards td:before)
+						$( 'tbody tr', table ).each( function () {
+							$( this ).find( 'td' ).each( function ( column ) {
+								$( this ).attr( 'data-label', labels[ column ] );
+							} );
+						} );
+
+						// set same heigth for all cards
+						var max = 0;
+						$( 'tbody tr', table ).each( function () {
+							max = Math.max( $( this ).height(), max );
+						} ).height( max );
+					}
 				}
 			} );
 		}

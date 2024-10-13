@@ -472,7 +472,8 @@
 				"VisualDataDatatables.js"
 			],
 			"styles": [
-				"datatables/datatables.min.css"
+				"datatables/datatables.min.css",
+				"datatables/style.css"
 			],
 			"dependencies": [
 				"ext.VisualData.PrintResults"

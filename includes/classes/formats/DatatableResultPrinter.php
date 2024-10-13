@@ -340,6 +340,13 @@ class DatatableResultPrinter extends TableResultPrinter {
 		// 	'required' => false,
 		// 	'default' => false,
 		// ],
+
+		// ***custom parameter
+		'datatables-cards' => [
+			'type' => 'boolean',
+			'required' => false,
+			'default' => false,
+		],
 	];
 
 	/**
@@ -387,7 +394,9 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$tableAttrs['data-json'] = json_encode( $this->json );
 		$tableAttrs['data-query'] = json_encode( $this->query );
 		$tableAttrs['width'] = '100%';
-		$tableAttrs['class'] = 'visualdata datatable display dataTable';
+		$tableAttrs['class'] = 'visualdata datatable dataTable';
+		$tableAttrs['class'] .= ( empty( $this->params['datatables-cards'] ) ?
+			' display' : ' cards' );
 
 		return $this->htmlTable->table(
 			$tableAttrs

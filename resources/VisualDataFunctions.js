@@ -829,6 +829,10 @@ VisualDataFunctions = ( function () {
 		} );
 	}
 
+	function objectValues( obj ) {
+		return Object.keys( obj ).map( ( k ) => obj[ k ] );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -866,6 +870,7 @@ VisualDataFunctions = ( function () {
 		isNaN,
 		escapeJsonPtr,
 		objectEntries,
-		sort
+		sort,
+		objectValues
 	};
 }() );
