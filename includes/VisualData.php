@@ -356,7 +356,15 @@ class VisualData {
 			'required' => false,
 			'default' => 'validate',
 			'example' => 'visualdata-parserfunction-form-validate-button-text-example'
-		]
+		],
+		'selected-schema' => [
+			'label' => 'visualdata-parserfunction-form-selected-schema-label',
+			'description' => 'visualdata-parserfunction-form-selected-schema-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-form-selected-schema-example'
+		],
 	];
 
 	/** @var array */

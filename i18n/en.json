@@ -227,6 +227,10 @@
 	"visualdata-parserfunction-form-validate-button-text-description": "text of the validate button",
 	"visualdata-parserfunction-form-validate-button-text-example": "",
 
+	"visualdata-parserfunction-form-selected-schema-label": "selected schema",
+	"visualdata-parserfunction-form-selected-schema-description": "selected schema (when using form with multiple schemas)",
+	"visualdata-parserfunction-form-selected-schema-example": "",
+
 	"visualdata-parserfunction-query-description": "A parser function to query schemas data and print them in various formats",
 
 	"visualdata-parserfunction-query-schema-label": "schema",

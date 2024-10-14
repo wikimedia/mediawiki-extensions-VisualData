@@ -1698,7 +1698,15 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				Form.schemas = Form.schemas.filter( ( x ) => x in Schemas );
 
 				if ( !SelectedSchema || Form.schemas.indexOf( SelectedSchema ) === -1 ) {
-					SelectedSchema = ( Form.schemas.length ? Form.schemas[ 0 ] : null );
+					// @credits https://gerrit.wikimedia.org/r/c/mediawiki/extensions/VisualData/+/1034934
+					if ( 'selected-schema' in Form.options &&
+						Form.options[ 'selected-schema' ] !== '' &&
+						inArray( Form.options[ 'selected-schema' ], Form.schemas )
+					) {
+						SelectedSchema = Form.options[ 'selected-schema' ];
+					} else {
+						SelectedSchema = ( Form.schemas.length ? Form.schemas[ 0 ] : null );
+					}
 				}
 
 				var layout = Form.options.layout;
@@ -1781,8 +1789,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 						booklet.addPages( items );
 						content = booklet;
-
-						// booklet.setPage( SelectedSchema );
+						booklet.setPage( SelectedSchema );
 
 						this.$element.addClass( 'PanelPropertiesStackPanelBooklet' );
 
@@ -1811,7 +1818,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						}
 
 						indexLayout.addTabPanels( items );
-						// indexLayout.setTabPanel( SelectedSchema );
+						indexLayout.setTabPanel( SelectedSchema );
 						content = indexLayout;
 
 						this.$element.addClass( 'PanelPropertiesStackPanelTabs' );
