@@ -56,7 +56,7 @@ class TableResultPrinter extends ResultPrinter {
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			// main label
 			$this->headers[''] = $this->params['pagetitle'];
-			$formatted = Linker::link( $title, $title->getText() );
+			$formatted = Linker::link( $title, $title->getFullText() );
 			$this->htmlTable->cell( $formatted );
 			$this->json[count( $this->htmlTable->rows )][] = $formatted;
 		}

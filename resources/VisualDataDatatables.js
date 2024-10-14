@@ -346,6 +346,26 @@ const VisualDataDatatables = function () {
 		return ret;
 	};
 
+	var renderCards = function ( table, headers ) {
+		if ( table.hasClass( 'cards' ) ) {
+			var labels = VisualDataFunctions.objectValues( headers );
+
+			// Add data-label attribute to each cell
+			// (will be used by .visualdata.datatable.cards td:before)
+			$( 'tbody tr', table ).each( function () {
+				$( this ).find( 'td' ).each( function ( column ) {
+					$( this ).attr( 'data-label', labels[ column ] );
+				} );
+			} );
+
+			// set same heigth for all cards
+			var max = 0;
+			$( 'tbody tr', table ).each( function () {
+				max = Math.max( $( this ).height(), max );
+			} ).height( max );
+		}
+	};
+
 	return {
 		getCacheKey,
 		callApi,
@@ -354,7 +374,8 @@ const VisualDataDatatables = function () {
 		getPanesOptions,
 		setPanesOptions,
 		initColumnSort,
-		searchPanesOptionsServer
+		searchPanesOptionsServer,
+		renderCards
 	};
 };
 
@@ -580,6 +601,12 @@ html-num-fmt
 
 		conf.columnDefs = columnDefs;
 
+		conf.drawCallback = function ( settings ) {
+			if ( conf.cards ) {
+				visualdataDatatables.renderCards( table, headers );
+			}
+		};
+
 		if ( !useAjax ) {
 			conf.serverSide = false;
 			conf.data = data;
@@ -678,25 +705,6 @@ html-num-fmt
 						searchPanesOptions,
 						displayLog
 					);
-				},
-				drawCallback: function ( settings ) {
-					if ( table.hasClass( 'cards' ) ) {
-						var labels = VisualDataFunctions.objectValues( headers );
-
-						// Add data-label attribute to each cell
-						// (will be used by .visualdata.datatable.cards td:before)
-						$( 'tbody tr', table ).each( function () {
-							$( this ).find( 'td' ).each( function ( column ) {
-								$( this ).attr( 'data-label', labels[ column ] );
-							} );
-						} );
-
-						// set same heigth for all cards
-						var max = 0;
-						$( 'tbody tr', table ).each( function () {
-							max = Math.max( $( this ).height(), max );
-						} ).height( max );
-					}
 				}
 			} );
 		}

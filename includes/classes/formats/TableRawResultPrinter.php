@@ -45,7 +45,7 @@ class TableRawResultPrinter extends ResultPrinter {
 	 */
 	public function processRow( $title, $value ) {
 		if ( !empty( $this->params['pagetitle'] ) ) {
-			$formatted = Linker::link( $title, $title->getText() );
+			$formatted = Linker::link( $title, $title->getFullText() );
 			$this->json[][] = $formatted;
 		} else {
 			$this->json[] = [];

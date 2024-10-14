@@ -762,7 +762,7 @@ class QueryProcessor {
 			$joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
 		}
 
-		if ( $this->treeFormat ) {
+		if ( $this->treeFormat && !$this->count ) {
 			$options['GROUP BY'] = 'page_id';
 		}
 
