@@ -497,8 +497,8 @@ class ResultPrinter {
 		if ( $this->hasTemplate( $path ) ) {
 			if ( $isArray ) {
 				// @TODO verify that json pointer is unescaped
-				$prop = array_pop( explode( '/', $path ) );
-				$properties = [ $prop => $value ];
+				$arr_ = explode( '/', $path );
+				$properties = [ array_pop( $arr_ ) => $value ];
 			}
 			$value = $this->processTemplate( $this->templates[$path],
 				$this->getTemplateParams( $title, $path, $properties ), false );
