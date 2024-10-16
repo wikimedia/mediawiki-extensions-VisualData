@@ -347,9 +347,7 @@ class CarouselResultPrinter extends ResultPrinter {
 	}
 
 	/**
-	 * @param array $results
-	 * @param array $schema
-	 * @return array
+	 * @inheritDoc
 	 */
 	public function processResults( $results, $schema ) {
 		$this->mapProperties = [
@@ -371,26 +369,16 @@ class CarouselResultPrinter extends ResultPrinter {
 	}
 
 	/**
-	 * @param Title $title
-	 * @param array $schema
-	 * @param array $properties
-	 * @param string $path
-	 * @param array $recPaths []
-	 * @return string
+	 * @inheritDoc
 	 */
 	public function processParent( $title, $schema, $properties, $path, $recPaths = [] ) {
 		return '';
 	}
 
 	/**
-	 * @param Title $title
-	 * @param array|null $schema
-	 * @param string $key
-	 * @param array $properties
-	 * @param string $path
-	 * @return string
+	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path ) {
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
 		if ( array_key_exists( $key, $this->mapProperties ) ) {
 			if ( $this->mapProperties[$key] === 'file' ) {
 				$this->obj[$this->mapProperties[$key]][] = [ $title, (string)$properties[$key] ];

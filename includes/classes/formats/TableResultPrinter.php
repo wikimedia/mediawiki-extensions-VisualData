@@ -69,13 +69,13 @@ class TableResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path ) {
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
 		// skip printouts as "a="
 		if ( empty( $this->printouts[$path] ) ) {
 			return '';
 		}
 
-		$value = parent::processChild( $title, $schema, $key, $properties, $path );
+		$value = parent::processChild( $title, $schema, $key, $properties, $path, $isArray );
 
 		// label from printout (|?a=b)
 		if ( $this->printouts[$path] !== $path ) {
