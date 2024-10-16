@@ -360,7 +360,7 @@ class ResultPrinter {
 					$key,
 					$arr,
 					$currentPathNoIndex,
-					$path === ''
+					$isArray
 				);
 
 				$recPaths[$currentPath] = $ret[$key];
@@ -383,7 +383,7 @@ class ResultPrinter {
 	 * @return string
 	 */
 	protected function processSchemaRec( $title, $schema, $arr, $path ) {
-		// $isArray = ( $schema['type'] === 'array' );
+		$isArray = ( $schema['type'] === 'array' );
 		$ret = [];
 		foreach ( $arr as $key => $value ) {
 			$currentPath = $path ? "$path/$key" : $key;
@@ -418,7 +418,8 @@ class ResultPrinter {
 					$subschema,
 					$key,
 					$arr,
-					$currentPath
+					$currentPath,
+					$isArray
 				);
 			}
 		}
@@ -486,13 +487,19 @@ class ResultPrinter {
 	 * @param string $key
 	 * @param array $properties
 	 * @param string $path
+	 * @param bool $isArray
 	 * @return string
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path ) {
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
 		$value = $properties[$key];
 
 		// apply template
 		if ( $this->hasTemplate( $path ) ) {
+			if ( $isArray ) {
+				// @TODO verify that json pointer is unescaped
+				$prop = array_pop( explode( '/', $path ) );
+				$properties = [ $prop => $value ];
+			}
 			$value = $this->processTemplate( $this->templates[$path],
 				$this->getTemplateParams( $title, $path, $properties ), false );
 		}
@@ -502,7 +509,7 @@ class ResultPrinter {
 		// disable pagetitle and render in different column
 		// ?pagetitle
 		// pagetitle=page title
-		if ( empty( $value ) && !in_array( $key, $this->getValidPrintouts() )
+		if ( !$isArray && empty( $value ) && !in_array( $key, $this->getValidPrintouts() )
 			&& in_array( $key, self::$titleAliases )
 		) {
 			$value = $title->getFullText();

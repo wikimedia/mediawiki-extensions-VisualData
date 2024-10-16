@@ -2220,7 +2220,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				newItem = true;
 			}
 			var path_ = `${ path }/${ i }`;
-			applyUntransformed( data, i, path );
+			applyUntransformed( data, i, path_ );
 			var thisModel = ( model[ i ] = {
 				parent: model,
 				childIndex: i,
