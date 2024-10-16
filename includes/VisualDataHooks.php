@@ -301,6 +301,18 @@ class VisualDataHooks {
 	}
 
 	/**
+	 * @param array &$tables
+	 * @param array &$conds
+	 * @param array &$joinConds
+	 * @return void
+	 */
+	public static function onRandomPageQuery( &$tables, &$conds, &$joinConds ) {
+		// avoid that articles with json data in the main slot
+		// are shown as random page
+		$conds['page_content_model'] = 'wikitext';
+	}
+
+	/**
 	 * @param Parser $parser
 	 * @param string &$text
 	 * @return void
