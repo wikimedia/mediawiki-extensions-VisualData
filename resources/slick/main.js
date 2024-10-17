@@ -35,6 +35,10 @@
 	function init( $slide ) {
 		$slide.slick( $slide.data().slick );
 
+		if ( $slide.data().slick.adaptiveHeight ) {
+			$slide.addClass( 'adaptiveHeight' );
+		}
+
 		$( '.slick-slider .slick-slide' ).each( function () {
 			// hide caption frame if title is empty
 			// and screen < 800px

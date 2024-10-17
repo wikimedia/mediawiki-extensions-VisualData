@@ -121,7 +121,7 @@ class CarouselResultPrinter extends ResultPrinter {
 		'slick-centerMode' => [
 			'type' => 'boolean',
 			'required' => false,
-			'default' => 3000,
+			'default' => false,
 		],
 		'slick-centerPadding' => [
 			'type' => 'string',

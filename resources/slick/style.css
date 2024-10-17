@@ -68,17 +68,17 @@
 	text-decoration: underline;
 }
 
-.slick-list,
-.slick-track,
-.slick-slide {
+.slick-slider:not (.adaptiveHeight ) .slick-list,
+.slick-slider:not( .adaptiveHeight ) .slick-track,
+.slick-slider:not( .adaptiveHeight ) .slick-slide {
 	height: inherit !important;
 }
 
-.slick-track {
+.slick-slider:not( .adaptiveHeight ) .slick-track {
 	display: flex !important;
 }
 
-.slick-slide {
+.slick-slider:not( .adaptiveHeight ) .slick-slide {
 	position: relative;
 	display: flex !important;
 	justify-content: center;
