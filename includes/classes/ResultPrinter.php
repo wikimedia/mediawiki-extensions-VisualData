@@ -85,6 +85,12 @@ class ResultPrinter {
 		'_articleid',
 	];
 
+	/** @var array */
+	public static $parametersAlias = [
+		'params',
+		'_params'
+	];
+
 	/**
 	 * @param Parser $parser
 	 * @param Output $output
@@ -304,6 +310,14 @@ class ResultPrinter {
 		foreach ( self::$pageidAliases as $text ) {
 			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
 				$ret[$text] = $title->getArticleID();
+			}
+		}
+
+		$retCopy = $ret;
+		foreach ( self::$parametersAlias as $text ) {
+			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
+				$ret[$text] = '<pre>' . json_encode( $retCopy, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )
+					. '</pre>';
 			}
 		}
 
