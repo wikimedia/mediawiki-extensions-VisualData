@@ -22,6 +22,8 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
+use MediaWiki\MediaWikiServices;
+
 $IP = getenv( 'MW_INSTALL_PATH' );
 if ( $IP === false ) {
 	$IP = __DIR__ . '/../../..';
@@ -89,7 +91,7 @@ class DeleteRegex extends Maintenance {
 			$formattedNamespaces = MediaWikiServices::getInstance()
 				->getContentLanguage()->getFormattedNamespaces();
 
-			$ns = array_search( $formattedNamespaces, $namespace );
+			$ns = array_search( $namespace, $formattedNamespaces );
 			if ( !empty( $ns ) ) {
 				$conds['page_namespace'] = $ns;
 			}
