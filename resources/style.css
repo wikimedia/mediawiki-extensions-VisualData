@@ -245,3 +245,7 @@ body > .oo-ui-windowManager,
 .oo-ui-horizontalLayout > .oo-ui-dropdownInputWidget {
 	max-width: 12em;
 }
+
+.VisualDataForm .oo-ui-dropdownWidget-handle {
+	box-sizing: border-box;
+}
