@@ -106,12 +106,19 @@ class TableResultPrinter extends ResultPrinter {
 	 */
 	public function getResults() {
 		$results = $this->queryProcessor->getResults();
+
+		if ( !count( $this->printouts ) ) {
+			$this->printouts = array_combine( $this->getValidPrintouts(), $this->getValidPrintouts() );
+		}
+
 		if ( count( $this->queryProcessorErrors() ) ) {
 			return implode( ', ', $this->queryProcessorErrors() );
 		}
+
 		if ( $this->params['debug'] ) {
 			return $results;
 		}
+
 		$this->htmlTable = new htmlTable();
 		return $this->processResults( $results, $this->schema );
 	}
