@@ -723,6 +723,12 @@ class QueryProcessor {
 			$fields_ = [ 't.value', 't.page_id', 'p.path_no_index', 'p.path', 'p.path_parent', 'p.schema_id' ];
 			$conds_ = [];
 			$options_ = [];
+
+			// *** IMPORTANT use one of the following when appropriate !!
+			// $options_['IGNORE INDEX'] = [ 'p' => [ 'path_parent', 'path_no_index', 'index_1', 'index_2', 'index_3' ] ];
+			// FORCE INDEX
+			// $options_['USE INDEX'] = [ 'p' => 'PRIMARY' ];
+
 			$jconds_ = [
 				'p' => [ 'JOIN', 'p.id=t.prop_id' ]
 			];

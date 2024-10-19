@@ -246,7 +246,8 @@ body > .oo-ui-windowManager,
 	max-width: 12em;
 }
 
-.oo-ui-dropdownWidget-handle {
+.oo-ui-dropdownWidget-handle,
+.oo-ui-tagMultiselectWidget-handle {
 	box-sizing: border-box !important;
 }
 
