@@ -647,6 +647,17 @@ class SubmitForm {
 			}, $data['schemas'] ) );
 		}
 
+		if ( !count( $errors ) ) {
+			MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnFormSubmit', [
+				$this->user,
+				$targetTitle,
+				$jsonData,
+				$freetext,
+				$isNewPage,
+				&$errors
+			] );
+		}
+
 		if ( count( $errors ) ) {
 			return [
 				'freetext' => $data['form']['freetext'] ?? '',
@@ -665,15 +676,6 @@ class SubmitForm {
 		if ( $wikiPage ) {
 			$wikiPage->doPurge();
 		}
-
-		// success, run hook
-		MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnFormSubmit', [
-			$this->user,
-			$targetTitle,
-			$jsonData,
-			$freetext,
-			$isNewPage
-		] );
 
 		return [
 			'target-url' => !empty( $data['options']['return-url'] ) ? $data['options']['return-url']

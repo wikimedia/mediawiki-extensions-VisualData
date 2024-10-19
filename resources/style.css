@@ -246,6 +246,10 @@ body > .oo-ui-windowManager,
 	max-width: 12em;
 }
 
+.oo-ui-dropdownWidget-handle {
+	box-sizing: border-box !important;
+}
+
 .VisualDataGroupWidgetPanel .oo-ui-dropdownWidget-handle,
 .VisualDataGroupWidgetPanel-border .oo-ui-dropdownWidget-handle {
 	box-sizing: border-box;
