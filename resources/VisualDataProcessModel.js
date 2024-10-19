@@ -141,6 +141,11 @@ const VisualDataProcessModel = function (
 			loopA: for ( var error of AjvErrors ) {
 				var path = `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }`;
 
+				// ignore NaN values if the field is not required
+				if ( VisualDataFunctions.isNaN( Flatten[ path ].value ) && !Flatten[ path ].schema.wiki.required ) {
+					continue;
+				}
+
 				for ( var path_ of Removed ) {
 					if ( path === path_ ||
 						// @FIXME add specific reference to arrays
