@@ -74,7 +74,7 @@ class LuaResultPrinter extends ResultPrinter {
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;
 			$rows[] = [
-				'title' => $title_->getText(),
+				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),
 				'data' => $row
 			];

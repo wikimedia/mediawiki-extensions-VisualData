@@ -56,7 +56,7 @@ class JsonRawResultPrinter extends ResultPrinter {
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;
 			$ret[] = [
-				'title' => $title_->getText(),
+				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),
 				'data' => $row
 			];
