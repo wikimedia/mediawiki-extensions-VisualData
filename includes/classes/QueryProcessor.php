@@ -87,6 +87,12 @@ class QueryProcessor {
 	/** @var array */
 	private $formattedNamespaces;
 
+	/** @var array */
+	private $mapPathNoIndexTable = [];
+
+	/** @var int */
+	private $schemaId = [];
+
 	/** @var bool */
 	private $debug;
 
@@ -120,6 +126,9 @@ class QueryProcessor {
 		$this->dbr = \VisualData::getDB( DB_REPLICA );
 		$this->formattedNamespaces = MediaWikiServices::getInstance()
 			->getContentLanguage()->getFormattedNamespaces();
+
+		$this->parseQuery();
+		$this->prepareQuery();
 	}
 
 	/**
@@ -509,23 +518,21 @@ class QueryProcessor {
 		}
 	}
 
-	private function performQuery() {
-		$this->parseQuery();
-
+	private function prepareQuery() {
 		if ( !$this->conditionId && empty( $this->AndConditions ) ) {
 			$this->errors[] = 'no query';
 			return;
 		}
 
-		$schemaId = $this->databaseManager->getSchemaId( $this->params['schema'] );
+		$this->schemaId = $this->databaseManager->getSchemaId( $this->params['schema'] );
 
-		if ( $schemaId === null ) {
+		if ( $this->schemaId === null ) {
 			$this->errors[] = 'no schema (' . $this->params['schema'] . ')';
 			return;
 		}
 
 		$conds = [
-			'schema_id' => $schemaId,
+			'schema_id' => $this->schemaId,
 		];
 
 		$res = $this->dbr->select(
@@ -540,11 +547,10 @@ class QueryProcessor {
 			return;
 		}
 
-		$mapPathNoIndexTable = [];
 		foreach ( $res as $row ) {
 			$row = (array)$row;
 			$tablename = $this->tableNameFromId( $row['table_id'] );
-			$mapPathNoIndexTable[$row['path_no_index']] = $tablename;
+			$this->mapPathNoIndexTable[$row['path_no_index']] = $tablename;
 		}
 
 		// remove non existing printouts, allow retrieving all
@@ -555,9 +561,9 @@ class QueryProcessor {
 			$pattern = str_replace( '~', '~0', $value );
 			$pattern = str_replace( '/', '(?:~1|\\/)', $pattern );
 
-			if ( !array_key_exists( $value, $mapPathNoIndexTable ) ) {
+			if ( !array_key_exists( $value, $this->mapPathNoIndexTable ) ) {
 				unset( $this->printouts[$key] );
-				foreach ( $mapPathNoIndexTable as $k => $v ) {
+				foreach ( $this->mapPathNoIndexTable as $k => $v ) {
 					if ( preg_match( "/^$pattern$/", $k )
 						|| preg_match( "/^$pattern\//", $k )
 					) {
@@ -572,7 +578,7 @@ class QueryProcessor {
 		// retrieve all, but order according to the schema
 		// descriptor
 		if ( empty( $this->printouts ) ) {
-			$this->printouts = array_keys( $mapPathNoIndexTable );
+			$this->printouts = array_keys( $this->mapPathNoIndexTable );
 
 			$schemaStr = json_encode( $this->schema );
 			usort( $this->printouts, static function ( $a, $b ) use ( $schemaStr ) {
@@ -602,6 +608,12 @@ class QueryProcessor {
 
 			$this->printoutsOriginal = $this->printouts;
 		}
+	}
+
+	private function performQuery() {
+		if ( count( $this->errors ) ) {
+			return;
+		}
 
 		$arr = [];
 		foreach ( $this->conditionProperties as $pathNoIndex ) {
@@ -618,7 +630,7 @@ class QueryProcessor {
 			return ( $a == $b ? 0 : (int)( $a > $b ) );
 		} );
 
-		$this->conditionProperties = array_intersect( $this->conditionProperties, array_keys( $mapPathNoIndexTable ) );
+		$this->conditionProperties = array_intersect( $this->conditionProperties, array_keys( $this->mapPathNoIndexTable ) );
 
 		if ( !$this->conditionId && !count( $this->conditionProperties ) && !count( $this->conditionSubjects ) ) {
 			$this->errors[] = 'no valid conditions';
@@ -631,7 +643,7 @@ class QueryProcessor {
 		}
 
 		foreach ( $this->printouts as $pathNoIndex ) {
-			if ( array_key_exists( $pathNoIndex, $mapPathNoIndexTable ) ) {
+			if ( array_key_exists( $pathNoIndex, $this->mapPathNoIndexTable ) ) {
 				$arr[$pathNoIndex] = true;
 			}
 		}
@@ -670,7 +682,7 @@ class QueryProcessor {
 		$joins = [];
 
 		$fields['page_id'] = 't0.page_id';
-		$conds['t0.schema_id'] = $schemaId;
+		$conds['t0.schema_id'] = $this->schemaId;
 
 		if ( $this->conditionId ) {
 			$conds[] = 't0.page_id = ' . $this->conditionId;
@@ -683,7 +695,7 @@ class QueryProcessor {
 			if ( $isPrintout ) {
 				$this->mapKeyToPrintout[$key] = $v['printout'];
 			}
-			$tablename = $mapPathNoIndexTable[$pathNoIndex];
+			$tablename = $this->mapPathNoIndexTable[$pathNoIndex];
 			$mapConds[$pathNoIndex] = [ 'key' => $key, 'tablename' => $tablename ];
 			$joinConds = [];
 

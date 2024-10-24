@@ -577,11 +577,15 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$params = $this->query['params'];
 		$params['count-printout'] = true;
 		$params['count-printout-min'] = $this->conf['searchPanes']['minCount'];
+
 		foreach ( $this->printouts as $printout => $label ) {
 			if ( empty( $label ) ) {
 				continue;
 			}
 			$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
+			if ( count( $queryProcessor->getValidPrintouts() ) !== 1 ) {
+				continue;
+			}
 			$results_ = $queryProcessor->getResults();
 			if ( count( $queryProcessor->getErrors() ) ) {
 				continue;
