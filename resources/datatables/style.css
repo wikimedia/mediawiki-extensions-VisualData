@@ -19,6 +19,7 @@
 .visualdata.datatable.cards tbody tr td {
 	display: block;
 	border: 0;
+	text-align: left;
 }
 
 .visualdata.datatable.cards td:before {

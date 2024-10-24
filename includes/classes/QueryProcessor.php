@@ -599,6 +599,8 @@ class QueryProcessor {
 				}
 				return ( $aPos < $bPos ) ? -1 : 1;
 			} );
+
+			$this->printoutsOriginal = $this->printouts;
 		}
 
 		$arr = [];
