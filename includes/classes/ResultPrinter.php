@@ -210,7 +210,7 @@ class ResultPrinter {
 			return "[[$titleTemplate]]";
 		}
 
-		// @see Scribunto_LuaEngine -> expandTemplate
+		// @see \MediaWiki\Extension\Scribunto\Engines\LuaCommon\LuaEngine::expandTemplate
 		if ( class_exists( 'MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine' ) ) {
 			$args = $params;
 			$titleText = $titleStr;
@@ -223,7 +223,7 @@ class ResultPrinter {
 			return $text[0];
 		}
 
-		// @see Scribunto_LuaEngine
+		// @see \MediaWiki\Extension\Scribunto\Engines\LuaCommon\LuaEngine
 		$args = $params;
 		return $this->expandTemplate( $titleTemplate, $args );
 
@@ -241,7 +241,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @see Scribunto_LuaEngine
+	 * @see \MediaWiki\Extension\Scribunto\Engines\LuaCommon\LuaEngine
 	 * @param Title $title
 	 * @param array $args
 	 * @return array
