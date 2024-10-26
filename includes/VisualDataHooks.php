@@ -49,7 +49,6 @@ class VisualDataHooks {
 
 		$GLOBALS['wgVisualDataResultPrinterClasses'] = [
 			'table' => 'TableResultPrinter',
-			'table-raw' => 'TableRawResultPrinter',
 			'datatable' => 'DatatableResultPrinter',
 			'datatables' => 'DatatableResultPrinter',
 			// 'list' => 'ListResultPrinter',

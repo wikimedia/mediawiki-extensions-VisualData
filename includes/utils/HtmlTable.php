@@ -64,6 +64,15 @@ class HtmlTable {
 	 */
 	public function cell( $content = '', $attributes = [] ) {
 		$this->formatContent( $content );
+		$this->cells[] = Html::Element( 'td', $attributes, $content );
+	}
+
+	/**
+	 * @param string $content
+	 * @param array $attributes
+	 */
+	public function cellRaw( $content = '', $attributes = [] ) {
+		$this->formatContent( $content );
 		$this->cells[] = Html::rawElement( 'td', $attributes, $content );
 	}
 

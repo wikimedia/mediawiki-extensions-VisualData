@@ -42,12 +42,19 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 	/** @var array */
 	public static $parameters = [
+		// *** @FIXME temporary parameter, see tableResultPrinter
+		'mode' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'pageLength',
+		],
 
-		// 'defer-each' => [
-		// 	'type' => 'integer',
-		// 	'required' => false,
-		// 	'default' => 100,
-		// ],
+		// ***custom parameter
+		'displayLog' => [
+			'type' => 'bool',
+			'required' => false,
+			'default' => false,
+		],
 
 		// https://datatables.net/reference/option/layout
 		'datatables-layout.topStart' => [
@@ -383,15 +390,16 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$tableAttrs['data-map-path-schema'] = json_encode( $this->mapPathSchema );
 		$tableAttrs['data-printouts'] = json_encode( $this->printouts );
 		$tableAttrs['data-templates'] = json_encode( $this->templates );
-		// $tableAttrs['data-params'] = json_encode( $this->params );
 		$tableAttrs['data-headers'] = json_encode( $this->headers );
 		$tableAttrs['data-conf'] = json_encode( $this->conf );
 		$tableAttrs['data-count'] = $this->count;
+		$tableAttrs['data-params'] = json_encode( $this->params );
 		$tableAttrs['data-search-panes-options'] = json_encode( $this->getSearchPanesOptions() );
 
 		// *** attention !!! "data-data" will conflict with
 		// datatables internal conf
-		$tableAttrs['data-json'] = json_encode( $this->json );
+		$tableAttrs['data-json'] = json_encode( $this->formatJson() );
+
 		$tableAttrs['data-query'] = json_encode( $this->query );
 		$tableAttrs['width'] = '100%';
 		$tableAttrs['class'] = 'visualdata datatable dataTable';

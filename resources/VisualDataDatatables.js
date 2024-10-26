@@ -391,16 +391,16 @@ $( function () {
 		var conf = tableData.conf;
 		var query = tableData.query;
 		var data = tableData.json;
+		var params = tableData.params;
 		var printouts = tableData.printouts;
 		var templates = tableData.templates;
-		// var params = tableData.params;
 		var mapPathSchema = tableData.mapPathSchema;
 		var headers = tableData.headers;
 		var printoutsOptions = tableData.printoutsOptions;
 		var searchPanesOptions = tableData.searchPanesOptions;
 		var useAjax = count > data.length;
 
-		var displayLog = false;
+		var displayLog = params.displayLog;
 		if ( displayLog ) {
 			// eslint-disable-next-line no-console
 			console.log( 'tableData', tableData );
@@ -543,6 +543,12 @@ html-num-fmt
 						className: 'schema-type-' + columnType,
 						targets: [ index ],
 
+						// @see https://datatables.net/reference/option/columns.data
+						// @see https://datatables.net/examples/ajax/objects_subarrays.html
+						// @see https://datatables.net/extensions/searchpanes/examples/advanced/renderArrays.html
+						data: function ( row, type, val, meta ) {
+							return row[ meta.col ].join( params[ 'values-separator' ] );
+						},
 						// @FIXME https://datatables.net/reference/option/columns.searchBuilderType
 						// implement in the proper way
 						searchBuilderType: datatablesFormat
@@ -636,7 +642,7 @@ html-num-fmt
 				query,
 				columnDefs,
 				printouts,
-				// params,
+				params,
 				templates,
 				sourcePage: mw.config.get( 'wgPageName' ),
 				settings: { count, displayLog }

@@ -50,19 +50,19 @@ class VisualDataApiDatatables extends ApiBase {
 
 		\VisualData::initialize();
 		$result = $this->getResult();
-		$params = $this->extractRequestParams();
+		$apiParams = $this->extractRequestParams();
 		// $output = $this->getContext()->getOutput();
 
-		$data = json_decode( $params['data'], true );
+		$data = json_decode( $apiParams['data'], true );
 		$datatableData = $data['datatableData'];
 		$cacheKey = $data['cacheKey'];
 		$settings = $data['settings'];
 		$columnDefs = $data['columnDefs'];
 		$printouts = $data['printouts'];
 		$query = $data['query']['query'];
-		// $params_ = $data['params'];
+		$params = $data['params'];
 		$templates = $data['templates'];
-		$params_ = $data['query']['params'];
+		// $queryParams = $data['query']['params'];
 		$sourcePage = $data['sourcePage'];
 
 		if ( \VisualData::isList( $printouts ) ) {
@@ -105,19 +105,19 @@ class VisualDataApiDatatables extends ApiBase {
 			$order[] = $value['name'] . " " . $value['dir'];
 		}
 
-		// $params_['format'] = 'json-raw';
-		$params_['limit'] = max( $datatableData['length'], $params_['limit'] );
-		$params_['offset'] = $datatableData['start'];
-		$params_['order'] = implode( ' ', $order );
+		$params['limit'] = max( $datatableData['length'], $params['limit'] );
+		$params['offset'] = $datatableData['start'];
+		$params['order'] = implode( ' ', $order );
+		$params['api'] = true;
 
-		// $results = \VisualData::getQueryResults( $params_['schema'], $query, $printouts, $params_ );
-		$schema = $params_['schema'];
+		// $results = \VisualData::getQueryResults( $params['schema'], $query, $printouts, $params_ );
+		// $schema = $params['schema'];
 
 		// limit, offset, order
-		$params_ = array_merge( $params_, [
-			'schema' => $schema,
-			'format' => 'table-raw'
-		] );
+		// $params = array_merge( $params, [
+		// 	'schema' => $schema,
+		// 	'format' => 'table'
+		// ] );
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		// $templates = [];
@@ -133,7 +133,7 @@ class VisualDataApiDatatables extends ApiBase {
 			$query,
 			$templates,
 			$printouts,
-			$params_
+			$params
 		);
 
 		if ( !$resultPrinter ) {
@@ -150,7 +150,7 @@ class VisualDataApiDatatables extends ApiBase {
 
 		$log = [
 			'query' => $query,
-			'params' => $params_
+			'params' => $params
 		];
 		// @see https://datatables.net/extensions/scroller/examples/initialisation/server-side_processing.html
 		$ret = [

@@ -128,7 +128,7 @@ class ResultPrinter {
 		$this->printouts = $printouts;
 		$this->printoutsOptions = $printoutsOptions;
 		$this->templates = $templates;
-		$this->valuesSeparator = $params['values-separator'];
+		$this->valuesSeparator = $params['values-separator'] ?? $this->valuesSeparator;
 		$this->separator = $params['separator'];
 	}
 

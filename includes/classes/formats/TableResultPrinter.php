@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
@@ -40,6 +40,22 @@ class TableResultPrinter extends ResultPrinter {
 	/** @var array */
 	protected $json = [];
 
+	/** @var array */
+	protected $headersRaw = [];
+
+	/** @var array */
+	protected $htmlInputs = [ 'TinyMCE', 'VisualEditor' ];
+
+	/** @var array */
+	public static $parameters = [
+		// *** @FIXME temporary parameter, see below
+		'mode' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'flat',
+		],
+	];
+
 	/**
 	 * @inheritDoc
 	 */
@@ -51,19 +67,19 @@ class TableResultPrinter extends ResultPrinter {
 	 * @inheritDoc
 	 */
 	public function processRow( $title, $value ) {
-		$this->htmlTable->row();
-
+		$this->json[] = [];
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			// main label
-			$this->headers[''] = $this->params['pagetitle'];
 			$formatted = Linker::link( $title, $title->getFullText() );
-			$this->htmlTable->cell( $formatted );
-			$this->json[count( $this->htmlTable->rows )][] = $formatted;
+			$this->json[count( $this->json ) - 1 ][''][] = $formatted;
 		}
 
 		$path = '';
 		$pathNoIndex = '';
-		return $this->processSchemaRec( $title, $this->schema, $value, $path, $pathNoIndex );
+
+		// @FIXME TEMPORARY PARAMETER see below
+		$method = ( empty( $this->params['mode'] ) || $this->params['mode'] !== 'tree' ? 'processSchemaRec' : 'processSchemaRecTree' );
+		return $this->$method( $title, $this->schema, $value, $path, $pathNoIndex );
 	}
 
 	/**
@@ -76,6 +92,10 @@ class TableResultPrinter extends ResultPrinter {
 		}
 
 		$value = parent::processChild( $title, $schema, $key, $properties, $path, $isArray );
+
+		if ( $isArray ) {
+			$key = $path;
+		}
 
 		// label from printout (|?a=b)
 		if ( $this->printouts[$path] !== $path ) {
@@ -90,22 +110,65 @@ class TableResultPrinter extends ResultPrinter {
 		$this->headers[$path] = $key;
 		$this->mapPathSchema[$path] = $schema;
 
-		if ( $this->hasTemplate( $path ) ) {
+		if ( !$this->hasTemplate( $path ) ) {
+			// @TODO add printout option |+ html
+			// @see DatatableResultPrinter -> getPrintoutsOptions
+			if ( empty( $schema['wiki']['preferred-input'] )
+				|| !in_array( $schema['wiki']['preferred-input'], $this->htmlInputs )
+			) {
+				$this->headersRaw[$path] = false;
+			} else {
+				$this->headersRaw[$path] = true;
+			}
+		} else {
 			$value = Parser::stripOuterParagraph(
 				$this->parser->recursiveTagParseFully( $value )
 			);
+			$this->headersRaw[$path] = true;
 		}
-		$this->json[count( $this->htmlTable->rows )][] = $value;
-		$this->htmlTable->cell( $value );
+
+		// keep temporarily headers to group values
+		// in the same cell
+		$this->json[count( $this->json ) - 1][$path][] = $value;
 
 		return $value;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function formatJson() {
+		// remove headers, they aren't necessary
+		// except for nested data @see https://datatables.net/reference/option/columns.data
+		// however the formatting of the static table
+		// must be kept in synch with this
+		$ret = [];
+		$headers = array_keys( $this->headers );
+		foreach ( $this->json as $i => $row ) {
+			foreach ( $headers as $ii => $header ) {
+				$values = ( array_key_exists( $header, $row ) ? $row[$header] : [ '' ] );
+				foreach ( $values as $value ) {
+					if ( !$this->headersRaw[$header] ) {
+						// @see MediaWiki\Html\Html -> Element
+						$value = strtr( $value ?? '', [ '&' => '&amp;', '<' => '&lt;' ] );
+					}
+					$ret[$i][$ii][] = $value;
+				}
+			}
+		}
+		return $ret;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function getResults() {
-		$results = $this->queryProcessor->getResults();
+		// @FIXME TEMPORARY PARAMETER
+		// this should be determined automatically
+		// based on the number of rows returned by the query
+		// (however this implies a first query queryProcessor->getResultsTree)
+		$method = ( empty( $this->params['mode'] ) || $this->params['mode'] !== 'tree' ? 'getResults' : 'getResultsTree' );
+		$results = $this->queryProcessor->$method();
 
 		if ( !count( $this->printouts ) ) {
 			$this->printouts = array_combine( $this->getValidPrintouts(), $this->getValidPrintouts() );
@@ -120,7 +183,31 @@ class TableResultPrinter extends ResultPrinter {
 		}
 
 		$this->htmlTable = new htmlTable();
+		if ( !empty( $this->params['pagetitle'] ) ) {
+			$this->headers[''] = $this->params['pagetitle'];
+			$this->headersRaw[''] = true;
+		}
+
 		return $this->processResults( $results, $this->schema );
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function processResults( $results, $schema ) {
+		$ret = [];
+		foreach ( $results as $value ) {
+			[ $title_, $row ] = $value;
+
+			// @TODO implement file value from mainlabel
+			$ret[] = $this->processRow( $title_, $row );
+		}
+
+		if ( empty( $this->params['api'] ) ) {
+			return $this->processRoot( $ret );
+		}
+
+		return $this->returnRawResult( $this->formatJson() );
 	}
 
 	/**
@@ -131,13 +218,21 @@ class TableResultPrinter extends ResultPrinter {
 		foreach ( $this->headers as $header ) {
 			$this->htmlTable->header( $header, $attributes );
 		}
+
+		foreach ( $this->json as $row ) {
+			$this->htmlTable->row();
+			foreach ( $row as $key => $cell ) {
+				$method = ( $this->headersRaw[$key] ? 'cellRaw' : 'cell' );
+				$this->htmlTable->$method( implode( $this->valuesSeparator, $cell ) );
+			}
+		}
+
 		$tableAttrs = [];
 		$tableAttrs['width'] = '100%';
-		$tableAttrs['class'] = ' wikitable display dataTable';
+		$tableAttrs['class'] = 'wikitable display dataTable';
 
 		return $this->htmlTable->table(
 			$tableAttrs
 		);
 	}
-
 }
