@@ -23,8 +23,10 @@
 
 namespace MediaWiki\Extension\VisualData\Scribunto;
 
+use MediaWiki\Extension\Scribunto\Engines\LuaCommon\LibraryBase;
+
 // @credits https://github.com/Open-CSP/WSSlots/tree/master/src/Scribunto
-class LuaLibrary extends \Scribunto_LuaLibraryBase {
+class LuaLibrary extends LibraryBase {
 
 	/**
 	 * @inheritDoc
