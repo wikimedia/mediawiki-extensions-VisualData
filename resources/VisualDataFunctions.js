@@ -833,6 +833,17 @@ VisualDataFunctions = ( function () {
 		return Object.keys( obj ).map( ( k ) => obj[ k ] );
 	}
 
+	function escapeHTML( str ) {
+		var chars = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;'
+		};
+		return str.replace( /[&<>]/g, function ( char ) {
+			return chars[ char ] || char;
+		} );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -871,6 +882,7 @@ VisualDataFunctions = ( function () {
 		escapeJsonPtr,
 		objectEntries,
 		sort,
-		objectValues
+		objectValues,
+		escapeHTML
 	};
 }() );

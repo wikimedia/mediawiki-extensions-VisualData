@@ -167,8 +167,7 @@ const VisualDataDatatables = function () {
 		}
 	};
 
-	// this is used only if Ajax is disabled and
-	// the table does not have fields with multiple values
+	// this is used only if Ajax is disabled
 	var getPanesOptions = function ( data, columnDefs, conf ) {
 		var ret = {};
 		var dataLength = {};
@@ -185,39 +184,43 @@ const VisualDataDatatables = function () {
 			for ( var ii in ret ) {
 				var key = Object.keys( data[ i ] )[ ii ];
 
-				if ( data[ i ][ key ] === '' ) {
-					if ( !conf.searchPanes.showEmpty ) {
-						continue;
-					}
-				}
-				dataLength[ ii ]++;
-				var label;
-				if ( conf.searchPanes.htmlLabels === false ) {
-					div.innerHTML = data[ i ][ key ];
-					label = div.textContent || div.innerText || '';
-				} else {
-					label = data[ i ][ key ];
-				}
+				for ( var iii in data[ i ][ key ] ) {
+					var value = data[ i ][ key ][ iii ];
 
-				// this will exclude images as well if
-				// conf.searchPanes.htmlLabels === false
-				if ( label === '' ) {
-					if ( !conf.searchPanes.showEmpty ) {
-						continue;
+					if ( value === '' ) {
+						if ( !conf.searchPanes.showEmpty ) {
+							continue;
+						}
+					}
+					dataLength[ ii ]++;
+					var label;
+					if ( conf.searchPanes.htmlLabels === false ) {
+						div.innerHTML = value;
+						label = div.textContent || div.innerText || '';
 					} else {
-						label = `<i>${ conf.searchPanes.emptyMessage }</i>`;
+						label = value;
 					}
-				}
 
-				if ( !( data[ i ][ key ] in ret[ ii ] ) ) {
-					ret[ ii ][ data[ i ][ key ] ] = {
-						label: label,
-						value: data[ i ][ key ],
-						count: 0
-					};
-				}
+					// this will exclude images as well if
+					// conf.searchPanes.htmlLabels === false
+					if ( label === '' ) {
+						if ( !conf.searchPanes.showEmpty ) {
+							continue;
+						} else {
+							label = `<i>${ conf.searchPanes.emptyMessage }</i>`;
+						}
+					}
 
-				ret[ ii ][ data[ i ][ key ] ].count++;
+					if ( !( value in ret[ key ] ) ) {
+						ret[ key ][ value ] = {
+							label: label,
+							value,
+							count: 0
+						};
+					}
+
+					ret[ key ][ value ].count++;
+				}
 			}
 		}
 
@@ -268,8 +271,8 @@ const VisualDataDatatables = function () {
 				return 0;
 			} );
 		}
-
-		return ret;
+		// @FIXME
+		return null;
 	};
 
 	var setPanesOptions = function ( data, searchPanesOptions, columnDefs ) {
@@ -302,7 +305,8 @@ const VisualDataDatatables = function () {
 	var searchPanesOptionsServer = function (
 		searchPanesOptions,
 		columnDefs,
-		conf
+		conf,
+		headersRaw
 	) {
 		function indexFromPrintout( printout ) {
 			for ( var thisIndex in columnDefs ) {
@@ -328,7 +332,7 @@ const VisualDataDatatables = function () {
 			columnDefs[ i ].searchPanes.show = Object.keys( ret[ i ] ).length > 0;
 
 			for ( var ii in ret[ i ] ) {
-				if ( conf.searchPanes.htmlLabels === false ) {
+				if ( conf.searchPanes.htmlLabels === false && headersRaw[ i ] ) {
 					div.innerHTML = ret[ i ][ ii ].label;
 					ret[ i ][ ii ].label = div.textContent || div.innerText || '';
 				}
@@ -338,7 +342,7 @@ const VisualDataDatatables = function () {
 		}
 
 		for ( var i in columnDefs ) {
-			if ( 'searchPanes' in columnDefs[ i ] && !( columnDefs[ i ].name in ret ) ) {
+			if ( 'searchPanes' in columnDefs[ i ] && !( indexFromPrintout( columnDefs[ i ].name ) in ret ) ) {
 				delete columnDefs[ i ].searchPanes;
 			}
 		}
@@ -396,6 +400,8 @@ $( function () {
 		var templates = tableData.templates;
 		var mapPathSchema = tableData.mapPathSchema;
 		var headers = tableData.headers;
+		// var headersRaw = tableData.headersRaw;
+		var headersRaw = VisualDataFunctions.objectValues( tableData.headersRaw );
 		var printoutsOptions = tableData.printoutsOptions;
 		var searchPanesOptions = tableData.searchPanesOptions;
 		var useAjax = count > data.length;
@@ -546,8 +552,18 @@ html-num-fmt
 						// @see https://datatables.net/reference/option/columns.data
 						// @see https://datatables.net/examples/ajax/objects_subarrays.html
 						// @see https://datatables.net/extensions/searchpanes/examples/advanced/renderArrays.html
-						data: function ( row, type, val, meta ) {
-							return row[ meta.col ].join( params[ 'values-separator' ] );
+						// data: function ( row, type, val, meta ) {
+						// return row[ meta.col ].join( params[ 'values-separator' ] );
+						// },
+
+						render: function ( thisData, type, row, meta ) {
+						// if ( !headersRaw[ Object.keys( headers )[ meta.col ] ] ) {
+							if ( !headersRaw[ meta.col ] ) {
+								thisData = thisData.map( function ( value ) {
+									return VisualDataFunctions.escapeHTML( value );
+								} );
+							}
+							return thisData.join( params[ 'values-separator' ] );
 						},
 						// @FIXME https://datatables.net/reference/option/columns.searchBuilderType
 						// implement in the proper way
@@ -600,7 +616,8 @@ html-num-fmt
 				searchPanesOptions = visualdataDatatables.searchPanesOptionsServer(
 					searchPanesOptions,
 					columnDefs,
-					conf
+					conf,
+					headersRaw
 				);
 			}
 		}
