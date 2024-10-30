@@ -135,6 +135,19 @@ class TableResultPrinter extends ResultPrinter {
 	}
 
 	/**
+	 * @param string $path
+	 * @param string $value
+	 * @return array
+	 */
+	public function escapeCell( $path, $value ) {
+		if ( $this->headersRaw[$path] ) {
+			return $value;
+		}
+		// @see MediaWiki\Html\Html -> Element
+		return strtr( $value ?? '', [ '&' => '&amp;', '<' => '&lt;', '>' => '&gt;' ] );
+	}
+
+	/**
 	 * @return array
 	 */
 	public function formatJson() {
@@ -143,16 +156,17 @@ class TableResultPrinter extends ResultPrinter {
 		// however the formatting of the static table
 		// must be kept in synch with this
 		$ret = [];
-		$headers = array_keys( $this->headers );
+
+		// rely on $printouts for the correct
+		// order of headers
+		// ( or usort array_keys( $this->headers ) using
+		// array_keys( $this->printouts )
+		$printouts = [ '', ...array_keys( $this->printouts ) ];
+
 		foreach ( $this->json as $i => $row ) {
-			foreach ( $headers as $ii => $header ) {
-				$values = ( array_key_exists( $header, $row ) ? $row[$header] : [ '' ] );
-				foreach ( $values as $value ) {
-					if ( !$this->headersRaw[$header] ) {
-						// @see MediaWiki\Html\Html -> Element
-						$value = strtr( $value ?? '', [ '&' => '&amp;', '<' => '&lt;' ] );
-					}
-					$ret[$i][$ii][] = $value;
+			foreach ( $printouts as $path ) {
+				if ( array_key_exists( $path, $this->headers ) ) {
+					$ret[$i][] = ( array_key_exists( $path, $row ) ? $row[$path] : [ '' ] );
 				}
 			}
 		}
@@ -213,7 +227,7 @@ class TableResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processRoot( $rows ) {
+	public function createHtmlTable() {
 		$attributes = [];
 		foreach ( $this->headers as $header ) {
 			$this->htmlTable->header( $header, $attributes );
@@ -226,6 +240,13 @@ class TableResultPrinter extends ResultPrinter {
 				$this->htmlTable->$method( implode( $this->valuesSeparator, $cell ) );
 			}
 		}
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function processRoot( $rows ) {
+		$this->createHtmlTable();
 
 		$tableAttrs = [];
 		$tableAttrs['width'] = '100%';

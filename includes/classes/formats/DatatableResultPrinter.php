@@ -367,10 +367,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 		$this->modules[] = 'ext.VisualData.Datatables';
 
-		$attributes = [];
-		foreach ( $this->headers as $header ) {
-			$this->htmlTable->header( $header, $attributes );
-		}
+		$this->createHtmlTable();
 
 		$tableAttrs = [];
 		$formattedPrintoutsOptions = [];
@@ -391,6 +388,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$tableAttrs['data-printouts'] = json_encode( $this->printouts );
 		$tableAttrs['data-templates'] = json_encode( $this->templates );
 		$tableAttrs['data-headers'] = json_encode( $this->headers );
+		$tableAttrs['data-headers-raw'] = json_encode( $this->headersRaw );
 		$tableAttrs['data-conf'] = json_encode( $this->conf );
 		$tableAttrs['data-count'] = $this->count;
 		$tableAttrs['data-params'] = json_encode( $this->params );
@@ -617,7 +615,8 @@ class DatatableResultPrinter extends TableResultPrinter {
 					continue;
 				}
 				$ret[$printout][] = [
-					'label' => ( $k !== '' ? $k : "<i>{$this->conf['searchPanes']['emptyMessage']}</i>" ),
+					'label' => ( $k !== '' ? $this->escapeCell( $printout, $k )
+						: "<i>{$this->conf['searchPanes']['emptyMessage']}</i>" ),
 					'value' => $k,
 					'count' => $v
 				];

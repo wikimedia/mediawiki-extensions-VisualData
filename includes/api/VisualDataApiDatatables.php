@@ -109,6 +109,7 @@ class VisualDataApiDatatables extends ApiBase {
 		$params['offset'] = $datatableData['start'];
 		$params['order'] = implode( ' ', $order );
 		$params['api'] = true;
+		$params['format'] = 'table';
 
 		// $results = \VisualData::getQueryResults( $params['schema'], $query, $printouts, $params_ );
 		// $schema = $params['schema'];
