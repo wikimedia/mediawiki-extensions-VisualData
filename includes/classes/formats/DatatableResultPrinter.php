@@ -396,7 +396,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 		// *** attention !!! "data-data" will conflict with
 		// datatables internal conf
-		$tableAttrs['data-json'] = json_encode( $this->formatJson() );
+		$tableAttrs['data-json'] = json_encode( $this->json );
 
 		$tableAttrs['data-query'] = json_encode( $this->query );
 		$tableAttrs['width'] = '100%';

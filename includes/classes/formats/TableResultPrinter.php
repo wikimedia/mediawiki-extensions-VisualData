@@ -157,19 +157,30 @@ class TableResultPrinter extends ResultPrinter {
 		// must be kept in synch with this
 		$ret = [];
 
-		// rely on $printouts for the correct
-		// order of headers
-		// ( or usort array_keys( $this->headers ) using
-		// array_keys( $this->printouts )
+		// order $this->headers based on $this->printouts
 		$printouts = [ '', ...array_keys( $this->printouts ) ];
 
+		$sortFunction = static function ( $a, $b ) use ( $printouts ) {
+			$iA = array_search( $a, $printouts );
+			$iB = array_search( $b, $printouts );
+			if ( $iA > $iB ) {
+				return 1;
+			}
+			if ( $iA < $iB ) {
+				return -1;
+			}
+			return 0;
+		};
+
+		uksort( $this->headers, $sortFunction );
+		uksort( $this->headersRaw, $sortFunction );
+
 		foreach ( $this->json as $i => $row ) {
-			foreach ( $printouts as $path ) {
-				if ( array_key_exists( $path, $this->headers ) ) {
-					$ret[$i][] = ( array_key_exists( $path, $row ) ? $row[$path] : [ '' ] );
-				}
+			foreach ( $this->headers as $path => $header ) {
+				$ret[$i][] = ( array_key_exists( $path, $row ) ? $row[$path] : [ '' ] );
 			}
 		}
+
 		return $ret;
 	}
 
@@ -221,22 +232,25 @@ class TableResultPrinter extends ResultPrinter {
 			return $this->processRoot( $ret );
 		}
 
-		return $this->returnRawResult( $this->formatJson() );
+		return $this->returnRawResult( $this->json );
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function createHtmlTable() {
+		$this->json = $this->formatJson();
+
 		$attributes = [];
-		foreach ( $this->headers as $header ) {
+		foreach ( $this->headers as $path => $header ) {
 			$this->htmlTable->header( $header, $attributes );
 		}
 
+		$headersRaw = array_values( $this->headersRaw );
 		foreach ( $this->json as $row ) {
 			$this->htmlTable->row();
 			foreach ( $row as $key => $cell ) {
-				$method = ( $this->headersRaw[$key] ? 'cellRaw' : 'cell' );
+				$method = ( $headersRaw[$key] ? 'cellRaw' : 'cell' );
 				$this->htmlTable->$method( implode( $this->valuesSeparator, $cell ) );
 			}
 		}
