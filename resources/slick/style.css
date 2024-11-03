@@ -68,7 +68,7 @@
 	text-decoration: underline;
 }
 
-.slick-slider:not (.adaptiveHeight ) .slick-list,
+.slick-slider:not(.adaptiveHeight ) .slick-list,
 .slick-slider:not( .adaptiveHeight ) .slick-track,
 .slick-slider:not( .adaptiveHeight ) .slick-slide {
 	height: inherit !important;
