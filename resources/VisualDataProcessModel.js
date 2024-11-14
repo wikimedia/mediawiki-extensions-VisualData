@@ -127,10 +127,10 @@ const VisualDataProcessModel = function (
 			for ( var error of validateAjv.errors ) {
 				switch ( error.keyword ) {
 					case 'uniqueItems':
-						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }/${ error.params.j }` ) === -1 ) {
+						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }/${ error.params.j }` ) === -1 ) {
 							AjvErrors.push( $.extend( VisualDataFunctions.deepCopy( error ), { instancePath: `${ error.instancePath }/${ error.params.i }` } ) );
 						}
-						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }/${ error.params.i }` ) === -1 ) {
+						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }/${ error.params.i }` ) === -1 ) {
 							AjvErrors.push( $.extend( VisualDataFunctions.deepCopy( error ), { instancePath: `${ error.instancePath }/${ error.params.j }` } ) );
 						}
 						break;
@@ -139,7 +139,7 @@ const VisualDataProcessModel = function (
 				}
 			}
 			loopA: for ( var error of AjvErrors ) {
-				var path = `${ VisualDataFunctions.escapeJsonPtr( schemaName ) }${ error.instancePath }`;
+				var path = `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }`;
 
 				// ignore NaN values if the field is not required
 				if ( VisualDataFunctions.isNaN( Flatten[ path ].value ) && !Flatten[ path ].schema.wiki.required ) {
@@ -221,7 +221,7 @@ const VisualDataProcessModel = function (
 			case 'object':
 				var items = {};
 				for ( var ii in model.properties ) {
-					var path_ = `${ path }/${ VisualDataFunctions.escapeJsonPtr( ii ) }`;
+					var path_ = `${ path }/${ VisualDataFunctions.escapeJsonPointer( ii ) }`;
 
 					if ( model.properties[ ii ].removed ) {
 						if ( Action !== 'validate' ) {
@@ -269,7 +269,7 @@ const VisualDataProcessModel = function (
 							continue;
 						}
 						ret[ schemaName ] = await getValuesRec(
-							VisualDataFunctions.escapeJsonPtr( schemaName ),
+							VisualDataFunctions.escapeJsonPointer( schemaName ),
 							ModelSchemas[ schemaName ]
 						);
 						// removeNulls(ret);
@@ -288,7 +288,7 @@ const VisualDataProcessModel = function (
 			case 'fetch':
 				for ( var schemaName in ModelSchemas ) {
 					ret[ schemaName ] = await getValuesRec(
-						VisualDataFunctions.escapeJsonPtr( schemaName ),
+						VisualDataFunctions.escapeJsonPointer( schemaName ),
 						ModelSchemas[ schemaName ]
 					);
 				}
@@ -300,7 +300,7 @@ const VisualDataProcessModel = function (
 						continue;
 					}
 					ret[ schemaName ] = await getValuesRec(
-						VisualDataFunctions.escapeJsonPtr( schemaName ),
+						VisualDataFunctions.escapeJsonPointer( schemaName ),
 						ModelSchemas[ schemaName ]
 					);
 				}
@@ -340,7 +340,7 @@ const VisualDataProcessModel = function (
 				}
 
 				var ret = await getValuesRec(
-					VisualDataFunctions.escapeJsonPtr( schemaName ),
+					VisualDataFunctions.escapeJsonPointer( schemaName ),
 					ModelSchemas[ schemaName ]
 				);
 				return {

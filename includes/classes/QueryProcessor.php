@@ -553,25 +553,53 @@ class QueryProcessor {
 			$this->mapPathNoIndexTable[$row['path_no_index']] = $tablename;
 		}
 
+		$thisClass = $this;
+		$parseEscapedPrintout = static function ( $varName, $key, $value ) use ( $thisClass ) {
+			$replacements = [];
+			if ( array_key_exists( $value, $thisClass->mapPathNoIndexTable ) ) {
+				$thisClass->$varName[$key] = $value;
+
+			} else {
+				unset( $thisClass->$varName[$key] );
+				$pattern = str_replace( '~', '~0', $value );
+
+				// match both slash and escaped slash
+				$pattern = str_replace( '/', '(?:~1|\\/)', $pattern );
+
+				// treat author/name as author~1name
+				foreach ( $thisClass->mapPathNoIndexTable as $k => $v ) {
+					// @FIXME why this is necessary ? shouldn't be one to one match ?
+					//  || preg_match( "/^$pattern\//", $k )
+					if ( preg_match( "/^$pattern$/", $k ) ) {
+						// $thisClass->$varName[] = $k;
+						$thisClass->$varName[$key] = $k;
+						$replacements[$value] = $k;
+						break;
+					}
+				}
+			}
+			return $replacements;
+		};
+
 		// remove non existing printouts, allow retrieving all
 		// printouts of subitems, e.g. authors/first_name, authors/last_name
 		// from |?authors, taking into account escaping of json pointers
 		foreach ( $this->printouts as $key => $value ) {
-			// $value = $this->databaseManager->escapeJsonPtr( $value );
-			$pattern = str_replace( '~', '~0', $value );
-			$pattern = str_replace( '/', '(?:~1|\\/)', $pattern );
+			// $value = $this->databaseManager->escapeJsonPointerPart( $value );
+			$parseEscapedPrintout( 'printouts', $key, $value );
+		}
 
-			if ( !array_key_exists( $value, $this->mapPathNoIndexTable ) ) {
-				unset( $this->printouts[$key] );
-				foreach ( $this->mapPathNoIndexTable as $k => $v ) {
-					if ( preg_match( "/^$pattern$/", $k )
-						|| preg_match( "/^$pattern\//", $k )
-					) {
-						$this->printouts[] = $k;
+		foreach ( $this->conditionProperties as $key => $value ) {
+			$replacements = $parseEscapedPrintout( 'conditionProperties', $key, $value );
+
+			// replace same prop in $this->AndConditions
+			foreach ( $this->AndConditions as $key => $values ) {
+				foreach ( $values as $k => $v ) {
+					if ( array_key_exists( $k, $replacements ) ) {
+						$this->AndConditions[$key][$replacements[$k]] = $v;
+						unset( $this->AndConditions[$key][$k] );
 					}
 				}
-			} else {
-				$this->printouts[$key] = $value;
 			}
 		}
 

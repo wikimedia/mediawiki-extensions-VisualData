@@ -390,6 +390,7 @@
 	"visualdata-jsmodule-formfield-optionsfrom-values": "as defined",
 	"visualdata-jsmodule-formfield-optionsfrom-wikilist": "wiki list",
 	"visualdata-jsmodule-formfield-optionsfrom-query": "query",
+	"visualdata-jsmodule-formfield-optionsfrom-smwquery": "SMW query",
 
 	"visualdata-jsmodule-formfield-options-values": "enter one or more values",
 	"visualdata-jsmodule-formfield-options-label-formula": "options label formula",
@@ -444,7 +445,9 @@
 	"visualdata-jsmodule-formfield-query-schema-label": "schema",
 	"visualdata-jsmodule-formfield-query-schema-help": "schema to be queried",
 	"visualdata-jsmodule-formfield-query-label": "query",
-	"visualdata-jsmodule-formfield-query-help": "Enter a visualdata query (wikitext and parser functions allowed). Use <name> to retrieve the value of other fields in the same form (if a nested property use the complete path separated by slashes and omit array indexes for multiple items) and <value> to use the current value of the input, if the input is editable",
+	"visualdata-jsmodule-formfield-query-help": "Enter a visualdata query (wikitext and parser functions allowed). Use &lt;property name&gt; to retrieve the value of other fields in the same form (if a nested property use the complete path separated by slashes and omit array indexes for multiple items) and &lt;value&gt; (use as it is) to use the current value of the input. With the LookupElement or MenuTagSearchMultiselect (the latter only available if the field is multiple) widgets a standard query is [[&lt;property name&gt;::&lt;value&gt;~]] (replace \"&lt;property name&gt;\" with the retrieved printout). See more <a target=\"_blank\" href=\"https://www.mediawiki.org/wiki/Extension:VisualData/Queries_in_forms\">here</a>.",
+	"visualdata-jsmodule-formfield-smwquery-label": "ask query",
+	"visualdata-jsmodule-formfield-smwquery-help": "Enter a SMW query (wikitext and parser functions allowed). Use &lt;property name&gt; to retrieve the value of other fields in the same form (if a nested property use the complete path separated by slashes and omit array indexes for multiple items) and &lt;value&gt; (use as it is) to use the current value of the input. With the LookupElement or MenuTagSearchMultiselect (the latter only available if the field is multiple) widgets a standard SMW query is [[&lt;property name&gt;::~&lt;value&gt;*]] (replace \"&lt;property name&gt;\" with the retrieved printout). See more <a target=\"_blank\" href=\"https://www.semantic-mediawiki.org/wiki/Help:Search_operators\">here</a>.",
 	"visualdata-jsmodule-formfield-printouts": "printouts",
 	"visualdata-jsmodule-formfield-printouts-help": "Enter the properties to be retrieved by the query (if a nested property use the complete path separated by slashes and omit array indexes in case of multiple items)",
 
@@ -461,7 +464,7 @@
 
 	"visualdata-special-submit-notitle": "title not set or invalid",
 	"visualdata-jsmodule-formfield-message-more-inputs": "Available input widgets depend on the data-type and the multiple toggle",
-	"visualdata-jsmodule-formfield-message-options-query": "Selected input widget will show all options at once, use 'LookupElement' or 'MenuTagSearchMultiselect' for lists of arbitrary length",
+	"visualdata-jsmodule-formfield-message-options-query": "The selected input widget will show all options at once, use 'LookupElement' or 'MenuTagSearchMultiselect' (the latter only available if the field is multiple) for lists of arbitrary length",
 
 	"visualdata-menutagmultiselect-placeholder": "search items",
 

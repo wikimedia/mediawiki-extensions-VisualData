@@ -65,8 +65,6 @@ class JsonResultPrinter extends ResultPrinter {
 			];
 		}
 
-		// print_r($ret);
-
 		$content = new \JsonContent( '' );
 		return $content->rootValueTable( json_decode( json_encode( $ret ), false ) );
 	}

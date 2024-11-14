@@ -383,6 +383,7 @@
 	"visualdata-jsmodule-formfield-optionsfrom-values": "A label message",
 	"visualdata-jsmodule-formfield-optionsfrom-wikilist": "A label message",
 	"visualdata-jsmodule-formfield-optionsfrom-query": "A label message",
+	"visualdata-jsmodule-formfield-optionsfrom-smwquery": "A label message",
 
 	"visualdata-jsmodule-formfield-options-values": "A label message",
 	"visualdata-jsmodule-formfield-options-label-formula": "A label message",
@@ -425,6 +426,8 @@
 	"visualdata-jsmodule-formfield-query-schema-help": "A label message",
 	"visualdata-jsmodule-formfield-query-label": "A label message",
 	"visualdata-jsmodule-formfield-query-help": "A label message",
+	"visualdata-jsmodule-formfield-smwquery-label": "A label message",
+	"visualdata-jsmodule-formfield-smwquery-help": "A label message",
 	"visualdata-jsmodule-formfield-printouts": "A label message",
 	"visualdata-jsmodule-formfield-printouts-help": "A label message",
 	"visualdata-jsmodule-formfield-optionformula": "A label message",

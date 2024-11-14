@@ -174,7 +174,7 @@ class Importer {
 
 		try {
 			$this->importer->doImportSelf( $pagename, $contents );
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			call_user_func( $this->showMsg, "error: $pagename " . $e->getMessage() );
 		}
 

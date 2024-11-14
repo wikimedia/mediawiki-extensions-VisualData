@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright © 2021-2023, https://wikisphere.org
+ * @copyright Copyright © 2021-2024, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */
@@ -457,12 +457,6 @@ VisualDataFunctions = ( function () {
 			return schema.wiki[ 'preferred-input' ];
 		}
 
-		var SMWProperty = getSMWProperty( schema.wiki );
-
-		if ( SMWProperty ) {
-			return VisualDataSMW.getAvailableInputs( SMWProperty.type )[ 0 ];
-		}
-
 		if ( 'type' in schema && schema.type !== '' ) {
 			return getAvailableInput( schema.type, schema.format || null )[ 0 ];
 		}
@@ -802,7 +796,7 @@ VisualDataFunctions = ( function () {
 		return typeof value === 'number' && value !== value;
 	}
 
-	function escapeJsonPtr( str ) {
+	function escapeJsonPointer( str ) {
 		return str.replace( /~/g, '~0' ).replace( /\//g, '~1' );
 	}
 
@@ -879,7 +873,7 @@ VisualDataFunctions = ( function () {
 		getInputHelpUrl,
 		loadScripts,
 		isNaN,
-		escapeJsonPtr,
+		escapeJsonPointer,
 		objectEntries,
 		sort,
 		objectValues,

@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright © 2021-2023, https://wikisphere.org
+ * @copyright Copyright © 2021-2024, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */
@@ -60,8 +60,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return arr.indexOf( val ) !== -1;
 	}
 
-	function escapeJsonPtr( str ) {
-		return VisualDataFunctions.escapeJsonPtr( str );
+	function escapeJsonPointer( str ) {
+		return VisualDataFunctions.escapeJsonPointer( str );
 	}
 
 	// @FIXME destroy/reinitialize on tab change
@@ -170,7 +170,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return;
 		}
 
-		var escapedSchemaName = escapeJsonPtr( schemaName );
+		var escapedSchemaName = escapeJsonPointer( schemaName );
 
 		Fields[ escapedSchemaName ].toggle( true );
 		Fields[ escapedSchemaName ].setType( 'error' );
@@ -236,7 +236,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return;
 		}
 
-		var escapedSchemaName = escapeJsonPtr( schemaName );
+		var escapedSchemaName = escapeJsonPointer( schemaName );
 
 		var el = window.document.querySelector( '#' +
 			jQuery.escapeSelector( makeElementId( escapedSchemaName ) ) );
@@ -318,19 +318,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				inputConfig.options = VisualDataFunctions.createDropDownOptions(
 					inputConfig.options
 				);
-			} else if ( isSMWProperty( field ) ) {
-				inputConfig.options = [];
-				var SMWProperty = getSMWProperty( field );
-				if ( '_PVAL' in SMWProperty.properties ) {
-					inputConfig.options = VisualDataFunctions.createDropDownOptions(
-						SMWProperty.properties._PVAL,
-						{
-							key: 'value'
-						}
-					);
-				} else {
-					inputConfig.options = [];
-				}
 			} else {
 				inputConfig.options = [];
 			}
@@ -343,20 +330,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		};
 		return ( InputWidgets[ inputConfig.name ] =
 			VisualDataFunctions.inputInstanceFromName( inputName, inputConfig ) );
-	}
-
-	function isSMWProperty( field ) {
-		return (
-			'SMW-property' in field &&
-			field[ 'SMW-property' ] in VisualDataSMW.getSemanticProperties()
-		);
-	}
-
-	function getSMWProperty( field ) {
-		if ( 'SMW-property' in field ) {
-			return VisualDataSMW.getSemanticProperty( field[ 'SMW-property' ] );
-		}
-		return null;
 	}
 
 	function isNewSchema( schemaName ) {
@@ -540,7 +513,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	async function performQuery( model, value ) {
 		var field = model.schema.wiki;
-		var query = field[ 'options-query' ];
+		var query = field[ 'options-query' ] || field[ 'options-smwquery' ];
 		var matches = [];
 
 		var re = /<([^<>]+)>/g;
@@ -558,7 +531,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				data: JSON.stringify( {
 					query,
 					properties: field[ 'query-printouts' ],
-					schema: field[ 'query-schema' ],
+					schema: field[ 'query-schema' ] || '',
 					'options-query-formula': field[ 'options-query-formula' ] || null,
 					'options-label-formula': field[ 'options-label-formula' ] || null
 				} )
@@ -570,8 +543,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					.done( function ( thisRes ) {
 						if ( payload.action in thisRes ) {
 							var thisData = thisRes[ payload.action ];
-							thisData = thisData.result;
-							resolve( thisData );
+							if ( 'result' in thisData ) {
+								thisData = thisData.result;
+								resolve( thisData );
+							} else if ( 'error' in thisData ) {
+								// eslint-disable-next-line no-console
+								console.error( 'visualdata-queryoptions', thisData.error );
+								reject( thisData.error );
+							}
 						}
 					} )
 					.fail( function ( thisRes ) {
@@ -586,20 +565,20 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		if ( matches.length ) {
 			var res = await ProcessModel.getModel( 'schema', model.schemaName );
-
-			// @MUST MATCH classes/SubmitForm -> replaceFormula
 			var parent = model.path.slice( 0, Math.max( 0, model.path.indexOf( '/' ) ) );
-			for ( var match of matches ) {
-				for ( var i in res.flatten ) {
-					if ( match[ 1 ] === 'value' ) {
-						query = query.replace(
-							match[ 0 ],
-							// value of lookupElement
-							value
-						);
-						continue;
-					}
 
+			for ( var match of matches ) {
+				if ( match[ 1 ] === 'value' ) {
+					query = query.replace(
+						match[ 0 ],
+						// value of lookupElement
+						value
+					);
+					continue;
+				}
+
+				// @MUST MATCH classes/SubmitForm -> replaceFormula
+				for ( var i in res.flatten ) {
 					// match first names at the same level
 					var fullPath = parent + '/' + match[ 1 ];
 
@@ -1192,9 +1171,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				// case "manage-forms":
 				// 		VisualDataForms.initialize();
 				// 		break;
-				// 	case "manage-semantic-properties":
-				// 		VisualDataSMW.initialize();
-				// 		break;
 			}
 
 			self.setActive( false );
@@ -1230,13 +1206,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					// this.popPending();
 					ActionWidget.popPending();
 					$( ToolbarMain.$bar ).find( '.wrapper' ).css( 'pointer-events', 'auto' );
-
-					// VisualDataSMW.initialize(
-					// 		Self,
-					// 		res["imported-vocabularies"],
-					// 		res["type-labels"],
-					// 		res["property-labels"]
-					// );
 
 					// VisualDataForms.initialize(Self, Forms);
 
@@ -1623,7 +1592,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					Form.jsonData.schemas[ schemaName_ ] = {};
 				}
 
-				var path = `${ escapeJsonPtr( schemaName_ ) }`;
+				var path = `${ escapeJsonPointer( schemaName_ ) }`;
 				var pathNoIndex = '';
 				var model = ( ModelSchemas[ schemaName_ ] = {
 					parent: ModelSchemas,
@@ -2389,11 +2358,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						if ( !( i in data ) ) {
 							data[ i ] = {};
 						}
-						var path_ = `${ path }/${ escapeJsonPtr( i ) }`;
+						var path_ = `${ path }/${ escapeJsonPointer( i ) }`;
 						applyUntransformed( data, i, path_ );
 						var pathNoIndex_ = pathNoIndex ?
-							`${ pathNoIndex }/${ escapeJsonPtr( i ) }` :
-							escapeJsonPtr( i );
+							`${ pathNoIndex }/${ escapeJsonPointer( i ) }` :
+							escapeJsonPointer( i );
 						var item = schema.properties[ i ];
 						var previousItem =
 							'properties' in previousSchema && i in previousSchema.properties ?

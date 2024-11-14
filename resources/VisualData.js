@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright © 2021-2023, https://wikisphere.org
+ * @copyright Copyright © 2021-2024, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */

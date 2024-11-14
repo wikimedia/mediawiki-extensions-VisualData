@@ -391,6 +391,19 @@ class VisualDataHooks {
 		$title = $wikiPage->getTitle();
 		$revertMethod = $editResult->getRevertMethod();
 		\VisualData::onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $revertMethod );
+
+		// create schema id and printouts if is a new schema
+		if ( $title->getNamespace() === NS_VISUALDATASCHEMA ) {
+			$content = $revisionRecord->getContent( MediaWiki\Revision\SlotRecord::MAIN );
+			$contentHandler = $content->getContentHandler();
+			$modelId = $contentHandler->getModelID();
+			$text = $content->getNativeData();
+			$data = json_decode( $text, true );
+			if ( $data ) {
+				$databaseManager = new DatabaseManager();
+				$databaseManager->createSchemaIdAndPrintouts( $data );
+			}
+		}
 	}
 
 	/**

@@ -60,11 +60,24 @@ class VisualDataApiQueryOptions extends ApiBase {
 			'options-label-formula' => $data['options-label-formula']
 		];
 
+		// @TODO a single 'options-query' parameter could
+		// be used, recording the kind of query in another parameter
+		if ( empty( $data['schema'] ) ) {
+			$wiki['options-smwquery'] = $data['query'];
+			unset( $wiki['options-query'] );
+		}
+
 		$context = RequestContext::getMain();
 		$schemaProcessor = new SchemaProcessor( $context );
-		$optionsValues = $schemaProcessor->queryResults( $wiki );
 
-		$result->addValue( [ $this->getModuleName() ], 'result', $optionsValues );
+		$errors = [];
+		$optionsValues = $schemaProcessor->queryResults( $wiki, $errors );
+
+		if ( count( $errors ) ) {
+			$result->addValue( [ $this->getModuleName() ], 'error', $errors );
+		} else {
+			$result->addValue( [ $this->getModuleName() ], 'result', $optionsValues );
+		}
 	}
 
 	/**
