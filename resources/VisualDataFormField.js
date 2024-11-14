@@ -461,7 +461,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var modelMap = {
 			'options-query': queryInput,
-			'options-SMWQuery': SMWQueryInput,
+			'options-smwquery': SMWQueryInput,
 			'query-schema': schemaInput,
 			'query-printouts': printoutsInput,
 			'options-query-formula': optionFormulaInput,
