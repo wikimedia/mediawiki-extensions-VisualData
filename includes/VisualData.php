@@ -2119,8 +2119,7 @@ class VisualData {
 				// 'canmanageforms' => $user->isAllowed( 'visualdata-canmanageforms' ),
 				'contentModels' => array_flip( self::getContentModels() ),
 				'contentModel' => $title->getContentModel(),
-				// self::$SMW,
-				'SMW' => false,
+				'SMW' => defined( 'SMW_VERSION' ),
 				'VEForAll' => $VEForAll,
 				'jsonDiffLibrary' => class_exists( 'Swaggest\JsonDiff\JsonDiff' )
 			],

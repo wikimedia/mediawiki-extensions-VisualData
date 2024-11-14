@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -101,7 +101,8 @@ class SchemaProcessor {
 		// 'selectOptionsFrom',
 		// 'options-values',		// harcoded options
 		// 'options-wikilist',		// page with wiki-list
-		// 'options-query',		// query
+		// 'options-query',			// query
+		// 'options-smwquery',		// SMW query
 		// 'query-printouts',	// printouts to retrieve (property names)
 		// 'query-subject',		// include subject (true, false)
 		// 'options-query-formula',		// replacement formula
@@ -390,13 +391,44 @@ class SchemaProcessor {
 			$ret['options']['hidden'] = true;
 		}
 
-		if ( array_key_exists( 'selectOptionsFrom', $properties )
-			&& $properties['selectOptionsFrom'] === 'options-values' ) {
-			unset( $properties['options-wikilist'] );
-			unset( $properties['options-query'] );
-			unset( $properties['query-schema'] );
-			unset( $properties['query-printouts'] );
-			unset( $properties['options-query-formula'] );
+		if ( array_key_exists( 'selectOptionsFrom', $properties ) ) {
+			switch ( $properties['selectOptionsFrom'] ) {
+				case 'options-values':
+					unset(
+						$properties['options-wikilist'],
+						$properties['options-query'],
+						$properties['options-smwquery'],
+						$properties['query-schema'],
+						$properties['query-printouts'],
+						$properties['options-query-formula']
+					);
+					break;
+				case 'options-wikilist':
+					unset(
+						$properties['options-values'],
+						$properties['options-query'],
+						$properties['options-smwquery'],
+						$properties['query-schema'],
+						$properties['query-printouts'],
+						$properties['options-query-formula']
+					);
+					break;
+				case 'options-query':
+					unset(
+						$properties['options-values'],
+						$properties['options-wikilist'],
+						$properties['options-smwquery']
+					);
+					break;
+				case 'options-smwquery':
+					unset(
+						$properties['options-values'],
+						$properties['options-wikilist'],
+						$properties['query-schema'],
+						$properties['options-query']
+					);
+					break;
+			}
 		}
 
 		// *** this should't be anymore necessary
@@ -792,6 +824,7 @@ class SchemaProcessor {
 					if ( empty( $properties['wiki']['options-wikilist'] )
 						&& empty( $properties['wiki']['options-values'] )
 						&& empty( $properties['wiki']['options-query'] )
+						&& empty( $properties['wiki']['options-smwquery'] )
 						&& is_array( $value ) && count( $value ) ) {
 
 						// @FIXME we are not distinguishing between "" and NULL
@@ -1150,9 +1183,9 @@ class SchemaProcessor {
 		$wiki = $ret['wiki'];
 
 		if ( in_array( $wiki['preferred-input'], $this->optionsInputs )
-			&& !empty( $wiki['options-query'] )
+			&& ( !empty( $wiki['options-query'] ) || !empty( $wiki['options-smwquery'] ) )
 			// && !preg_match( '/\<.+?\>/', $wiki['options-query'] )
-			) {
+		) {
 			$values = $this->queryResults( $wiki );
 
 			if ( array_key_exists( 'options-allow-null', $wiki ) && $wiki['options-allow-null'] ) {
@@ -1222,11 +1255,43 @@ class SchemaProcessor {
 	}
 
 	/**
+	 * @see SemanticTasks/src/Query.php
+	 * @param string $query_string
+	 * @param array(String) $properties_to_display
+	 * @param array|null $parameters
+	 * @param bool|null $display_title
+	 * @return \SMWQueryResult
+	 */
+	public static function SMWQueryResults( $query_string, $properties_to_display, $parameters = [], $display_title = true ) {
+		$SMWDataValueFactory = \SMW\DataValueFactory::getInstance();
+		$SMWApplicationFactory = \SMW\Services\ServicesFactory::getInstance();
+
+		$printouts = [];
+		foreach ( $properties_to_display as $property ) {
+			// @see SemanticMediaWiki/src/Mediawiki/ApiRequestParameterFormatter.php -> formatPrintouts
+			$printouts[] = new \SMWPrintRequest(
+				\SMWPrintRequest::PRINT_PROP,
+				$property,
+				$SMWDataValueFactory->newPropertyValueByLabel( $property )
+			);
+		}
+		if ( $display_title ) {
+			\SMWQueryProcessor::addThisPrintout( $printouts, $parameters );
+		}
+		$params = \SMWQueryProcessor::getProcessedParams( $parameters, $printouts );
+		$inline = true;
+		$query = \SMWQueryProcessor::createQuery( $query_string, $params, $inline, null, $printouts );
+		return $SMWApplicationFactory->getStore()->getQueryResult( $query );
+	}
+
+	/**
 	 * @param string $wiki
+	 * @param array &$errors
 	 * @return array
 	 */
-	public function queryResults( $wiki ) {
-		$query = $wiki['options-query'];
+	public function queryResults( $wiki, &$errors = [] ) {
+		$isSMW = !empty( $wiki['options-smwquery'] );
+		$query = ( !$isSMW ? $wiki['options-query'] : $wiki['options-smwquery'] );
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 
 		// *** credits WikiTeQ
@@ -1237,16 +1302,11 @@ class SchemaProcessor {
 		$query = $parser->preprocess( $query, $this->context->getTitle(), $poptions );
 		// -------------->
 
-		$params = [
-			'schema' => $wiki['query-schema'],
-			'format' => 'query'
-		];
-
 		$printouts_ = $wiki['query-printouts'];
 		$printouts = [];
 		foreach ( $printouts_ as $val ) {
 			// *** this does not seem really necessary,
-			// but we do this for consistenty with
+			// but we do this for consistency with
 			// parserFunctionQuery
 			if ( strpos( $val, '=' ) !== false ) {
 				$arr_ = explode( '=', $val ) + [ null, null ];
@@ -1256,21 +1316,112 @@ class SchemaProcessor {
 			}
 		}
 
-		$templates = [];
-		$resultPrinter = \VisualData::getResults(
-			$parser,
-			$this->context,
-			$query,
-			$templates,
-			$printouts,
-			$params
-		);
+		if ( !$isSMW ) {
+			$params = [
+				'schema' => $wiki['query-schema'],
+				'format' => 'query'
+			];
+			$templates = [];
+			$resultPrinter = \VisualData::getResults(
+				$parser,
+				$this->context,
+				$query,
+				$templates,
+				$printouts,
+				$params
+			);
 
-		if ( !$resultPrinter ) {
-			return [];
+			if ( !$resultPrinter ) {
+				return [];
+			}
+
+			$results = $resultPrinter->getResults();
+			if ( array_key_exists( 'errors', $results ) ) {
+				$errors = array_merge( $errors, $results['errors'] );
+				return [];
+			}
+
+		} else {
+			$parameters = [];
+			$display_title = true;
+			$results_ = $this->SMWQueryResults( $query, $printouts, $parameters, $display_title );
+			$arr_ = $results_->serializeToArray();
+
+			// @see ResultPrinter -> getTemplateParams
+			// @see QueryResultPrinter -> processRow
+			$getTemplateParams = static function ( $properties, $title ) {
+				foreach ( ResultPrinter::$titleAliases as $text ) {
+					if ( !array_key_exists( $text, $properties ) ) {
+						$properties[$text] = $title->getFullText();
+					}
+				}
+				foreach ( ResultPrinter::$pageidAliases as $text ) {
+					if ( !array_key_exists( $text, $properties ) ) {
+						$properties[$text] = $title->getArticleID();
+					}
+				}
+				return $properties;
+			};
+			$isEmpty = static function ( $properties ) use ( $printouts ) {
+				foreach ( $printouts as $prop ) {
+					if ( array_key_exists( $prop, $properties ) && count( $properties[$prop] ) ) {
+						return false;
+					}
+				}
+				return true;
+			};
+/*
+e.g.
+[[Prop a::a]]
+[[Prop b::b1]]
+[[Prop b::b2]]
+[[Prop c::c1]]
+[[Prop c::c2]]
+[[Prop c::c3]]
+*/
+			// @see https://stackoverflow.com/questions/8567082/how-to-generate-in-php-all-combinations-of-items-in-multiple-arrays
+			$getCombinations = static function ( $arrays, $title_ ) use ( &$getTemplateParams ) {
+				$result = [ [] ];
+				foreach ( $arrays as $property => $property_values ) {
+					$tmp = [];
+					foreach ( $result as $result_item ) {
+						foreach ( $property_values as $property_value ) {
+							// @FIXME use a switch for each property type
+							if ( is_array( $property_value ) && array_key_exists( 'fulltext', $property_value ) ) {
+								$property_value = $property_value['fulltext'];
+							}
+							$tmp[] = $getTemplateParams( array_merge( $result_item, [ $property => $property_value ] ), $title_ );
+						}
+					}
+					$result = $tmp;
+				}
+				return $result;
+			};
+
+			$sortPrintouts = static function ( $a, $b ) use ( $printouts ) {
+				$aIndex = array_search( $a, $printouts );
+				$bIndex = array_search( $b, $printouts );
+				if ( $aIndex < $bIndex ) {
+					return -1;
+				}
+				if ( $aIndex > $bIndex ) {
+					return 1;
+				}
+				return 0;
+			};
+
+			$results = [];
+			foreach ( $arr_['results'] as $titleText => $properties ) {
+				if ( $isEmpty( $properties['printouts'] ) ) {
+					continue;
+				}
+				$title_ = \Title::newFromText( $titleText );
+				$row = [];
+				uksort( $properties, $sortPrintouts );
+				$combinations = $getCombinations( $properties['printouts'], $title_ );
+				$results = array_merge( $results, $combinations );
+			}
 		}
-
-		$results = $resultPrinter->getResults();
 
 		// rename to options-value-formula
 		if ( !empty( $wiki['options-query-formula'] ) ) {

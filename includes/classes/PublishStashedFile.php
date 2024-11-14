@@ -135,7 +135,7 @@ class PublishStashedFile extends Job {
 					'status' => Status::newGood()
 				]
 			);
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			UploadBase::setSessionStatus(
 				$user,
 				$this->params['filekey'],

@@ -96,7 +96,7 @@ class DatabaseManager {
 	 */
 	public function prepareData( $schema, $data ) {
 		$ret = [];
-		$path = $this->escapeJsonPtr( $schema['wiki']['name'] );
+		$path = $this->escapeJsonPointerPart( $schema['wiki']['name'] );
 		$pathNoIndex = '';
 		$this->flattenData( $ret, $schema, $data, $path, $pathNoIndex );
 		return $ret;
@@ -876,6 +876,15 @@ class DatabaseManager {
 	}
 
 	/**
+	 * @param string $part
+	 * @return string
+	 */
+	private function escapeJsonPointerPart( $part ) {
+		$value = str_replace( '~', '~0', $part );
+		return str_replace( '/', '~1', $value );
+	}
+
+	/**
 	 * @param string $tableName
 	 * @param array $conds
 	 * @param array $insert
@@ -964,6 +973,78 @@ class DatabaseManager {
 		}
 
 		return [ $this->tableTypeToId( $propType ), $propType ];
+	}
+
+	/**
+	 * @see resources/VisualDataForms.js -> processSchema
+	 * @param array $schema
+	 * @param string $path
+	 * @param string $printout
+	 * @param function $callback
+	 */
+	public function traverseSchema( $schema, $path, $printout, $callback ) {
+		switch ( $schema['type'] ) {
+			case 'object':
+				if ( isset( $schema['properties'] ) ) {
+					foreach ( $schema['properties'] as $key => $value ) {
+						$keyEscaped = $this->escapeJsonPointerPart( $key );
+						$currentPath = $path ? "$path/properties/$keyEscaped" : $keyEscaped;
+
+						$printout_ = ( $printout ? "$printout/$keyEscaped" : $keyEscaped );
+						$subSchema = $value;
+						$callback( $subSchema, $currentPath, $printout_, $key );
+						$this->traverseSchema( $subSchema, $currentPath, $printout_, $callback );
+					}
+				}
+				break;
+			case 'array':
+				// @TODO support tuple
+				if ( isset( $schema['items'] ) ) {
+					$subSchema = $schema['items'];
+					$this->traverseSchema( $subSchema, $path, $printout, $callback );
+				}
+				break;
+		}
+	}
+
+	/**
+	 * @param array $schema
+	 */
+	public function createSchemaIdAndPrintouts( $schema ) {
+		$rows = [];
+		$path = $this->escapeJsonPointerPart( $schema['wiki']['name'] );
+		$schemaId = $this->recordSchema( $path );
+		$thisClass = $this;
+
+		$callback = static function ( $schema, $path, $printout, $property ) use ( &$rows, $schemaId, $thisClass ) {
+			[ $table_id, $propType ] = $thisClass->schemaFormatToTableId( $schema['type'],
+				array_key_exists( 'format', $schema ) ? $schema['format'] : null );
+
+			if ( !$table_id || !$propType ) {
+				// @TODO log error
+				return;
+			}
+
+			$rows[] = [
+				'schema_id' => $schemaId,
+				'table_id' => $table_id,
+				'path_no_index' => $printout,
+				'updated_at' => $thisClass->dateTime,
+				'created_at' => $thisClass->dateTime,
+			];
+		};
+
+		$printout = '';
+		$this->traverseSchema( $schema, $path, $printout, $callback );
+
+		$options = [ 'IGNORE' ];
+		$tableName = 'visualdata_prop_tables';
+		$res = $this->dbw->insert(
+			$tableName,
+			$rows,
+			__METHOD__,
+			$options
+		);
 	}
 
 	/**
@@ -1231,15 +1312,6 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param string $str
-	 * @return string
-	 */
-	public function escapeJsonPtr( $str ) {
-		$ret = str_replace( '~', '~0', $str );
-		return str_replace( '/', '~1', $ret );
-	}
-
-	/**
 	 * @param array &$ret
 	 * @param array $schema
 	 * @param array $data
@@ -1248,7 +1320,7 @@ class DatabaseManager {
 	 */
 	private function flattenData( &$ret, $schema, $data, $path, $pathNoIndex ) {
 		foreach ( (array)$data as $key => $value ) {
-			$keyEscaped = $this->escapeJsonPtr( $key );
+			$keyEscaped = $this->escapeJsonPointerPart( $key );
 			$currentPath = $path ? "$path/$keyEscaped" : $keyEscaped;
 
 			switch ( $schema['type'] ) {

@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */
@@ -179,13 +179,10 @@ VisualDataSchemas = ( function () {
 					ret = mw.msg( 'visualdata-jsmodule-schemas-subitem' );
 					break;
 				case 'property':
-					ret =
-						'SMW-property' in thisItem ?
-							thisItem[ 'SMW-property' ] :
-							thisItem.wiki[ 'jsonSchema-type' ] +
-							( thisItem.wiki[ 'jsonSchema-type' ] !== 'string' ?
-								'' :
-								' (' + thisItem.wiki[ 'jsonSchema-format' ] + ')' );
+					ret = thisItem.wiki[ 'jsonSchema-type' ] +
+						( thisItem.wiki[ 'jsonSchema-type' ] !== 'string' ?
+							'' :
+							' (' + thisItem.wiki[ 'jsonSchema-format' ] + ')' );
 
 					if ( !( 'preferred-input' in thisItem.wiki ) ) {
 						thisItem.wiki[ 'preferred-input' ] =

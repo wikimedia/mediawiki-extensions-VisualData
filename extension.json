@@ -7,7 +7,7 @@
 	"license-name": "GPL-2.0-or-later",
 	"type": "parserhook",
 	"requires": {
-		"MediaWiki": ">= 1.40"
+		"MediaWiki": ">= 1.35.3"
 	},
 	"MessagesDirs": {
 		"VisualData": [
@@ -306,8 +306,7 @@
 				"visualdata-jsmodule-forms-target-slot",
 				"visualdata-jsmodule-forms-target-slot-option-jsondata",
 				"visualdata-jsmodule-forms-target-slot-option-main",
-				"visualdata-jsmodule-forms-submit-no-schemas",
-				"visualdata-jsmodule-missing-json-diff-library"
+				"visualdata-jsmodule-forms-submit-no-schemas"
 			]
 		},
 		"ext.VisualData.ManageSchemas": {
@@ -426,6 +425,7 @@
 				"visualdata-jsmodule-formfield-optionsfrom-values",
 				"visualdata-jsmodule-formfield-optionsfrom-wikilist",
 				"visualdata-jsmodule-formfield-optionsfrom-query",
+				"visualdata-jsmodule-formfield-optionsfrom-smwquery",
 				"visualdata-jsmodule-formfield-options-values",
 				"visualdata-jsmodule-formfield-options-label-formula",
 				"visualdata-jsmodule-formfield-options-label-formula-help",
@@ -439,6 +439,8 @@
 				"visualdata-jsmodule-formfield-query-schema-help",
 				"visualdata-jsmodule-formfield-query-label",
 				"visualdata-jsmodule-formfield-query-help",
+				"visualdata-jsmodule-formfield-smwquery-label",
+				"visualdata-jsmodule-formfield-smwquery-help",
 				"visualdata-jsmodule-formfield-printouts",
 				"visualdata-jsmodule-formfield-printouts-help",
 				"visualdata-jsmodule-formfield-optionformula",
@@ -450,7 +452,8 @@
 
 				"visualdata-jsmodule-inputconfig-dialog-label",
 				"visualdata-jsmodule-inputconfig-addremoveoptions",
-				"visualdata-jsmodule-inputconfig-selectfield"
+				"visualdata-jsmodule-inputconfig-selectfield",
+				"visualdata-jsmodule-missing-json-diff-library"
 			]
 		},
 		"ext.VisualData.PrintResults": {

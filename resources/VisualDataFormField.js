@@ -62,26 +62,15 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 	function getAvailableInputs(
 		propertyModel,
-		SMWproperty,
 		JSONSchemaType,
 		stringFormat,
 		multipleItems
 	) {
-		if ( Config.SMW && propertyModel === 'smw-property' ) {
-			var dataType = VisualDataSMW.getSemanticProperty( SMWproperty, 'type' );
-			if ( !dataType ) {
-				// eslint-disable-next-line no-console
-				console.error( SMWproperty + ' property does not exist' );
-				dataType = '_wpg';
-			}
-			var ret = VisualDataSMW.getAvailableInputs( dataType );
-		} else {
-			ret = VisualDataFunctions.getAvailableInputs(
-				JSONSchemaType,
-				stringFormat,
-				Config
-			);
-		}
+		var ret = VisualDataFunctions.getAvailableInputs(
+			JSONSchemaType,
+			stringFormat,
+			Config
+		);
 
 		// remove multiselects
 		if ( multipleItems === false ) {
@@ -114,41 +103,50 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		parentItems.push( layout );
 
+		// keep the variables separated
+		var optionsWikilistValue = getPropertyValue( 'options-wikilist' ) || '';
+		// var optionsQueryValue = getPropertyValue( 'options-query' ) || '';
+		// var optionsSMWQueryValue = getPropertyValue( 'options-smwquery' ) || '';
 		var optionsValues = getPropertyValue( 'options-values' ) || [];
 
-		var selectOptionsFromValue = 'options-values';
-		var wikilistValue = getPropertyValue( 'options-wikilist' );
+		var selectOptionsFromValue = null;
+		var optionsValue = null;
 
 		// @TODO add more data sources
-		if ( !optionsValues.length ) {
-			if ( wikilistValue ) {
-				selectOptionsFromValue = 'options-wikilist';
-			} else if ( getPropertyValue( 'options-query' ) ) {
-				selectOptionsFromValue = 'options-query';
+		var methods = [ 'values', 'wikilist', 'query' ];
+
+		if ( Config.SMW ) {
+			methods.push( 'smwquery' );
+		}
+
+		// only for lookup widget
+		var methodsReduced = [ 'query' ];
+		if ( Config.SMW ) {
+			methodsReduced.push( 'smwquery' );
+		}
+
+		for ( var method of methods ) {
+			// eslint-disable-next-line no-cond-assign, no-unused-vars
+			if ( optionsValue = getPropertyValue( 'options-' + method ) ) {
+				selectOptionsFromValue = 'options-' + method;
+				break;
 			}
 		}
 
 		var selectOptionsFrom = new OO.ui.RadioSelectInputWidget( {
-			options: [
-				{
-					data: 'options-values',
+			options: methods.map( function ( x ) {
+				return {
+					data: 'options-' + x,
+					// Messages that can be used here:
+					// * visualdata-jsmodule-formfield-optionsfrom-values
+					// * visualdata-jsmodule-formfield-optionsfrom-wikilist
+					// * visualdata-jsmodule-formfield-optionsfrom-query
+					// * visualdata-jsmodule-formfield-optionsfrom-smwquery
 					label: mw.msg(
-						'visualdata-jsmodule-formfield-optionsfrom-values'
+						'visualdata-jsmodule-formfield-optionsfrom-' + x
 					)
-				},
-				{
-					data: 'options-wikilist',
-					label: mw.msg(
-						'visualdata-jsmodule-formfield-optionsfrom-wikilist'
-					)
-				},
-				{
-					data: 'options-query',
-					label: mw.msg(
-						'visualdata-jsmodule-formfield-optionsfrom-query'
-					)
-				}
-			],
+				};
+			} ),
 			value: selectOptionsFromValue
 		} );
 
@@ -187,7 +185,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		items.push( messageWidgetOptionsQuery );
 
 		var optionsValuesInput = new OO.ui.TagMultiselectWidget( {
-			selected: optionsValues.filter( ( x ) => x !== '' ),
+			selected: optionsValues,
 			allowArbitrary: true,
 			orientation: 'vertical'
 		} );
@@ -202,7 +200,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		items.push( fieldOptionsValues );
 
 		var wikilistInput = new mw.widgets.TitleInputWidget( {
-			value: wikilistValue
+			value: optionsWikilistValue
 		} );
 
 		var fieldWikilist = new OO.ui.FieldLayout( wikilistInput, {
@@ -251,8 +249,10 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		selectOptionsFrom.on( 'change', function ( value ) {
 			fieldOptionsValues.toggle( value === 'options-values' );
 			fieldWikilist.toggle( value === 'options-wikilist' );
-			fieldOptionsLabelFormula.toggle( value !== 'options-query' );
-			messageWidgetOptionsQuery.toggle( value === 'options-query' );
+			fieldOptionsLabelFormula.toggle( value !== 'options-query' && value !== 'options-smwquery' );
+
+			var optionInput = inArray( availableInputsInput.getValue(), VisualDataFunctions.optionsInputs );
+			messageWidgetOptionsQuery.toggle( optionInput && ( value === 'options-query' || value === 'options-smwquery' ) );
 		} );
 
 		var modelMap = {
@@ -275,12 +275,32 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		function onSelectAvailableInputs() {
 			var availableInputsValue = availableInputsInput.getValue();
+
+			selectOptionsFrom.setOptions(
+				( !inArray( availableInputsValue, VisualDataFunctions.lookupInputs ) ? methods : methodsReduced ).map( function ( x ) {
+					return {
+						data: 'options-' + x,
+
+						// Messages that can be used here:
+						// * visualdata-jsmodule-formfield-optionsfrom-values
+						// * visualdata-jsmodule-formfield-optionsfrom-wikilist
+						// * visualdata-jsmodule-formfield-optionsfrom-query
+						// * visualdata-jsmodule-formfield-optionsfrom-smwquery
+						label: mw.msg(
+							'visualdata-jsmodule-formfield-optionsfrom-' + x.toLowerCase()
+						)
+					};
+				} )
+			);
+
 			var thisSelectOptionsFromValue = selectOptionsFrom.getValue();
 			var optionInput = inArray( availableInputsValue, VisualDataFunctions.optionsInputs );
 
-			fieldSelectOptionsFrom.toggle( optionInput );
+			fieldSelectOptionsFrom.toggle( optionInput ||
+				( Config.SMW && inArray( availableInputsValue, VisualDataFunctions.lookupInputs ) )
+			);
 
-			messageWidgetOptionsQuery.toggle( optionInput && thisSelectOptionsFromValue === 'options-wikilist' );
+			messageWidgetOptionsQuery.toggle( optionInput && ( thisSelectOptionsFromValue === 'options-query' || thisSelectOptionsFromValue === 'options-smwquery' ) );
 			fieldNullValue.toggle( optionInput );
 
 			fieldOptionsValues.toggle(
@@ -292,6 +312,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 			fieldOptionsLabelFormula.toggle(
 				thisSelectOptionsFromValue !== 'options-query' &&
+				thisSelectOptionsFromValue !== 'options-smwquery' &&
 				inArray( availableInputsValue, VisualDataFunctions.labelFormulaInputs ) &&
 				!inArray( availableInputsValue, VisualDataFunctions.lookupInputs )
 			);
@@ -338,12 +359,25 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var fieldQuery = new OO.ui.FieldLayout( queryInput, {
 			label: mw.msg( 'visualdata-jsmodule-formfield-query-label' ),
-			help: mw.msg( 'visualdata-jsmodule-formfield-query-help' ),
+			help: new OO.ui.HtmlSnippet( mw.msg( 'visualdata-jsmodule-formfield-query-help' ) ),
 			helpInline: true,
 			align: 'top'
 		} );
 
 		items.push( fieldQuery );
+
+		var SMWQueryInput = new OO.ui.TextInputWidget( {
+			value: getPropertyValue( 'options-smwquery' )
+		} );
+
+		var fieldSMWQuery = new OO.ui.FieldLayout( SMWQueryInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-smwquery-label' ),
+			help: new OO.ui.HtmlSnippet( mw.msg( 'visualdata-jsmodule-formfield-smwquery-help' ) ),
+			helpInline: true,
+			align: 'top'
+		} );
+
+		items.push( fieldSMWQuery );
 
 		var schemaInput = new OO.ui.DropdownInputWidget( {
 			options: VisualDataFunctions.createDropDownOptions(
@@ -427,6 +461,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		var modelMap = {
 			'options-query': queryInput,
+			'options-SMWQuery': SMWQueryInput,
 			'query-schema': schemaInput,
 			'query-printouts': printoutsInput,
 			'options-query-formula': optionFormulaInput,
@@ -456,15 +491,16 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			var availableInputsValue = availableInputsInput.getValue();
 			var selectOptionsFromValue = selectOptionsFrom.getValue();
 
-			var optionInput = ( selectOptionsFromValue === 'options-query' &&
+			var optionInput = ( ( selectOptionsFromValue === 'options-query' || selectOptionsFromValue === 'options-smwquery' ) &&
 				inArray( availableInputsValue, VisualDataFunctions.optionsInputs ) );
 			var lookupInput = inArray( availableInputsValue, VisualDataFunctions.lookupInputs );
-			var labelFormulaInput = ( selectOptionsFromValue === 'options-query' &&
+			var labelFormulaInput = ( ( selectOptionsFromValue === 'options-query' || selectOptionsFromValue === 'options-smwquery' ) &&
 				inArray( availableInputsValue, VisualDataFunctions.labelFormulaInputs ) );
 
-			fieldQuery.toggle( lookupInput || optionInput );
+			fieldQuery.toggle( ( lookupInput || optionInput ) && selectOptionsFromValue === 'options-query' );
+			fieldSMWQuery.toggle( ( lookupInput || optionInput ) && selectOptionsFromValue === 'options-smwquery' );
 			fieldPrintouts.toggle( lookupInput || optionInput );
-			fieldSchema.toggle( lookupInput || optionInput );
+			fieldSchema.toggle( ( lookupInput || optionInput ) && selectOptionsFromValue !== 'options-smwquery' );
 			fieldOptionFormula.toggle( lookupInput || optionInput );
 			fieldOptionsLabelFormula.toggle( labelFormulaInput );
 
@@ -686,69 +722,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		items.push( helpMessageField );
 
+		// *** now a constant
 		var propertyModelValue = 'json-schema';
-		if ( Config.SMW ) {
-			propertyModelValue = getPropertyValue( 'propertyModel' ) || 'smw-property';
-			var propertyModelInput = new OO.ui.RadioSelectInputWidget( {
-				options: [
-					{
-						data: 'smw-property',
-						label: mw.msg(
-							'visualdata-jsmodule-formfield-propertymodel-smwproperty'
-						)
-					},
-					{
-						data: 'json-schema',
-						label: mw.msg(
-							'visualdata-jsmodule-formfield-propertymodel-jsonschema'
-						)
-					}
-				],
-				value: propertyModelValue
-			} );
-
-			Model.propertyModel = propertyModelInput;
-
-			items.push(
-				new OO.ui.FieldLayout( propertyModelInput, {
-					label: mw.msg( 'visualdata-jsmodule-formfield-propertymodel' ),
-					helpInline: true,
-					align: 'top'
-				} )
-			);
-
-			var SMWpropertiesValue =
-				getPropertyValue( 'SMW-property' ) ||
-				Object.keys( VisualDataSMW.getSemanticProperties() )[ 0 ];
-
-			var SMWpropertiesInput = new OO.ui.DropdownInputWidget( {
-				options: VisualDataFunctions.createDropDownOptions(
-					Object.keys( VisualDataSMW.getSemanticProperties() ),
-					{ key: 'value' }
-				),
-				value: SMWpropertiesValue
-			} );
-
-			// eslint-disable-next-line no-unused-vars
-			SMWpropertiesInput.on( 'change', function ( value ) {
-				redrawAvailableInputs();
-			} );
-
-			Model[ 'SMW-property' ] = SMWpropertiesInput;
-
-			var fieldSMWpropertiesInput = new OO.ui.FieldLayout( SMWpropertiesInput, {
-				label: mw.msg( 'visualdata-jsmodule-formfield-smwproperties' ),
-				helpInline: true,
-				align: 'top'
-			} );
-
-			items.push( fieldSMWpropertiesInput );
-		}
-
-		// var smwTypesInput = new OO.ui.DropdownInputWidget({
-		// 	options: VisualDataFunctions.createDropDownOptions(VisualDataSMW.TypeLabels),
-		// 	value:
-		// });
 
 		var jsonSchemaValue = getPropertyValue( 'jsonSchema-type' ) || 'string';
 
@@ -836,33 +811,10 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			redrawAvailableInputs();
 		} );
 
-		if ( Config.SMW ) {
-			fieldSMWpropertiesInput.toggle( propertyModelValue === 'smw-property' );
-		}
 		fieldjsonSchemaInput.toggle( propertyModelValue === 'json-schema' );
 		fieldjsonSchemaFormatInput.toggle(
 			propertyModelValue === 'json-schema' && jsonSchemaValue === 'string'
 		);
-
-		if ( Config.SMW ) {
-			propertyModelInput.on( 'change', function ( value ) {
-				switch ( value ) {
-					case 'smw-property':
-						fieldSMWpropertiesInput.toggle( true );
-						fieldjsonSchemaInput.toggle( false );
-						fieldjsonSchemaFormatInput.toggle( false );
-						break;
-					case 'json-schema':
-						fieldSMWpropertiesInput.toggle( false );
-						fieldjsonSchemaInput.toggle( true );
-						fieldjsonSchemaFormatInput.toggle(
-							getPropertyValue( 'jsonSchema-type' ) === 'string'
-						);
-						break;
-				}
-				redrawAvailableInputs();
-			} );
-		}
 
 		var multipleItemsInputValue =
 			getPropertyValue( 'multiple-items' ) || parentSchema.type === 'array';
@@ -904,7 +856,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			options: VisualDataFunctions.createDropDownOptions(
 				getAvailableInputs(
 					propertyModelValue,
-					SMWpropertiesValue,
 					jsonSchemaValue,
 					jsonSchemaFormatValue,
 					multipleItemsInputValue
@@ -944,16 +895,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		);
 
 		inputConfigButton.on( 'click', function () {
-			var dataType = null;
-			if ( Config.SMW ) {
-				var SMWproperty = getPropertyValue( 'SMW-property' );
-				dataType = VisualDataSMW.getSemanticProperty( SMWproperty, 'type' );
-				if ( !dataType ) {
-					// eslint-disable-next-line no-console
-					console.error( SMWproperty + ' property does not exist' );
-					dataType = '_wpg';
-				}
-			}
 			VisualDataInputConfigInst.openDialog(
 				Model[ 'input-config' ],
 				availableInputsInput.getValue(),
@@ -1008,7 +949,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 			// var availableInputs = getAvailableInputs(
 			// 	getPropertyValue("propertyModel") || "json-schema",
-			// 	getPropertyValue("SMW-property"),
 			// 	getPropertyValue("jsonSchema-type"),
 			// 	"text",
 			// 	getPropertyValue("multiple-items")
@@ -1149,7 +1089,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				VisualDataFunctions.createDropDownOptions(
 					getAvailableInputs(
 						getPropertyValue( 'propertyModel' ) || 'json-schema',
-						getPropertyValue( 'SMW-property' ),
 						getPropertyValue( 'jsonSchema-type' ),
 						getPropertyValue( 'jsonSchema-format' ),
 						getPropertyValue( 'multiple-items' )
@@ -1260,20 +1199,9 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 				var objName = obj[ 'multiple-items' ] ? obj.parentSchema.name : obj.name;
 
-				switch ( obj.propertyModel ) {
-					case 'json-schema':
-						delete obj[ 'SMW-property' ];
-						break;
-					case 'smw-property':
-						// *** important! used to recover the type
-						// if a property has been deleted
-						obj[ 'smw-property-type' ] = VisualDataSMW.getSemanticProperty(
-							obj[ 'SMW-property' ],
-							'type'
-						);
-						// delete obj["jsonSchema-type"];
-						// delete obj["jsonSchema-format"];
-						break;
+				// remove unsupported value
+				if ( 'SMW-property' in obj ) {
+					delete obj[ 'SMW-property' ];
 				}
 
 				var alert = null;

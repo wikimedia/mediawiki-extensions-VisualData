@@ -23,10 +23,13 @@
 
 namespace MediaWiki\Extension\VisualData\Scribunto;
 
-use MediaWiki\Extension\Scribunto\Engines\LuaCommon\LibraryBase;
+// MW 1.42
+if ( class_exists( 'MediaWiki\Extension\Scribunto\Engines\LuaCommon\LibraryBase' ) ) {
+	class_alias( 'MediaWiki\Extension\Scribunto\Engines\LuaCommon\LibraryBase', 'Scribunto_LuaLibraryBase' );
+}
 
 // @credits https://github.com/Open-CSP/WSSlots/tree/master/src/Scribunto
-class LuaLibrary extends LibraryBase {
+class LuaLibrary extends \Scribunto_LuaLibraryBase {
 
 	/**
 	 * @inheritDoc
