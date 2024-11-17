@@ -255,3 +255,7 @@ body > .oo-ui-windowManager,
 .VisualDataGroupWidgetPanel-border .oo-ui-dropdownWidget-handle {
 	box-sizing: border-box;
 }
+
+.PanelPropertiesStackPanelTabs .oo-ui-tabOptionWidget {
+	display: inline-block;
+}
