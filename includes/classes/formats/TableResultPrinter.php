@@ -232,6 +232,7 @@ class TableResultPrinter extends ResultPrinter {
 			return $this->processRoot( $ret );
 		}
 
+		$this->json = $this->formatJson();
 		return $this->returnRawResult( $this->json );
 	}
 
