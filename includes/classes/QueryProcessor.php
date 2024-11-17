@@ -245,6 +245,17 @@ class QueryProcessor {
 					$this->AndConditions[] = $orConditions;
 				}
 			}, $this->query );
+
+		// check if is a title as in VisualData -> parserFunctionPrint
+		// @FIXME check only if the origin function is parserFunctionQuery
+		if ( empty( $this->AndConditions ) ) {
+			$title_ = Title::newFromText( $this->query );
+			// allow also unknown titles, in case is used within a parser function
+			// && $title_->isKnown()
+			if ( $title_ ) {
+				$this->conditionId = $title_->getArticleID();
+			}
+		}
 	}
 
 	/**
@@ -519,8 +530,8 @@ class QueryProcessor {
 	}
 
 	private function prepareQuery() {
-		if ( !$this->conditionId && empty( $this->AndConditions ) ) {
-			$this->errors[] = 'no query';
+		if ( empty( $this->AndConditions ) && !$this->conditionId ) {
+			$this->errors[] = ( $this->conditionId === null ? 'no query' : 'unknown title' );
 			return;
 		}
 

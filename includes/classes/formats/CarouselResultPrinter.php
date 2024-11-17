@@ -338,10 +338,10 @@ class CarouselResultPrinter extends ResultPrinter {
 	public function getResults() {
 		$results = $this->queryProcessor->getResultsTree();
 		if ( count( $this->queryProcessorErrors() ) ) {
-			return [ 'errors' => $this->queryProcessorErrors() ];
+			return implode( ', ', $this->queryProcessorErrors() );
 		}
 		if ( $this->params['debug'] ) {
-			return [ 'sql' => $results ];
+			return $results;
 		}
 		return $this->processResults( $results, $this->schema );
 	}
