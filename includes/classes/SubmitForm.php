@@ -217,15 +217,22 @@ class SubmitForm {
 
 	/**
 	 * @param Title $title
-	 * @return string
+	 * @param array &$errors
+	 * @return bool
 	 */
-	private function createEmptyRevision( $title ) {
+	private function createEmptyRevision( $title, &$errors = [] ) {
+		if ( !\VisualData::checkWritePermissions( $this->user, $title, $errors ) ) {
+			$errors[] = $this->context->msg( 'visualdata-special-submit-permission-error' )->text();
+			return false;
+		}
 		$wikiPage = \VisualData::getWikiPage( $title );
 		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
 		$main_content = ContentHandler::makeContent( '', $title );
 		$pageUpdater->setContent( SlotRecord::MAIN, $main_content );
 		$comment = CommentStoreComment::newUnsavedComment( '' );
-		return $pageUpdater->saveRevision( $comment, EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY );
+		$revisionRecord = $pageUpdater->saveRevision( $comment, EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY );
+		$status = $pageUpdater->getStatus();
+		return $status->isOK();
 	}
 
 	/**
@@ -366,7 +373,8 @@ class SubmitForm {
 		if ( array_key_exists( 'categories', $data['form'] ) ) {
 			$jsonData['categories'] = $data['form']['categories'];
 		} elseif ( empty( $data['options']['edit-categories'] )
-			&& array_key_exists( 'default-categories', $data['options'] ) ) {
+			&& array_key_exists( 'default-categories', $data['options'] )
+		) {
 			$jsonData['categories'] = $data['options']['default-categories'];
 		}
 
@@ -409,7 +417,8 @@ class SubmitForm {
 		if (
 			// !empty( $data['options']['action'] )
 			// && $data['options']['action'] === 'create'
-			!empty( $data['form']['target-title'] ) ) {
+			!empty( $data['form']['target-title'] )
+		) {
 			$userDefinedTitle = Title::newFromText( $data['form']['target-title'] );
 		}
 
@@ -509,7 +518,7 @@ class SubmitForm {
 				// @TODO save freetext at this stage if
 				// provided
 				if ( !count( $errors ) ) {
-					$this->createEmptyRevision( $targetTitle );
+					$this->createEmptyRevision( $targetTitle, $errors );
 				}
 			} elseif ( empty( $editTitle ) && empty( $data['options']['overwrite-existing-article-on-create'] ) ) {
 				$errors[] = $this->context->msg( 'visualdata-special-submit-article-exists' )->text();
@@ -552,7 +561,8 @@ class SubmitForm {
 					// *** double-check here, we should distinguish
 					// between replacing a file and renaming
 					&& empty( $data['flatten'][$path_]['filekey'] )
-					&& $arr1[$key] != $value ) {
+					&& $arr1[$key] != $value
+				) {
 					// move file
 					$res = $this->movePageApi( $arr1[$key], $value, $errors );
 				}
@@ -590,7 +600,8 @@ class SubmitForm {
 
 		if ( $data['options']['action'] === 'create'
 			&& !array_key_exists( 'freetext', $data['form'] )
-			&& !empty( $data['options']['preload'] ) ) {
+			&& !empty( $data['options']['preload'] )
+		) {
 			$title_ = \VisualData::getTitleIfKnown( $data['options']['preload'] );
 			if ( $title_ ) {
 				$freetext = \VisualData::getWikipageContent( $title_ );

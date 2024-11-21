@@ -1527,9 +1527,8 @@ class VisualData {
 		$slotsData,
 		&$errors = []
 	) {
-		$canWrite = self::checkWritePermissions( $user, $title, $errors );
-
-		if ( !$canWrite ) {
+		if ( !self::checkWritePermissions( $user, $title, $errors ) ) {
+			$errors[] = wfMessage( 'visualdata-special-submit-permission-error' )->text();
 			return false;
 		}
 
@@ -1684,7 +1683,7 @@ class VisualData {
 		$summary = 'VisualData update';
 		$flags = EDIT_INTERNAL;
 		$comment = CommentStoreComment::newUnsavedComment( $summary );
-		$RevisionRecord = $pageUpdater->saveRevision( $comment, $flags );
+		$revisionRecord = $pageUpdater->saveRevision( $comment, $flags );
 
 		// Perform an additional null-edit if requested
 		if ( $doNullEdit && !$pageUpdater->isUnchanged() ) {
@@ -1694,7 +1693,7 @@ class VisualData {
 		}
 
 		// or !$pageUpdater->isUnchanged()
-		return $RevisionRecord !== null;
+		return $revisionRecord !== null;
 	}
 
 	/**

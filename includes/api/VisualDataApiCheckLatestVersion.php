@@ -42,6 +42,11 @@ class VisualDataApiCheckLatestVersion extends ApiBase {
 	 * @inheritDoc
 	 */
 	public function execute() {
+		// @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageProperties/+/951f570515113c6205b13e5b77a80ee2ac21d89a%5E%21/
+		if ( !empty( $GLOBALS['wgVisualDataDisableVersionCheck'] ) ) {
+			$this->dieWithError( 'apierror-visualdata-permissions-error' );
+		}
+
 		$user = $this->getUser();
 		\VisualData::initialize();
 
@@ -51,7 +56,8 @@ class VisualDataApiCheckLatestVersion extends ApiBase {
 		// execute if any of the condition below is true
 		if ( !$user->isAllowed( 'visualdata-canmanageschemas' )
 			// execute if user is in the admin group
-			&& !count( array_intersect( $groups, \VisualData::getUserGroups( $user ) ) ) ) {
+			&& !count( array_intersect( $groups, \VisualData::getUserGroups( $user ) ) )
+		) {
 			$this->dieWithError( 'apierror-visualdata-permissions-error' );
 		}
 

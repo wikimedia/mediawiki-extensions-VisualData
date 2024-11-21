@@ -416,6 +416,7 @@
 	"visualdata-special-submit-contentsnotsaved": "A label message",
 	"visualdata-special-submit-publishfilejoberror": "A label message",
 	"visualdata-special-submit-article-exists": "A label message",
+	"visualdata-special-submit-permission-error": "A label message",
 	"visualdata-jsmodule-forms-validate": "A label message",
 	"visualdata-jsmodule-forms-goback": "A label message",
 	"visualdata-jsmodule-dialog-validate": "A label message",
