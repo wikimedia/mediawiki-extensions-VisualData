@@ -21,8 +21,12 @@
 
 /* eslint-disable no-unused-vars */
 
-const VisualDataDatatables = function () {
-	var cacheLimit = 40000;
+const VisualDataDatatables = function ( Table, TableData, Datatable ) {
+	var CacheLimit = 40000;
+
+	var getCacheLimit = function ( obj ) {
+		return CacheLimit;
+	};
 
 	var getCacheKey = function ( obj ) {
 		// this ensures that the preload key
@@ -48,6 +52,63 @@ const VisualDataDatatables = function () {
 					{},
 			searchBuilder: 'searchBuilder' in obj ? obj.searchBuilder : {}
 		} );
+	};
+
+	// @credits https://stackoverflow.com/questions/32692618/how-to-export-all-rows-from-datatables-using-ajax
+	var exportAction = function ( e1, dt, button, config ) {
+		var self = this;
+		// eslint-disable-next-line no-underscore-dangle
+		var oldStart = dt.settings()[ 0 ]._iDisplayStart;
+		var buttonClass = config.className.split( ' ' ).shift();
+
+		var funcName = null;
+		switch ( buttonClass ) {
+			case 'buttons-copy':
+				funcName = 'copyHtml5';
+				break;
+			case 'buttons-excel':
+				funcName = ( Datatable.buttons.excelHtml5.available( dt, config ) ? 'excelHtml5' : 'excelFlash' );
+				break;
+			case 'buttons-csv':
+				funcName = ( Datatable.buttons.csvHtml5.available( dt, config ) ? 'csvHtml5' : 'csvFlash' );
+				break;
+			case 'buttons-pdf':
+				funcName = ( Datatable.buttons.pdfHtml5.available( dt, config ) ? 'pdfHtml5' : 'pdfFlash' );
+				break;
+			case 'buttons-print':
+				funcName = 'print';
+				break;
+		}
+
+		var cb = function () {
+			button.removeClass( 'processing' );
+		};
+
+		if ( !funcName ) {
+			cb();
+			return;
+		}
+
+		dt.one( 'preXhr', function ( e2, s, data ) {
+			data.start = 0;
+			data.length = TableData.count;
+
+			dt.one( 'preDraw', function ( e3, settings ) {
+				Datatable.buttons[ funcName ].action.call( self, e3, dt, button, config, cb );
+
+				dt.one( 'preXhr', function ( e4, s1, data1 ) {
+					// eslint-disable-next-line no-underscore-dangle
+					settings._iDisplayStart = oldStart;
+					data1.start = oldStart;
+				} );
+
+				setTimeout( dt.ajax.reload, 0 );
+				return false;
+			} );
+
+		} );
+
+		dt.ajax.reload();
 	};
 
 	var callApi = function (
@@ -82,7 +143,7 @@ const VisualDataDatatables = function () {
 
 				// cache all retrieved rows for each sorting
 				// dimension (column/dir), up to a fixed
-				// threshold (cacheLimit)
+				// threshold (CacheLimit)
 
 				if ( data.datatableData.search.value === '' ) {
 					preloadData[ json.cacheKey ] = {
@@ -373,19 +434,18 @@ const VisualDataDatatables = function () {
 	return {
 		getCacheKey,
 		callApi,
-		cacheLimit,
+		getCacheLimit,
 		initSearchPanesColumns,
 		getPanesOptions,
 		setPanesOptions,
 		initColumnSort,
 		searchPanesOptionsServer,
-		renderCards
+		renderCards,
+		exportAction
 	};
 };
 
 $( function () {
-	var visualdataDatatables = new VisualDataDatatables();
-
 	$( '.visualdata.datatable' ).each( function () {
 		var preloadData = {};
 
@@ -405,6 +465,15 @@ $( function () {
 		var printoutsOptions = tableData.printoutsOptions;
 		var searchPanesOptions = tableData.searchPanesOptions;
 		var useAjax = count > data.length;
+
+		var visualdataDatatables = new VisualDataDatatables(
+			table,
+			tableData,
+
+			// *** calling the same from the function exportAction
+			// Datatable.buttons has undefined properties
+			$.fn.dataTable.ext
+		);
 
 		var displayLog = params.displayLog;
 		if ( displayLog ) {
@@ -639,6 +708,19 @@ html-num-fmt
 			// prevents double spinner
 			// $(container).find(".datatables-spinner").hide();
 
+			for ( var i in conf.buttons ) {
+				switch ( conf.buttons[ i ] ) {
+					case 'print':
+					case 'pdf':
+					case 'excel':
+					case 'csv':
+						conf.buttons[ i ] = {
+							extend: conf.buttons[ i ],
+							action: visualdataDatatables.exportAction
+						};
+				}
+			}
+
 			var preloadData = {};
 
 			// cache using the column index and sorting
@@ -708,13 +790,13 @@ html-num-fmt
 					// *** another method is to compute the actual
 					// size in bytes of each row, but it takes more
 					// resources
-					for ( var i in preloadData ) {
-						var totalSize = preloadData[ i ].data.length;
+					for ( var ii in preloadData ) {
+						var totalSize = preloadData[ ii ].data.length;
 
-						if ( totalSize > VisualDataDatatables.cacheLimit ) {
+						if ( totalSize > visualdataDatatables.getCacheLimit() ) {
 							// eslint-disable-next-line no-console
 							console.log( 'flushing datatables cache!' );
-							preloadData[ i ] = {};
+							preloadData[ ii ] = {};
 						}
 					}
 
