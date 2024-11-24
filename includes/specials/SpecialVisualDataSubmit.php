@@ -18,7 +18,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2021-2022, https://wikisphere.org
+ * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
 use MediaWiki\Extension\VisualData\SubmitForm;
@@ -30,9 +30,6 @@ class SpecialVisualDataSubmit extends SpecialPage {
 
 	/** @var title */
 	protected $title;
-
-	/** @var formID */
-	protected $formID;
 
 	/** @inheritDoc */
 	public function __construct() {
@@ -74,28 +71,6 @@ class SpecialVisualDataSubmit extends SpecialPage {
 	}
 
 	/**
-	 * @param array $result
-	 * @return array
-	 */
-	private function setSessionData( $result ) {
-		if ( !array_key_exists( 'visualdataform-submissiondata', $_SESSION ) ) {
-			$_SESSION['visualdataform-submissiondata'][$this->formID] = [];
-		}
-
-		// @TODO use standard Mediawiki's sessions interface
-		$_SESSION['visualdataform-submissiondata'][$this->formID] = [
-			'freetext' => $result['freetext'],
-			'jsonData' => $result['jsonData'],
-			'categories' => $result['categories'],
-			'errors' => $result['errors'],
-			'userDefined' => $result['userDefined'],
-
-			// schemas currently active
-			'schemas' => $result['schemas'],
-		];
-	}
-
-	/**
 	 * @param array $data
 	 * @return void|bool
 	 */
@@ -106,23 +81,50 @@ class SpecialVisualDataSubmit extends SpecialPage {
 			return false;
 		}
 
-		$this->formID = $data['formID'];
-
 		$submitForm = new SubmitForm( $this->user, $this->getContext() );
 
 		$result = $submitForm->processData( $data );
 
 		if ( !count( $result['errors'] ) ) {
-			// unset( $_SESSION['visualdataform-submissiondata-' . $this->formID] );
 			header( 'Location: ' . $result['target-url'] );
 			return true;
 		}
 
 		array_unshift( $result['errors'], $this->msg( "visualdata-special-submit-contentsnotsaved" )->text() );
 
-		$this->setSessionData( $result );
+		$obj = [
+			$data['formID'] => [
+				'freetext' => $result['freetext'],
+				'jsonData' => $result['jsonData'],
+				'categories' => $result['categories'],
+				'errors' => $result['errors'],
+				'userDefined' => $result['userDefined'],
 
-		header( 'Location: ' . $data['options']['origin-url'] );
+				// schemas currently active
+				'schemas' => $result['schemas'],
+			]
+		];
+
+		// submission id
+		$sid = time();
+		\VisualData::setSessionData( $sid, $obj );
+
+		// only for tab Edit data
+		if ( !empty( $data['options']['origin-url'] ) ) {
+			header( 'Location: ' . wfAppendQuery( $data['options']['origin-url'], [ 'sid' => $sid ] ) );
+
+		} else {
+			// *** the following reloads the origin page as script (with a query)
+			// thus ensuring that is associated with the submission data
+			$title_ = Title::newFromText( $data['options']['origin-page'] );
+			$url = $title_->getLinkURL( [ 'sid' => $sid ] );
+			header( 'Location: ' . $url );
+		}
+
+		// *** the following do not seem necessary
+		// $this->getOutput()->redirect( $data['options']['origin-url'] );
+		// $mediaWiki = new MediaWiki();
+		// $mediaWiki->restInPeace();
 	}
 
 }

@@ -587,14 +587,11 @@ class VisualDataHooks {
 		$title = $outputPage->getTitle();
 
 		// @TODO use Ajax validation for page-forms
-		if ( isset( $_SESSION ) && !empty( $_SESSION['visualdataform-submissiondata'] ) ) {
+		$sessionData = \VisualData::getSessionData();
+		if ( $sessionData ) {
 			$outputPage->addJsConfigVars( [
-				'visualdata-submissiondata' => json_encode( $_SESSION['visualdataform-submissiondata'], true ),
+				'visualdata-submissiondata' => json_encode( $sessionData, true ),
 			] );
-
-			if ( empty( $_POST ) ) {
-				unset( $_SESSION['visualdataform-submissiondata'] );
-			}
 		}
 	}
 

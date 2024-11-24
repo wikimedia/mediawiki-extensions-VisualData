@@ -116,6 +116,10 @@ class SpecialEditData extends SpecialPage {
 
 		$options = [
 			'action' => ( $this->title ? 'edit' : 'create' ),
+
+			// required when the address is like title=Special:EditData/Main_Page
+			'edit-page' => ( $this->title ? $this->title->getFullText() : '' ),
+
 			'target-slot' => $targetSlot,
 			'edit-freetext' => ( !$this->title || !$this->title->isKnown() ),
 			'edit-content-model' => true,
@@ -133,9 +137,14 @@ class SpecialEditData extends SpecialPage {
 		// "hardcode" more parameters
 		$params['return-url'] = ( $this->title ? $this->title->getLocalURL() : '' );
 
-		// PHPUnit only
-		if ( isset( $_SERVER['HTTP_HOST'] ) ) {
-			$params['origin-url'] = 'http' . ( isset( $_SERVER['HTTPS'] ) && $_SERVER['HTTPS'] === 'on' ? 's' : '' ) . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+		[ $text_ ] = explode( '/', $out->getTitle()->getFullText(), 2 );
+
+		if ( $text_ !== 'Special:EditData' ) {
+			$params['origin-url'] = $this->title->getLinkURL( [ 'action' => 'editdata' ] );
+
+		} else {
+			$special = SpecialPage::getTitleFor( 'EditData', $this->title );
+			$params['origin-url'] = $special->getLinkURL();
 		}
 
 		// if ( !$this->title && ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) ) {

@@ -660,8 +660,6 @@ class VisualData {
 		$title_ = Title::newFromText( $values[0] );
 		$url = $title_->getLinkURL( $query );
 
-		$url = wfAppendQuery( $url, $query );
-
 		return [
 			$url,
 			'noparse' => true,
@@ -1997,9 +1995,7 @@ class VisualData {
 			$formData['errors'] = [];
 
 			// show errors (SubmitForm)
-			if ( !array_key_exists( 'origin-url', $value['options'] ) ) {
-				$pageForms[$formID]['options']['origin-url'] = $title->getLocalURL();
-			}
+			$pageForms[$formID]['options']['origin-page'] = $title->getFullText();
 
 			// otherwise return-url is the target title
 			// @see SubmitForm
@@ -2068,11 +2064,13 @@ class VisualData {
 			$obj['pageForms'] = $obj['pageForms'] + self::$pageForms;
 			$obj['pageForms'] = self::processPageForms( $title, $obj['pageForms'], $obj['config'] );
 		}
-		if ( isset( $_SESSION ) && !empty( $_SESSION['visualdataform-submissiondata'] ) ) {
-			foreach ( $_SESSION['visualdataform-submissiondata'] as $formData ) {
-				self::setSchemas( $schemaProcessor, $formData['schemas'] );
-			}
-		}
+
+		// @TODO double-check in what cases this was necessary ?
+		// if ( isset( $_SESSION ) && !empty( $_SESSION['visualdataform-submissiondata'] ) ) {
+		// 	foreach ( $_SESSION['visualdataform-submissiondata'] as $formData ) {
+		// 		self::setSchemas( $schemaProcessor, $formData['schemas'] );
+		// 	}
+		// }
 
 		// load all schemas also if context is !== than 'EditData'
 		// to display them in ask query schemas and other inputs
@@ -2366,6 +2364,12 @@ class VisualData {
 		}
 
 		$wikiPage = self::getWikiPage( $title );
+
+		// a special page
+		if ( !$wikiPage ) {
+			return [];
+		}
+
 		$arr = $wikiPage->getCategories();
 		$ret = [];
 		foreach ( $arr as $title_ ) {
@@ -2456,6 +2460,26 @@ class VisualData {
 
 		include_once __DIR__ . '/importer/VisualDataImporter1_35.php';
 		return new VisualDataImporter1_35( $services->getMainConfig() );
+	}
+
+	/**
+	 * @return array|null
+	 */
+	public static function getSessionData() {
+		$webRequest = RequestContext::getMain()->getRequest();
+		$sid = $webRequest->getVal( 'sid' );
+		$key = "visualdataform-submissiondata-$sid";
+		return $webRequest->getSessionData( $key );
+	}
+
+	/**
+	 * @param string $sid
+	 * @param array $obj
+	 */
+	public static function setSessionData( $sid, $obj ) {
+		$webRequest = RequestContext::getMain()->getRequest();
+		$key = "visualdataform-submissiondata-$sid";
+		$webRequest->setSessionData( $key, $obj );
 	}
 
 	/**
