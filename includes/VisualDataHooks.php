@@ -445,6 +445,14 @@ class VisualDataHooks {
 		$user = $out->getUser();
 
 		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
+
+			// required by VisualData::setSessionData for unregistered users
+			$webRequest = $out->getContext()->getRequest();
+			$session = $webRequest->getSession();
+			if ( !$session->isPersistent() ) {
+				$session->persist();
+			}
+
 			$pageForms = $parserOutput->getExtensionData( 'visualdataforms' );
 
 			\VisualData::addJsConfigVars( $out, [
