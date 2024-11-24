@@ -71,7 +71,10 @@ class SpecialManageSchemas extends SpecialPage {
 
 		$out->setPageTitle( $this->msg( 'manageschemas' )->text() );
 
-		$out->addModules( 'ext.VisualData.ManageSchemas' );
+		$out->addModules( [
+			'ext.VisualData.DatatablesLite',
+			'ext.VisualData.ManageSchemas'
+		] );
 
 		$out->addModuleStyles( [ 'mediawiki.special.preferences.styles.ooui' ] );
 

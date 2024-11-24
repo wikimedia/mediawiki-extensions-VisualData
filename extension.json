@@ -309,10 +309,18 @@
 				"visualdata-jsmodule-forms-submit-no-schemas"
 			]
 		},
+		"ext.VisualData.DatatablesLite": {
+			"position": "top",
+			"scripts": [
+				"datatables-lite/datatables.min.js"
+			],
+			"styles": [
+				"datatables-lite/datatables.min.css"
+			]
+		},
 		"ext.VisualData.ManageSchemas": {
 			"position": "top",
 			"scripts": [
-				"datatables-lite/datatables.min.js",
 				"VisualDataInputConfig.js",
 				"VisualDataContentBlock.js",
 				"VisualDataGeolocation.js",
@@ -320,7 +328,6 @@
 				"VisualDataSchemas.js"
 			],
 			"styles": [
-				"datatables-lite/datatables.min.css"
 			],
 			"dependencies": [
 				"mediawiki.widgets",

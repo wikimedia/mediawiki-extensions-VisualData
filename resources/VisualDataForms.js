@@ -3515,7 +3515,15 @@ $( function () {
 		VisualData.setVars( config, schemas, init() );
 
 	} else {
-		mw.loader.using( 'ext.VisualData.ManageSchemas', function () {
+		var modules = [ 'ext.VisualData.ManageSchemas' ];
+
+		// *** this prevents errors if 'ext.VisualData.Datatables'
+		// was already loaded through DatatableResultPrinter
+		// @TODO the best solution is to use scoped versions
+		if ( !$.fn.DataTable ) {
+			modules.unshift( 'ext.VisualData.DatatablesLite' );
+		}
+		mw.loader.using( modules, function () {
 			var instances = init();
 			VisualData.setVars( config, schemas, instances );
 			VisualDataSchemas.setVars(
