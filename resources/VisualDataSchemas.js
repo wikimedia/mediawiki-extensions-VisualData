@@ -1326,7 +1326,19 @@ VisualDataSchemas = ( function () {
 
 		model.layout = layoutInput;
 
-		fieldset.addItems( [
+		var visibilityInputValue = getPropertyValue( 'visibility' ) || 'visible';
+
+		var visibilityInput = new OO.ui.DropdownInputWidget( {
+			options: VisualDataFunctions.createDropDownOptions( {
+				visible: mw.msg( 'visualdata-jsmodule-formfield-visibility-visible' ),
+				condition: mw.msg( 'visualdata-jsmodule-formfield-visibility-condition' )
+			} ),
+			value: visibilityInputValue
+		} );
+
+		model.visibility = visibilityInput;
+
+		var items = [
 			new OO.ui.FieldLayout( nameInput, {
 				label: mw.msg( 'visualdata-jsmodule-schemas-name' ),
 				align: 'top'
@@ -1359,8 +1371,112 @@ VisualDataSchemas = ( function () {
 				align: 'top',
 				help: mw.msg( 'visualdata-jsmodule-schemas-layout-help' ),
 				helpInline: true
+			} ),
+
+			new OO.ui.FieldLayout( visibilityInput, {
+				label: mw.msg( 'visualdata-jsmodule-formfield-visibility-label' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-visibility-help' ),
+				helpInline: true,
+				align: 'top'
 			} )
-		] );
+		];
+
+		// ------------------ show-if -----------------
+
+		var ParentObj = SelectedItems[ SelectedItems.length - 2 ].properties;
+
+		var otherFields = Object.keys( ParentObj ).filter( ( x ) => {
+			return ( ParentObj[ x ].wiki.type === 'property' &&
+				ParentObj[ x ].wiki[ 'multiple-items' ] === false );
+		} );
+
+		var showifFieldInput = new OO.ui.DropdownInputWidget( {
+			options: VisualDataFunctions.createDropDownOptions( otherFields, { key: 'value' } ),
+			value: getPropertyValue( 'showif-field' )
+		} );
+
+		var showifConditionInput = new OO.ui.DropdownInputWidget( {
+			// @https://github.com/Knowledge-Wiki/SemanticResultFormats/blob/561e5304e17fccc894d7b38ab88a03b75606d6c8/formats/datatables/Api.php
+			options: VisualDataFunctions.createDropDownOptions( {
+				'=': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-=' ),
+				'!=': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!=' ),
+				starts: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-starts' ),
+				'!starts': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!starts' ),
+				contains: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-contains' ),
+				'!contains': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!contains' ),
+				ends: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-ends' ),
+				'!ends': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!ends' ),
+				'!null': mw.msg( 'visualdata-jsmodule-formfield-showif-condition-!null' ),
+				regex: mw.msg( 'visualdata-jsmodule-formfield-showif-condition-regex' )
+			} ),
+			value: getPropertyValue( 'showif-condition' )
+		} );
+
+		var showifValueInput = new OO.ui.TextInputWidget( {
+			value: getPropertyValue( 'showif-value' )
+		} );
+
+		showifConditionInput.on( 'change', function ( value ) {
+			showifValueInput.toggle( value !== '!null' );
+			updateModelShowif( getPropertyValue( 'visibility' ) === 'condition' );
+		} );
+
+		showifValueInput.toggle( getPropertyValue( 'showif-condition' ) !== '!null' );
+
+		var layoutHorizontal = new OO.ui.HorizontalLayout( { items: [
+			showifFieldInput,
+			showifConditionInput,
+			showifValueInput
+		] } );
+
+		var showifField = new OO.ui.FieldLayout(
+			new OO.ui.Widget( {
+				content: [ layoutHorizontal ]
+			} ),
+			{
+				label: mw.msg( 'visualdata-jsmodule-formfield-showif' ),
+				help: mw.msg( 'visualdata-jsmodule-formfield-showif-help' ),
+				helpInline: true,
+				align: 'top'
+			}
+		);
+
+		items.push( showifField );
+
+		var modelMap = {
+			'showif-field': showifFieldInput,
+			'showif-condition': showifConditionInput,
+			'showif-value': showifValueInput
+		};
+
+		function updateModelShowif( thisVisibleItems ) {
+			for ( var i in modelMap ) {
+				if ( thisVisibleItems ) {
+					model[ i ] = modelMap[ i ];
+				} else {
+					delete model[ i ];
+				}
+			}
+			if ( getPropertyValue( 'showif-condition' ) === '!null' ) {
+				delete model[ 'showif-value' ];
+			}
+		}
+
+		updateModelShowif( visibilityInputValue === 'condition' );
+		showifField.toggle( visibilityInputValue === 'condition' );
+
+		function onVisibilityInputChange( value ) {
+			showifField.toggle( value === 'condition' );
+			updateModelShowif( value === 'condition' );
+		}
+
+		visibilityInput.on( 'change', function ( value ) {
+			onVisibilityInputChange( value );
+		} );
+
+		// ------------------ show-if >>>>>>>>>>>>>>>>>
+
+		fieldset.addItems( items );
 
 		this.content = new OO.ui.PanelLayout( {
 			$content: fieldset.$element,

@@ -554,7 +554,7 @@ class QueryProcessor {
 		);
 
 		if ( !$res->numRows() ) {
-			$this->errors[] = 'no matched schema';
+			$this->errors[] = 'schema has no data';
 			return;
 		}
 
@@ -707,7 +707,8 @@ class QueryProcessor {
 		foreach ( $combined as $i => $v ) {
 			for ( $ii = 0; $ii < $i; $ii++ ) {
 				if ( !empty( $combined[$ii]['printoutParent'] )
-					&& strpos( $v['printoutParent'], $combined[$ii]['printoutParent'] ) === 0 ) {
+					&& strpos( $v['printoutParent'], $combined[$ii]['printoutParent'] ) === 0
+				) {
 					$combined[$i]['parent'] = $ii;
 					$combined[$i]['isSibling'] = $v['depth'] === $combined[$ii]['depth'];
 				}
@@ -903,10 +904,10 @@ class QueryProcessor {
 
 				$fields = [];
 				foreach ( $row as $k => $v ) {
-					if ( empty( $v ) ) {
-						continue;
-					}
-
+					// $v can be 0 (numeric value)
+					// if ( empty( $v ) ) {
+					// 	continue;
+					// }
 					$index = substr( $k, 1 );
 					$row_[$this->mapKeyToPrintout[$index]] = $v;
 				}

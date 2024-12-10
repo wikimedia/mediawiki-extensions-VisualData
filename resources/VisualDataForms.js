@@ -351,40 +351,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function updateFieldsVisibility( sourceModel ) {
-		// *** a more complicated solution is to loop through
-		// siblings using model.parent or model.parentSchema
-		var pathParent = sourceModel.path.split( '/' ).slice( 0, -1 ).join( '/' );
-		var pathNoIndex = sourceModel.pathNoIndex.split( '/' ).slice( -1 )[ 0 ];
+		var field = sourceModel.schema.wiki;
+		var value = VisualDataFunctions.castType( sourceModel.input.getValue(), sourceModel.schema.type );
 
 		function escapeRegExp( string ) {
 			return string.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
 		}
 
-		for ( var i in ModelFlatten ) {
-			var model = ModelFlatten[ i ];
-
-			if ( sourceModel.schemaName !== model.schemaName ) {
-				continue;
-			}
-
-			if ( pathParent !== model.path.split( '/' ).slice( 0, -1 ).join( '/' ) ) {
-				continue;
-			}
-
-			var field = model.schema.wiki;
-			if ( !( 'showif-field' in field ) ) {
-				continue;
-			}
-
-			if ( field[ 'showif-field' ] !== pathNoIndex ) {
-				continue;
-			}
-
-			var value = VisualDataFunctions.castType( sourceModel.input.getValue(), sourceModel.schema.type );
-			var refValue = VisualDataFunctions.castType( field[ 'showif-value' ], sourceModel.schema.type );
+		function toggleVisibility( thisModel, thisField ) {
+			var refValue = VisualDataFunctions.castType( thisField[ 'showif-value' ], sourceModel.schema.type );
 
 			var res;
-			switch ( field[ 'showif-condition' ] ) {
+			switch ( thisField[ 'showif-condition' ] ) {
 				case '=':
 					res = ( refValue === value );
 					break;
@@ -419,14 +397,65 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					res = regExp.test( value );
 					break;
 			}
-			model.removed = !res;
 
+			thisModel.removed = !res;
 			// Fields[ model.path ].toggle( res );
 			var el = window.document.querySelector( '#' +
-				jQuery.escapeSelector( makeElementId( model.path ) ) );
+				jQuery.escapeSelector( makeElementId( thisModel.path ) ) );
 
 			$( el ).toggle( res );
 		}
+
+		for ( var i in sourceModel.parent ) {
+			var model_ = sourceModel.parent[ i ];
+
+			if ( sourceModel.schemaName !== model_.schemaName ) {
+				continue;
+			}
+
+			var field_ = model_.schema.wiki;
+			if ( model_.schema.type === 'array' ) {
+				field_ = model_.schema.items.wiki;
+			}
+
+			if ( !( 'showif-field' in field_ ) ) {
+				continue;
+			}
+
+			// consider only same level
+			if ( field_[ 'showif-field' ] !== field.name ) {
+				continue;
+			}
+
+			toggleVisibility( model_, field_ );
+		}
+
+		// old solution
+		// var pathParent = sourceModel.path.split( '/' ).slice( 0, -1 ).join( '/' );
+		// var pathNoIndex = sourceModel.pathNoIndex.split( '/' ).slice( -1 )[ 0 ];
+
+		// for ( var i in ModelFlatten ) {
+		// 	var model_ = ModelFlatten[ i ];
+
+		// 	if ( sourceModel.schemaName !== model_.schemaName ) {
+		// 		continue;
+		// 	}
+
+		// 	if ( pathParent !== model_.path.split( '/' ).slice( 0, -1 ).join( '/' ) ) {
+		// 		continue;
+		// 	}
+
+		// 	var field_ = model_.schema.wiki;
+		// 	if ( !( 'showif-field' in field_ ) ) {
+		// 		continue;
+		// 	}
+
+		// 	if ( field_[ 'showif-field' ] !== pathNoIndex ) {
+		// 		continue;
+		// 	}
+
+		// 	toggleVisibility( model_ );
+		// }
 	}
 
 	function clearDependentFields( pathNoIndex ) {

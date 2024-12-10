@@ -687,6 +687,16 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		updateModelShowif( visibilityInputValue === 'condition' );
 		showifField.toggle( visibilityInputValue === 'condition' );
 
+		function onVisibilityInputChange( value ) {
+			onToggleHiddenInput( value === 'hidden' );
+			showifField.toggle( value === 'condition' );
+			updateModelShowif( value === 'condition' );
+		}
+
+		visibilityInput.on( 'change', function ( value ) {
+			onVisibilityInputChange( value );
+		} );
+
 		// ------------------ show-if >>>>>>>>>>>>>>>>>
 
 		var labelValue = getPropertyValue( 'label' );
@@ -1058,16 +1068,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				align: 'top'
 			} )
 		);
-
-		function onVisibilityInputChange( value ) {
-			onToggleHiddenInput( value === 'hidden' );
-			showifField.toggle( value === 'condition' );
-			updateModelShowif( value === 'condition' );
-		}
-
-		visibilityInput.on( 'change', function ( value ) {
-			onVisibilityInputChange( value );
-		} );
 
 		function onToggleHiddenInput( hidden ) {
 			if ( hidden ) {

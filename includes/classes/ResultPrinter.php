@@ -463,17 +463,17 @@ class ResultPrinter {
 				$this->valuesSeparator : '', $properties );
 		}
 
-		$properties = array_merge( $properties, $recPaths );
 		$ret = '';
 		if ( $this->hasTemplate( $path ) ) {
+			$properties_ = array_merge( $properties, $recPaths );
 			$ret = $this->processTemplate( $this->templates[$path],
-				$this->getTemplateParams( $title, $path, $properties ) );
+				$this->getTemplateParams( $title, $path, $properties_ ) );
 
 		} else {
 			// *** the cleaning here has no effect
 			// for TableResultPrinter since the columns
 			// are added to the table from the children
-			$properties = array_intersect_key( $properties, array_filter( $this->printouts ) );
+			// $properties = array_intersect_key( $properties, array_filter( $this->printouts ) );
 			$ret = implode( $this->separator ?? '', $properties );
 		}
 

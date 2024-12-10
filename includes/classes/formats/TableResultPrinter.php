@@ -103,7 +103,8 @@ class TableResultPrinter extends ResultPrinter {
 
 		// label from schema title
 		} elseif ( array_key_exists( 'title', $schema )
-			&& !empty( $schema['title'] ) ) {
+			&& !empty( $schema['title'] )
+		) {
 			$key = $schema['title'];
 		}
 

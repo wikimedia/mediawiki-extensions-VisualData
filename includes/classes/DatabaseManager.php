@@ -1012,7 +1012,9 @@ class DatabaseManager {
 	 */
 	public function createSchemaIdAndPrintouts( $schema ) {
 		$rows = [];
-		$path = $this->escapeJsonPointerPart( $schema['wiki']['name'] );
+		// @FIXME use only if used in all similar cases
+		// $this->escapeJsonPointerPart( )
+		$path = $schema['wiki']['name'];
 		$schemaId = $this->recordSchema( $path );
 		$thisClass = $this;
 
