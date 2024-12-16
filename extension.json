@@ -86,7 +86,8 @@
 		"SkinTemplateNavigation::Universal": "VisualDataHooks::onSkinTemplateNavigation",
 		"ParserPreSaveTransformComplete": "VisualDataHooks::onParserPreSaveTransformComplete",
 		"ScribuntoExternalLibraries": "VisualDataHooks::onScribuntoExternalLibraries",
-		"RandomPageQuery": "VisualDataHooks::onRandomPageQuery"
+		"RandomPageQuery": "VisualDataHooks::onRandomPageQuery",
+		"AfterImportPage": "VisualDataHooks::onAfterImportPage"
 	},
 	"SpecialPages": {
 		"VisualDataSubmit": "SpecialVisualDataSubmit",

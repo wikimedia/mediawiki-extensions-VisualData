@@ -1262,6 +1262,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		Model = {};
 
 		// *** place here properties to copy
+		// @FIXME with arrays this is mistakenly copying to
+		// the child, not the parent schema
 		if ( fieldName in parentObj && 'uuid' in parentObj[ fieldName ].wiki ) {
 			Model.uuid = new VisualDataFunctions.MockupOOUIClass(
 				parentObj[ fieldName ].wiki.uuid );

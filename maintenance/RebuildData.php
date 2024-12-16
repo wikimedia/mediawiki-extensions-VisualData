@@ -55,6 +55,9 @@ class RebuildData extends Maintenance {
 	/** @var array */
 	private $onlySchemas;
 
+	/** @var DatabaseManager */
+	private $databaseManager;
+
 	public function __construct() {
 		parent::__construct();
 		$this->addDescription( 'rebuild data' );
@@ -96,6 +99,8 @@ class RebuildData extends Maintenance {
 			// @TODO ...
 		}
 
+		$this->databaseManager = new DatabaseManager();
+
 		$this->rebuildData();
 
 		// *** unfortunately we cannot rely on tracking categories
@@ -110,8 +115,6 @@ class RebuildData extends Maintenance {
 		$category = null;
 		$prefix = null;
 		$use_regex = true;
-
-		$databaseManager = new DatabaseManager();
 
 		// *** this could lead to "false-positive"
 		// for instance when the parser function is in
@@ -161,7 +164,7 @@ class RebuildData extends Maintenance {
 				continue;
 			}
 
-			\VisualData::handleLinks( $this->user, $parserOutput, $title_, $databaseManager );
+			\VisualData::handleLinks( $this->user, $parserOutput, $title_, $this->databaseManager );
 		}
 	}
 
@@ -169,30 +172,63 @@ class RebuildData extends Maintenance {
 		$maxByPageId = $this->getMaxPageId();
 		$context = RequestContext::getMain();
 
-		for ( $i = 0; $i <= $maxByPageId; $i++ ) {
-			$title = Title::newFromID( $i );
+		// first select VisualData's schemas which
+		// require to store initial data
+		$conds = [
+			'page_is_redirect' => 0,
+			'page_namespace' => NS_VISUALDATASCHEMA
+		];
+		$options = [
+			'USE INDEX' => ( version_compare( MW_VERSION, '1.36', '<' ) ? 'name_title' : 'page_name_title' )
+		];
 
-			if ( !$title || !$title->isKnown() ) {
+		$dbr = \VisualData::getDB( DB_PRIMARY );
+		$res = $dbr->select(
+			'page',
+			[ 'page_namespace', 'page_title', 'page_id' ],
+			$conds,
+			__METHOD__,
+			$options
+		);
+
+		$IDs = [];
+		foreach ( $res as $row ) {
+			$title_ = Title::newFromRow( $row );
+			$IDs[] = $title_->getArticleID();
+		}
+
+		$range = range( 1, $maxByPageId );
+
+		usort( $range, static function ( $a, $b ) use ( $IDs ) {
+			if ( in_array( $a, $IDs ) && !in_array( $b, $IDs ) ) {
+				return -1;
+			}
+			return 0;
+		} );
+
+		foreach ( $range as $i ) {
+			$title_ = Title::newFromID( $i );
+
+			if ( !$title_ || !$title_->isKnown() ) {
 				continue;
 			}
 
 			echo "processing $i/$maxByPageId" . PHP_EOL;
 
 			foreach ( $this->excludePrefix as $prefix ) {
-				if ( strpos( $title->getFullText(), $prefix ) === 0 ) {
+				if ( strpos( $title_->getFullText(), $prefix ) === 0 ) {
 					continue 2;
 				}
 			}
 
-			$wikiPage = \VisualData::getWikiPage( $title );
+			$wikiPage = \VisualData::getWikiPage( $title_ );
 
 			if ( !$wikiPage ) {
 				continue;
 			}
 
-			$context->setTitle( $title );
+			$context->setTitle( $title_ );
 			$revisionRecord = $wikiPage->getRevisionRecord();
-
 			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );
 
 			$slotData = $this->getSlotData( $revisionRecord );
@@ -213,6 +249,13 @@ class RebuildData extends Maintenance {
 				continue;
 			}
 
+			if ( $title_->getNamespace() === NS_VISUALDATASCHEMA ) {
+				// *** use VisualDataHooks::onAfterImportPage instead
+				// $this->databaseManager->createSchemaIdAndPrintouts( $data );
+				echo 'rebuilding schema data for ' . $title_->getFullText() . PHP_EOL;
+				continue;
+			}
+
 			if ( count( $this->excludeSchemas ) || count( $this->onlySchemas ) ) {
 				if ( empty( $data['schemas'] ) ) {
 					continue;
@@ -228,10 +271,10 @@ class RebuildData extends Maintenance {
 				}
 			}
 
-			echo 'rebuilding data for ' . $title->getFullText() . PHP_EOL;
+			echo 'rebuilding data for ' . $title_->getFullText() . PHP_EOL;
 
 			$errors = [];
-			\VisualData::rebuildArticleData( $this->user, $title, $data, $errors );
+			\VisualData::rebuildArticleData( $this->user, $title_, $data, $errors );
 		}
 	}
 

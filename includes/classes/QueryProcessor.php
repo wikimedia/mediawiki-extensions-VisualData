@@ -596,7 +596,7 @@ class QueryProcessor {
 		// printouts of subitems, e.g. authors/first_name, authors/last_name
 		// from |?authors, taking into account escaping of json pointers
 		foreach ( $this->printouts as $key => $value ) {
-			// $value = $this->databaseManager->escapeJsonPointerPart( $value );
+			// $value = $this->databaseManager::escapeJsonPointerPart( $value );
 			$parseEscapedPrintout( 'printouts', $key, $value );
 		}
 
@@ -801,8 +801,39 @@ class QueryProcessor {
 				if ( !$this->treeFormat ) {
 					$fields["v$key"] = "t$key.value";
 				} else {
-					$fields["v$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
 					$fields["p$key"] = "GROUP_CONCAT(t$key.path SEPARATOR 0x1E)";
+					// @see https://www.w3schools.com/sql/func_mysql_cast.asp
+					$cast_ = null;
+					switch ( $tablename ) {
+						case 'text':
+						case 'textarea':
+							break;
+						case 'date':
+							$cast_ = 'DATE';
+							break;
+						case 'datetime':
+							$cast_ = 'DATETIME';
+							break;
+						case 'time':
+							$cast_ = 'TIME';
+							break;
+						case 'integer':
+							$cast_ = '+ 0';
+							break;
+						case 'numeric':
+							$cast_ = '+ 0.0';
+							break;
+						case 'boolean':
+							$cast_ = 'UNSIGNED';
+							break;
+					}
+					if ( !$cast_ ) {
+						$fields["v$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
+					} elseif ( $tablename === 'integer' || $tablename === 'numeric' ) {
+						$fields["v$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E) $cast_";
+					} else {
+						$fields["v$key"] = "CAST(GROUP_CONCAT(t$key.value SEPARATOR 0x1E) as $cast_)";
+					}
 				}
 			}
 		}
@@ -823,7 +854,7 @@ class QueryProcessor {
 		}
 
 		if ( $this->treeFormat && !$this->count ) {
-			$options['GROUP BY'] = 'page_id';
+			$options['GROUP BY'] = 't0.page_id';
 		}
 
 		// used by datatables searchPanes
@@ -843,11 +874,18 @@ class QueryProcessor {
 			}
 		}
 
+		if ( $this->count ) {
+			$fields = [
+				'count' => ( !$this->treeFormat ?
+					'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
+			];
+		}
+
 		$res = $this->dbr->$method(
 			// tables
 			$tables,
 			// fields
-			!$this->count ? $fields : 'COUNT(*) as count',
+			$fields,
 			// where
 			$conds,
 			__METHOD__,
@@ -902,7 +940,6 @@ class QueryProcessor {
 				// number of fields
 				$row_ = array_fill_keys( $this->printoutsOriginal, '' );
 
-				$fields = [];
 				foreach ( $row as $k => $v ) {
 					// $v can be 0 (numeric value)
 					// if ( empty( $v ) ) {
@@ -917,7 +954,8 @@ class QueryProcessor {
 						continue;
 					}
 					$paths = explode( $separator, $row["p$key"] );
-					$values = explode( $separator, (string)$row["v$key"] );
+					$values = array_slice( explode( $separator, (string)$row["v$key"] ), 0, count( $paths ) );
+					$paths = array_slice( $paths, 0, count( $values ) );
 					foreach ( $paths as $key => $path ) {
 						$row_[$path] = $values[$key];
 					}
@@ -930,6 +968,7 @@ class QueryProcessor {
 			];
 		}
 
+		// *** only if required using a parameter
 		// if ( $this->conditionId && count( $this->result ) ) {
 		// 	$this->result = $this->result[0];
 		// }

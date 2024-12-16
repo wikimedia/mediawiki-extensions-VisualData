@@ -1531,6 +1531,8 @@ VisualDataSchemas = ( function () {
 		Models.push( { parentSchema: {} } );
 
 		// *** place here properties to copy
+		// @FIXME with arrays this is mistakenly copying to
+		// the child, not the parent schema
 		if ( 'uuid' in SelectedItems[ SelectedItems.length - 1 ].wiki ) {
 			Models[ Models.length - 1 ].uuid = new VisualDataFunctions.MockupOOUIClass(
 				schema.wiki.uuid );

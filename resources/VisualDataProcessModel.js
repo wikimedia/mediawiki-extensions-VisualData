@@ -37,6 +37,32 @@ const VisualDataProcessModel = function (
 	var Removed;
 	var Errors;
 
+	async function getValue( model, errors ) {
+		var value = 'getValue' in model.input ? model.input.getValue() : '';
+
+		if ( VisualDataFunctions.isPromise( value ) ) {
+			value = await value;
+		}
+
+		if ( 'validateFunc' in model.input ) {
+			var errorMsg = model.input.validateFunc();
+			if ( VisualDataFunctions.isPromise( errorMsg ) ) {
+				errorMsg = await errorMsg;
+			}
+			if ( typeof errorMsg === 'string' ) {
+				errors.push( errorMsg );
+			}
+		}
+
+		if ( Array.isArray( value ) ) {
+			value = value.map( ( x ) => castType( x, model ) );
+		} else {
+			value = castType( value, model );
+		}
+
+		return value;
+	}
+
 	function castType( value, model ) {
 		// *** this is an hack to prevent
 		// empty string, alternatively
@@ -351,6 +377,7 @@ const VisualDataProcessModel = function (
 	}
 
 	return {
-		getModel
+		getModel,
+		getValue
 	};
 };

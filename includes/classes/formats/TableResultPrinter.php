@@ -25,6 +25,7 @@
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
 use Linker;
+use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 use MediaWiki\Extension\VisualData\Utils\HtmlTable;
 use Parser;
@@ -48,11 +49,11 @@ class TableResultPrinter extends ResultPrinter {
 
 	/** @var array */
 	public static $parameters = [
-		// *** @FIXME temporary parameter, see below
 		'mode' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => 'flat',
+			// auto, tree, plain
+			'default' => 'auto',
 		],
 	];
 
@@ -77,8 +78,7 @@ class TableResultPrinter extends ResultPrinter {
 		$path = '';
 		$pathNoIndex = '';
 
-		// @FIXME TEMPORARY PARAMETER see below
-		$method = ( empty( $this->params['mode'] ) || $this->params['mode'] !== 'tree' ? 'processSchemaRec' : 'processSchemaRecTree' );
+		$method = ( $this->params['mode'] === 'plain' ? 'processSchemaRec' : 'processSchemaRecTree' );
 		return $this->$method( $title, $this->schema, $value, $path, $pathNoIndex );
 	}
 
@@ -97,6 +97,8 @@ class TableResultPrinter extends ResultPrinter {
 			$key = $path;
 		}
 
+		// @TODO $this->printouts[$path] should be null if not
+		// set by the user
 		// label from printout (|?a=b)
 		if ( $this->printouts[$path] !== $path ) {
 			$key = $this->printouts[$path];
@@ -186,14 +188,50 @@ class TableResultPrinter extends ResultPrinter {
 	}
 
 	/**
+	 * @param array $validPrintouts
+	 */
+	private function determineMode( $validPrintouts ) {
+		if ( in_array( $this->params['mode'], [ 'tree', 'plain' ] ) ) {
+			return;
+		}
+
+		$paths = [];
+		$multipleValues = false;
+		$callback = static function ( $schema, $path, $printout, $property ) use ( &$paths, $validPrintouts, &$multipleValues ) {
+			if ( in_array( $printout, $validPrintouts ) ) {
+				$pathArr = explode( '/', $path );
+				array_pop( $pathArr );
+				$paths[implode( '/', $pathArr )] = 1;
+				if ( $schema['type'] === 'array' ) {
+					$multipleValues = true;
+				}
+			}
+		};
+
+		$printout = '';
+		$path = '';
+		DatabaseManager::traverseSchema( $this->schema, $path, $printout, $callback );
+
+		// use getResultsTree only if all printouts
+		// are on the same level and one or more of
+		// them is an array
+
+		// @TODO tree mode could be used in all cases
+		// of nested printouts provided that results
+		// are consistent and that branches can be
+		// rendered using templates
+		$this->params['mode'] = ( $multipleValues && count( $paths ) === 1
+			? 'tree' : 'plain' );
+	}
+
+	/**
 	 * @inheritDoc
 	 */
 	public function getResults() {
-		// @FIXME TEMPORARY PARAMETER
-		// this should be determined automatically
-		// based on the number of rows returned by the query
-		// (however this implies a first query queryProcessor->getResultsTree)
-		$method = ( empty( $this->params['mode'] ) || $this->params['mode'] !== 'tree' ? 'getResults' : 'getResultsTree' );
+		$validPrintouts = $this->getValidPrintouts();
+		$this->determineMode( $validPrintouts );
+
+		$method = ( $this->params['mode'] === 'plain' ? 'getResults' : 'getResultsTree' );
 		$results = $this->queryProcessor->$method();
 
 		if ( !count( $this->printouts ) ) {
@@ -256,6 +294,14 @@ class TableResultPrinter extends ResultPrinter {
 				$this->htmlTable->$method( implode( $this->valuesSeparator, $cell ) );
 			}
 		}
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getCount() {
+		$method = ( $this->params['mode'] === 'plain' ? 'getCount' : 'getCountTree' );
+		return $this->queryProcessor->$method();
 	}
 
 	/**

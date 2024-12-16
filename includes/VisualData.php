@@ -776,7 +776,10 @@ class VisualData {
 
 		if ( $isButton ) {
 			$params['label'] = $values[0];
-			$params['action'] = 'edit';
+			// *** additional action 'fetch' ?
+			if ( !empty( $params['edit-page'] ) ) {
+				$params['action'] = 'edit';
+			}
 			$params['view'] = 'button';
 			$params['edit-categories'] = false;
 			$params['edit-freetext'] = false;
@@ -1009,6 +1012,8 @@ class VisualData {
 				// |?name=abc abc is the field name
 				$value = substr( $val, 1 );
 				$printoutsOptions[$value] = $parsePrintoutsOptions( $value );
+
+				// @TODO set to null and do the related changes
 				$printouts[$value] = $value;
 			}
 		}
@@ -1919,6 +1924,7 @@ class VisualData {
 
 				if ( $editTitle ) {
 					$pageForms[$formID]['options']['edit-page'] = $editTitle->getFullText();
+
 					$jsonData = self::getJsonData( $editTitle );
 
 					if ( empty( $targetSlot ) ) {

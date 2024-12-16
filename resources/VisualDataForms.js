@@ -776,6 +776,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		inputWidget.$element.find( 'input' ).on( 'blur', function () {
 			updateFieldsVisibility( config.model );
 			updateDependentFields( config.model );
+			updateDefaultValue( config.model );
 		} );
 
 		config.model.input = inputWidget;
@@ -2285,6 +2286,24 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	OO.inheritClass( OptionsListContainer, OO.ui.Widget );
 	// OO.mixinClass(OptionsListContainer, OO.ui.mixin.GroupWidget);
 
+	function updateDefaultValue( model ) {
+		if ( !VisualDataFunctions.getNestedProp(
+			[ 'schema', 'wiki', 'default' ],
+			model
+		) ) {
+			return;
+		}
+
+		ProcessModel.getValue( model ).then( function ( res ) {
+			if ( VisualDataFunctions.isEmpty( res ) &&
+				model.schema.wiki.required &&
+				!VisualDataFunctions.isEmpty( model.schema.wiki.default )
+			) {
+				model.input.setValue( model.schema.wiki.default );
+			}
+		} );
+	}
+
 	function determineInputValue(
 		schema,
 		previousSchema,
@@ -2296,7 +2315,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// can be an array, in case of multiselect
 		var ret = VisualDataFunctions.isObject( data ) ? null : data;
 		// remove value-prefix
-		// ***this is not necessary, since is hanlded
+		// ***this is not necessary, since is handled
 		// by applyUntransformed
 		// if (defaultValue) {
 		// 	if ("value-prefix" in schema.wiki) {
@@ -2309,20 +2328,32 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// 	}
 		// }
 
-		if (
-			!newItem &&
-			!isNewSchema( schemaName ) &&
-			!Form.emptyData
-		) {
-			return ret;
-		}
-
 		if ( !( 'default' in schema ) ) {
 			return ret;
 		}
 
-		// if ret is the default of previousSchema
-		// update to the default of current schema
+		// @FIXME schema.default may be returned
+		// immediately ?
+		var requiredDefaultWithEmptyValue = VisualDataFunctions.isEmpty( data ) &&
+			schema.wiki.required &&
+			!VisualDataFunctions.isEmpty( schema.default );
+
+		// possibly return schema.default (bypass this)
+		// if is a new item, or is a new schema,
+		// or there are not data entered through
+		// the form in the form
+		if (
+			!newItem &&
+			!isNewSchema( schemaName ) &&
+			!Form.emptyData &&
+			!requiredDefaultWithEmptyValue
+		) {
+			return ret;
+		}
+
+		// possibly return schema.default (bypass this)
+		// if ret is null or is equal to the default value
+		// of previousSchema
 		if (
 			ret !== null &&
 			( !( 'default' in previousSchema ) || ret !== previousSchema.default )
@@ -2330,8 +2361,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			return ret;
 		}
 
-		// *** in case of array the default values will
-		// create the respective entries by OptionsListContainer
+		// possibly return schema.default (bypass this)
+		// if the default value is not an array
+		// or the preferred input is not a multiselect
+		// (the respective entries by OptionsListContainer)
 		if (
 			Array.isArray( schema.default ) &&
 				(
@@ -3089,7 +3122,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			} );
 			var widget;
 
-			if ( Form.options.schema !== '' ) {
+			if ( Form.options[ 'edit-page' ] !== '' ) {
 				var editButton = new OO.ui.ButtonWidget( {
 					icon: 'edit',
 					flags: [ 'primary', 'progressive' ]

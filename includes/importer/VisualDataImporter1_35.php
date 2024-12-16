@@ -87,6 +87,19 @@ class VisualDataImporter1_35 extends WikiImporter {
 	}
 
 	/**
+	 * @param Title $title
+	 */
+	public function doDeferredUpdates( $title ) {
+		// *** important !!
+		// @see JobRunner -> doExecuteJob
+		DeferredUpdates::doUpdates();
+
+		if ( $title->getArticleID() === 0 ) {
+			throw new MWException( 'article not saved' );
+		}
+	}
+
+	/**
 	 * @return string
 	 */
 	public function getErrorMessages() {
@@ -264,6 +277,9 @@ class VisualDataImporter1_35 extends WikiImporter {
 				}
 			}
 		}
+
+		// ***
+		$this->doDeferredUpdates( $title );
 
 		return $this->hookContainer->run( 'AfterImportPage', [ $title, $foreignTitle,
 			$revCount, $sRevCount, $pageInfo ] );

@@ -1462,7 +1462,7 @@ e.g.
 	 * @param string &$value
 	 * @param array|null $schema
 	 */
-	private	static function castType( &$value, $schema = null ) {
+	public static function castType( &$value, $schema = null ) {
 		// use validate filters
 		// @see https://www.php.net/manual/en/filter.filters.validate.php
 		switch ( $schema['type'] ) {
@@ -1486,6 +1486,12 @@ e.g.
 			case 'string':
 			default:
 				switch ( $schema['format'] ) {
+					case 'date':
+						$value = self::parseDateTime( $value, 'Y-m-d' );
+						break;
+					case 'datetime':
+						$value = self::parseDateTime( $value, DATE_RFC3339 );
+						break;
 					case 'url':
 						$value = filter_var( $value, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );
 						break;
@@ -1499,6 +1505,32 @@ e.g.
 						 settype( $value, 'string' );
 				}
 		}
+	}
+
+	/**
+	 * @see https://github.com/barbushin/php-imap/blob/master/src/PhpImap/Mailbox.php
+	 * @param string $dateHeader
+	 * @param string $format
+	 * @return string
+	 */
+	public static function parseDateTime( string $dateHeader, $format ) {
+		if ( empty( \trim( $dateHeader ) ) ) {
+			return '';
+		}
+
+		$dateHeaderUnixtimestamp = \strtotime( $dateHeader );
+
+		if ( !$dateHeaderUnixtimestamp ) {
+			return $dateHeader;
+		}
+
+		$dateHeaderRfc3339 = \date( DATE_RFC3339, $dateHeaderUnixtimestamp );
+
+		if ( !$dateHeaderRfc3339 ) {
+			return $dateHeader;
+		}
+
+		return $dateHeaderRfc3339;
 	}
 
 	/**
@@ -1621,56 +1653,6 @@ e.g.
 				return 'number';
 			default:
 				return $type;
-		}
-	}
-
-	/**
-	 * @see resources/VisualDataForms.js -> processSchema
-	 * @param array $schema
-	 * @param array &$data
-	 * @param array $renamed
-	 * @param array $removed
-	 * @param string $path
-	 */
-	public function processSchemaRec( $schema, &$data, $renamed, $removed, $path ) {
-		if ( !$renamed && !$removed ) {
-			return;
-		}
-		switch ( $schema['type'] ) {
-			case 'object':
-				$prevData = $data;
-				$data = [];
-				if ( isset( $schema['properties'] ) ) {
-					foreach ( $schema['properties'] as $key => $value ) {
-						$currentPath = "$path/properties/$key";
-						if ( $renamed && $currentPath === $renamed[1] ) {
-							$pathItemsOld = explode( '/', $renamed[0] );
-							$keyOld = array_pop( $pathItemsOld );
-							$data[$key] = $prevData[$keyOld];
-							// unset( $data[$keyOld] );
-						} elseif ( array_key_exists( $key, $prevData ) ) {
-							$data[$key] = $prevData[$key];
-						}
-						// if ( $removed && $currentPath === $removed ) {
-						// 	unset( $data[$key] );
-						// }
-						$subSchema = $schema['properties'][$key];
-						$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
-					}
-				}
-				break;
-			case 'array':
-				// @TODO support tuple
-				if ( isset( $schema['items'] ) ) {
-					$subSchema = $schema['items'];
-					if ( is_array( $data ) ) {
-						foreach ( $data as $key => $value ) {
-							$currentPath = "$path/$key";
-							$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
-						}
-					}
-				}
-				break;
 		}
 	}
 

@@ -24,6 +24,7 @@
 
 use MediaWiki\Cache\CacheKeyHelper;
 use MediaWiki\Content\IContentHandlerFactory;
+use MediaWiki\Deferred\DeferredUpdates;
 use MediaWiki\HookContainer\HookContainer;
 use MediaWiki\HookContainer\HookRunner;
 use MediaWiki\MainConfigNames;
@@ -139,7 +140,7 @@ class VisualDataImporter1_42 extends WikiImporter {
 
 		// Default callbacks
 		$this->setPageCallback( [ $this, 'beforeImportPage' ] );
-		$this->setRevisionCallback( [ $this, "importRevision" ] );
+		$this->setRevisionCallback( [ $this, 'importRevision' ] );
 		$this->setUploadCallback( [ $this, 'importUpload' ] );
 		$this->setLogItemCallback( [ $this, 'importLogItem' ] );
 		$this->setPageOutCallback( [ $this, 'finishImportPage' ] );
@@ -161,6 +162,19 @@ class VisualDataImporter1_42 extends WikiImporter {
 		$this->contents = $contents;
 
 		$this->handlePageSelf();
+	}
+
+	/**
+	 * @param Title $title
+	 */
+	public function doDeferredUpdates( $title ) {
+		// *** important !!
+		// @see JobRunner -> doExecuteJob
+		DeferredUpdates::doUpdates();
+
+		if ( $title->getArticleID() === 0 ) {
+			throw new MWException( 'article not saved' );
+		}
 	}
 
 	/**
@@ -200,7 +214,7 @@ class VisualDataImporter1_42 extends WikiImporter {
 			[ $pageInfo['_title'], $foreignTitle ] = $title;
 		} else {
 			// $badTitle = true;
-			throw new MWException( "Bad title" );
+			throw new MWException( 'Bad title' );
 		}
 
 		if ( $title ) {
@@ -407,6 +421,10 @@ class VisualDataImporter1_42 extends WikiImporter {
 		}
 
 		$title = Title::newFromPageIdentity( $pageIdentity );
+
+		// ***
+		$this->doDeferredUpdates( $title );
+
 		return $this->hookRunner->onAfterImportPage( $title, $foreignTitle,
 			$revCount, $sRevCount, $pageInfo );
 	}

@@ -132,18 +132,38 @@ class UpdateDataJob extends Job {
 				if ( $jsonData && isset( $jsonData['schemas'] ) && isset( $jsonData['schemas'][$this->params['schema']] ) ) {
 					$schemaName = $this->params['schema'];
 					$schema = \VisualData::getSchema( $context, $schemaName );
-					foreach ( $this->params['renamed'] as $value ) {
-						$schemaProcessor->processSchemaRec( $schema, $jsonData['schemas'][$schemaName],
-							$value, [], '' );
+					$renamed = $this->params['renamed'];
+					$removed_ = $this->params['removed'];
+					$removed = [];
+					foreach ( $removed_ as $value ) {
+						$parentPath = explode( '/', $value );
+						$oldKey = array_pop( $parentPath );
+						$removed[] = [ $parentPath, $oldKey ];
 					}
-					foreach ( $this->params['removed'] as $value ) {
-						$schemaProcessor->processSchemaRec( $schema, $jsonData['schemas'][$schemaName],
-							[], $value, '' );
-					}
-					// foreach ( $this->params['added'] as $value ) {
-					// 	$schemaProcessor->processSchemaRec( $schema, $jsonData['schemas'][$schemaName],
-					// 		$value, '' );
-					// }
+					// 'added'
+					$callback = static function ( $schema, &$data, $newPath, $printout, $newKey ) use ( $renamed, $removed ) {
+						if ( in_array( $newPath, $renamed ) ) {
+							$oldPathArr = explode( '/', array_search( $newPath, $renamed ) );
+							$oldKey = array_pop( $oldPathArr );
+							$data[$newKey] = $data[$oldKey];
+							unset( $data[$oldKey] );
+						}
+
+						if ( count( $removed ) ) {
+							$parentPath = substr( $newPath, 0, strrpos( $newPath, '/' ) );
+
+							foreach ( $removed as $value_ ) {
+								if ( $value_[0] === $parentPath ) {
+									unset( $data[$value_[1]] );
+								}
+							}
+						}
+					};
+
+					$printout = '';
+					$path = '';
+					DatabaseManager::traverseData( $schema, $jsonData['schemas'], $path, $printout, $callback );
+
 					$targetSlot = \VisualData::getTargetSlot( $title );
 					$slots = [
 						$targetSlot => [

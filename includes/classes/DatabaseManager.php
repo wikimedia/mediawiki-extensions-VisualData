@@ -96,7 +96,7 @@ class DatabaseManager {
 	 */
 	public function prepareData( $schema, $data ) {
 		$ret = [];
-		$path = $this->escapeJsonPointerPart( $schema['wiki']['name'] );
+		$path = self::escapeJsonPointerPart( $schema['wiki']['name'] );
 		$pathNoIndex = '';
 		$this->flattenData( $ret, $schema, $data, $path, $pathNoIndex );
 		return $ret;
@@ -503,6 +503,9 @@ class DatabaseManager {
 			$patch = json_decode( json_encode( $patch ), true );
 
 			switch ( $patch['op'] ) {
+				// *** attention, this is considered removed
+				// only if it hasn't been renamed (by comparing
+				// the uuid)
 				case 'remove':
 					$schema_ = $getRelatedSchema( $storedSchemaObj, $patch['path'] );
 					if ( is_array( $schema_ ) && $schema_['wiki']['type'] !== 'content-block' ) {
@@ -515,6 +518,7 @@ class DatabaseManager {
 						$added[] = $patch['path'];
 					}
 					break;
+				// @TODO
 				case 'replace':
 					break;
 				// @TODO
@@ -524,18 +528,21 @@ class DatabaseManager {
 				case 'copy':
 					break;
 			}
-			// print_r((array)$patch);
 		}
 
 		$renamed = [];
-		foreach ( $added as $key => $path ) {
-			$obj = $getRelatedSchema( $updatedSchemaObj, $path );
-			if ( isset( $obj['wiki']['uuid'] ) ) {
-				foreach ( $removed as $k => $p ) {
-					$o = $getRelatedSchema( $storedSchemaObj, $p );
-					if ( isset( $o['wiki']['uuid'] )
-					&& $o['wiki']['uuid'] === $obj['wiki']['uuid'] ) {
-						$renamed[] = [ $p, $path ];
+		foreach ( $added as $key => $newPath ) {
+			$objA = $getRelatedSchema( $updatedSchemaObj, $newPath );
+
+			// @FIXME with arrays the uuid is being mistakenly
+			// copied to the child, not the parent schema
+			if ( isset( $objA['wiki']['uuid'] ) ) {
+				foreach ( $removed as $k => $oldPath ) {
+					$objB = $getRelatedSchema( $storedSchemaObj, $oldPath );
+					if ( isset( $objB['wiki']['uuid'] )
+						&& $objB['wiki']['uuid'] === $objA['wiki']['uuid']
+					) {
+						$renamed[$oldPath] = $newPath;
 						unset( $added[$key] );
 						unset( $removed[$k] );
 					}
@@ -553,12 +560,38 @@ class DatabaseManager {
 			return count( $pages );
 		}
 
+		// remove from visualdata_props and visualdata_prop_tables
+		$tableNameProps = $this->dbr->tableName( 'visualdata_props' );
+		$tableNamePropTables = $this->dbr->tableName( 'visualdata_prop_tables' );
+
+		foreach ( $removed as $path ) {
+			$printout_ = $this->getPrintoutOfPath( $storedSchema, $path );
+			if ( $printout_ ) {
+				$conds = [
+					'schema_id' => $schemaId,
+					'path_no_index' => $printout_
+				];
+
+				$this->dbw->delete(
+					$tableNameProps,
+					$conds,
+					__METHOD__
+				);
+
+				$this->dbw->delete(
+					$tableNamePropTables,
+					$conds,
+					__METHOD__
+				);
+			}
+		}
+
 		// *** rename of db entries is performed
 		// by rebuildArticleDataFromSlot from the job itself
 		// that also calls removeUnusedEntries
 
 		// *** as above, if a property name is
-		// changed, this may imply the rename of
+		// changed, this may require the rename of
 		// property names in parser functions,
 		// therefore the best way is to use
 		// a query builder, to save data as json
@@ -879,7 +912,7 @@ class DatabaseManager {
 	 * @param string $part
 	 * @return string
 	 */
-	private function escapeJsonPointerPart( $part ) {
+	public static function escapeJsonPointerPart( $part ) {
 		$value = str_replace( '~', '~0', $part );
 		return str_replace( '/', '~1', $value );
 	}
@@ -978,22 +1011,120 @@ class DatabaseManager {
 	/**
 	 * @see resources/VisualDataForms.js -> processSchema
 	 * @param array $schema
+	 * @param array &$data
 	 * @param string $path
 	 * @param string $printout
 	 * @param function $callback
 	 */
-	public function traverseSchema( $schema, $path, $printout, $callback ) {
+	public static function traverseData( $schema, &$data, $path, $printout, $callback ) {
 		switch ( $schema['type'] ) {
 			case 'object':
 				if ( isset( $schema['properties'] ) ) {
 					foreach ( $schema['properties'] as $key => $value ) {
-						$keyEscaped = $this->escapeJsonPointerPart( $key );
-						$currentPath = $path ? "$path/properties/$keyEscaped" : $keyEscaped;
+						$keyEscaped = self::escapeJsonPointerPart( $key );
+						$currentPath = "$path/properties/$keyEscaped";
+						$printout_ = ( $printout ? "$printout/$keyEscaped" : $keyEscaped );
+						$subSchema = $schema['properties'][$key];
+						$callback( $subSchema, $data, $currentPath, $printout_, $key );
+						self::traverseData( $subSchema, $data[$key], $currentPath, $printout_, $callback );
+					}
+				}
+				break;
+			case 'array':
+				// @TODO support tuple
 
+				if ( isset( $schema['items'] ) ) {
+					$pathArr = explode( '/', $path );
+					$key = array_pop( $pathArr );
+					$callback( $schema, $data, $path, $printout, $key );
+
+					$subSchema = $schema['items'];
+					if ( is_array( $data ) ) {
+						foreach ( $data as $key => $value ) {
+							$currentPath = "$path/$key";
+							self::traverseData( $subSchema, $data[$key], $currentPath, $printout, $callback );
+						}
+					}
+				}
+				break;
+			default:
+				// $pathArr = explode( '/', $path );
+				// $key = array_pop( $pathArr );
+				// $callback( $schema, $data, $path, $printout, $key );
+		}
+	}
+
+	/**
+	 * @see resources/VisualDataForms.js -> processSchema
+	 * @param array $schema
+	 * @param string $path
+	 * @param string $printout
+	 * @param function $callback
+	 */
+	public static function traverseSchema( $schema, $path, $printout, $callback ) {
+		switch ( $schema['type'] ) {
+			case 'object':
+				if ( isset( $schema['properties'] ) ) {
+					foreach ( $schema['properties'] as $key => $value ) {
+						$keyEscaped = self::escapeJsonPointerPart( $key );
+						$currentPath = "$path/properties/$keyEscaped";
 						$printout_ = ( $printout ? "$printout/$keyEscaped" : $keyEscaped );
 						$subSchema = $value;
 						$callback( $subSchema, $currentPath, $printout_, $key );
-						$this->traverseSchema( $subSchema, $currentPath, $printout_, $callback );
+						self::traverseSchema( $subSchema, $currentPath, $printout_, $callback );
+					}
+				}
+				break;
+			case 'array':
+				// @TODO support tuple
+
+				if ( isset( $schema['items'] ) ) {
+					$pathArr = explode( '/', $path );
+					$key = array_pop( $pathArr );
+					$callback( $schema, $path, $printout, $key );
+					$subSchema = $schema['items'];
+					self::traverseSchema( $subSchema, $path, $printout, $callback );
+				}
+				break;
+			default:
+				// $pathArr = explode( '/', $path );
+				// $key = array_pop( $pathArr );
+				// $callback( $schema, $path, $printout, $key );
+		}
+	}
+
+	/**
+	 * @see resources/VisualDataForms.js -> processSchema
+	 * @param array $schema
+	 * @param array &$data
+	 * @param array $renamed
+	 * @param array $removed
+	 * @param string $path
+	 */
+	public function processSchemaRec( $schema, &$data, $renamed, $removed, $path ) {
+		if ( !$renamed && !$removed ) {
+			return;
+		}
+		switch ( $schema['type'] ) {
+			case 'object':
+				$prevData = $data;
+				$data = [];
+				if ( isset( $schema['properties'] ) ) {
+					foreach ( $schema['properties'] as $key => $value ) {
+						$currentPath = "$path/properties/$key";
+						if ( $renamed && $currentPath === $renamed[1] ) {
+							$pathItemsOld = explode( '/', $renamed[0] );
+							$keyOld = array_pop( $pathItemsOld );
+							$data[$key] = $prevData[$keyOld];
+							// unset( $data[$keyOld] );
+						} elseif ( array_key_exists( $key, $prevData ) ) {
+							$data[$key] = $prevData[$key];
+						}
+						// if ( $removed && $currentPath === $removed ) {
+						// 	unset( $data[$key] );
+						// }
+						$subSchema = $schema['properties'][$key];
+						$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
 					}
 				}
 				break;
@@ -1001,10 +1132,34 @@ class DatabaseManager {
 				// @TODO support tuple
 				if ( isset( $schema['items'] ) ) {
 					$subSchema = $schema['items'];
-					$this->traverseSchema( $subSchema, $path, $printout, $callback );
+					if ( is_array( $data ) ) {
+						foreach ( $data as $key => $value ) {
+							$currentPath = "$path/$key";
+							$this->processSchemaRec( $subSchema, $data[$key], $renamed, $removed, $currentPath );
+						}
+					}
 				}
 				break;
 		}
+	}
+
+	/**
+	 * @param array $schema
+	 * @param string $matchPath
+	 * @return string
+	 */
+	public function getPrintoutOfPath( $schema, $matchPath ) {
+		$ret = null;
+		$callback = static function ( $schema, $path, $printout, $property ) use ( &$ret, $matchPath ) {
+			if ( $path === $matchPath ) {
+				$ret = $printout;
+			}
+		};
+
+		$printout = '';
+		$path = '';
+		self::traverseSchema( $schema, $path, $printout, $callback );
+		return $ret;
 	}
 
 	/**
@@ -1014,8 +1169,7 @@ class DatabaseManager {
 		$rows = [];
 		// @FIXME use only if used in all similar cases
 		// $this->escapeJsonPointerPart( )
-		$path = $schema['wiki']['name'];
-		$schemaId = $this->recordSchema( $path );
+		$schemaId = $this->recordSchema( $schema['wiki']['name'] );
 		$thisClass = $this;
 
 		$callback = static function ( $schema, $path, $printout, $property ) use ( &$rows, $schemaId, $thisClass ) {
@@ -1035,9 +1189,9 @@ class DatabaseManager {
 				'created_at' => $thisClass->dateTime,
 			];
 		};
-
+		$path = '';
 		$printout = '';
-		$this->traverseSchema( $schema, $path, $printout, $callback );
+		self::traverseSchema( $schema, $path, $printout, $callback );
 
 		$options = [ 'IGNORE' ];
 		$tableName = 'visualdata_prop_tables';
@@ -1074,6 +1228,16 @@ class DatabaseManager {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * @param array $schema
+	 * @param string|int|bool|number|null $value
+	 * @return int
+	 */
+	private function castValue( $schema, $value ) {
+		SchemaProcessor::castType( $value, $schema );
+		return $value;
 	}
 
 	/**
@@ -1283,7 +1447,7 @@ class DatabaseManager {
 					$tables[$propType][] = [
 						'page_id' => $articleId,
 						'prop_id' => $propId,
-						'value' => $val['value'],
+						'value' => $this->castValue( $val['schema'], $val['value'] ),
 						'created_at' => $this->dateTime,
 					];
 				} else {
@@ -1296,7 +1460,7 @@ class DatabaseManager {
 						$tables[$propType][] = [
 							'page_id' => $articleId,
 							'prop_id' => $propId,
-							'value' => $v,
+							'value' => $this->castValue( $val['schema'], $v ),
 							'created_at' => $this->dateTime,
 						];
 					}
@@ -1322,7 +1486,7 @@ class DatabaseManager {
 	 */
 	private function flattenData( &$ret, $schema, $data, $path, $pathNoIndex ) {
 		foreach ( (array)$data as $key => $value ) {
-			$keyEscaped = $this->escapeJsonPointerPart( $key );
+			$keyEscaped = self::escapeJsonPointerPart( $key );
 			$currentPath = $path ? "$path/$keyEscaped" : $keyEscaped;
 
 			switch ( $schema['type'] ) {

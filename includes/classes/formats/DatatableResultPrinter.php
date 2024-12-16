@@ -42,11 +42,11 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 	/** @var array */
 	public static $parameters = [
-		// *** @FIXME temporary parameter, see tableResultPrinter
 		'mode' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => 'pageLength',
+			// auto, tree, plain
+			'default' => 'auto',
 		],
 
 		// ***custom parameter

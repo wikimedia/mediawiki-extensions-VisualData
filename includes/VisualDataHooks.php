@@ -408,6 +408,31 @@ class VisualDataHooks {
 
 	/**
 	 * @param Title $title
+	 * @param ForeignTitle $foreignTitle
+	 * @param int $revCount
+	 * @param int $sRevCount
+	 * @param array $pageInfo
+	 * @return bool|void
+	 */
+	public static function onAfterImportPage( $title, $foreignTitle, $revCount, $sRevCount, $pageInfo ) {
+		// create schema id and printouts if is a new schema
+		// *** used by rebuildData
+		if ( $title->getNamespace() === NS_VISUALDATASCHEMA ) {
+			$revisionRecord = \VisualData::revisionRecordFromTitle( $title );
+			$content = $revisionRecord->getContent( MediaWiki\Revision\SlotRecord::MAIN );
+			$contentHandler = $content->getContentHandler();
+			$modelId = $contentHandler->getModelID();
+			$text = $content->getNativeData();
+			$data = json_decode( $text, true );
+			if ( $data ) {
+				$databaseManager = new DatabaseManager();
+				$databaseManager->createSchemaIdAndPrintouts( $data );
+			}
+		}
+	}
+
+	/**
+	 * @param Title $title
 	 * @param bool $create
 	 * @param string $comment
 	 * @param int $oldPageId

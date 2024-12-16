@@ -838,6 +838,31 @@ VisualDataFunctions = ( function () {
 		} );
 	}
 
+	function isEmpty( value ) {
+		switch ( typeof value ) {
+			case 'boolean':
+				return value === false;
+			case 'number':
+			case 'bigint':
+				return value === 0;
+			case 'string':
+				return value === '';
+			case 'object':
+				if ( value === null ) {
+					return true;
+				}
+				if ( Array.isArray( value ) ) {
+					return value.length === 0;
+				}
+				return Object.keys( value ).length === 0;
+			case 'undefined':
+			case 'null':
+				return true;
+			case 'symbol':
+				return false;
+		}
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -877,6 +902,7 @@ VisualDataFunctions = ( function () {
 		objectEntries,
 		sort,
 		objectValues,
-		escapeHTML
+		escapeHTML,
+		isEmpty
 	};
 }() );
