@@ -29,6 +29,7 @@
 			config.classes = [];
 		}
 		var self = this;
+		this.initialized = false;
 		this.config = config;
 
 		VisualDataTinyMCE.super.call( this, config );
@@ -64,8 +65,14 @@
 				showPlaceholders: false,
 				decodeHtmlEntitiesOnInput: false,
 				auto_focus: true,
-				visual: false
-				// license_key: 'gpl|<your-license-key>'
+				visual: false,
+				setup: function ( editor ) {
+					editor.on( 'init', function () {
+						self.initialized = true;
+						// editor.setContent( self.text );
+					} );
+				}
+				// license_key: 'gpl|<your-license-key>',
 			} );
 
 		} );
@@ -76,6 +83,9 @@
 
 	VisualDataTinyMCE.prototype.getValue = function () {
 		var editor = tinymce.get( this.textareaId );
-		return editor.getContent( this.textareaId );
+		if ( editor && this.initialized ) {
+			return editor.getContent( this.textareaId );
+		}
+		return this.text;
 	};
 }() );

@@ -352,13 +352,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	function updateFieldsVisibility( sourceModel ) {
 		var field = sourceModel.schema.wiki;
-		var value = VisualDataFunctions.castType( sourceModel.input.getValue(), sourceModel.schema.type );
 
 		function escapeRegExp( string ) {
 			return string.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
 		}
 
-		function toggleVisibility( thisModel, thisField ) {
+		function toggleVisibility( value, thisModel, thisField ) {
 			var refValue = VisualDataFunctions.castType( thisField[ 'showif-value' ], sourceModel.schema.type );
 
 			var res;
@@ -406,56 +405,37 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			$( el ).toggle( res );
 		}
 
-		for ( var i in sourceModel.parent ) {
-			var model_ = sourceModel.parent[ i ];
+		// *** attention, VEForAll was causing an infinite loop
+		// by adding the following class:
+		// ve-for-all-waiting-for-update
+		// mutation observer's disconnect(); and initialize
+		// again could be used
 
-			if ( sourceModel.schemaName !== model_.schemaName ) {
-				continue;
+		ProcessModel.getValue( sourceModel ).then( function ( value ) {
+			for ( var i in sourceModel.parent ) {
+				var model_ = sourceModel.parent[ i ];
+
+				if ( sourceModel.schemaName !== model_.schemaName ) {
+					continue;
+				}
+
+				var field_ = model_.schema.wiki;
+				if ( model_.schema.type === 'array' ) {
+					field_ = model_.schema.items.wiki;
+				}
+
+				if ( !( 'showif-field' in field_ ) ) {
+					continue;
+				}
+
+				// consider only same level
+				if ( field_[ 'showif-field' ] !== field.name ) {
+					continue;
+				}
+
+				toggleVisibility( value, model_, field_ );
 			}
-
-			var field_ = model_.schema.wiki;
-			if ( model_.schema.type === 'array' ) {
-				field_ = model_.schema.items.wiki;
-			}
-
-			if ( !( 'showif-field' in field_ ) ) {
-				continue;
-			}
-
-			// consider only same level
-			if ( field_[ 'showif-field' ] !== field.name ) {
-				continue;
-			}
-
-			toggleVisibility( model_, field_ );
-		}
-
-		// old solution
-		// var pathParent = sourceModel.path.split( '/' ).slice( 0, -1 ).join( '/' );
-		// var pathNoIndex = sourceModel.pathNoIndex.split( '/' ).slice( -1 )[ 0 ];
-
-		// for ( var i in ModelFlatten ) {
-		// 	var model_ = ModelFlatten[ i ];
-
-		// 	if ( sourceModel.schemaName !== model_.schemaName ) {
-		// 		continue;
-		// 	}
-
-		// 	if ( pathParent !== model_.path.split( '/' ).slice( 0, -1 ).join( '/' ) ) {
-		// 		continue;
-		// 	}
-
-		// 	var field_ = model_.schema.wiki;
-		// 	if ( !( 'showif-field' in field_ ) ) {
-		// 		continue;
-		// 	}
-
-		// 	if ( field_[ 'showif-field' ] !== pathNoIndex ) {
-		// 		continue;
-		// 	}
-
-		// 	toggleVisibility( model_ );
-		// }
+		} );
 	}
 
 	function clearDependentFields( pathNoIndex ) {
@@ -1529,7 +1509,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	// OO.mixinClass( GroupWidget, OO.EventEmitter );
 
 	GroupWidget.prototype.formLoaded = function () {
-	//	if ( this.data.root === true ) {
 		setTimeout( function () {
 			VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
 		}, 30 );
@@ -1550,7 +1529,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		for ( var model of ModelFlatten ) {
 			updateDependentFields( model );
 		}
-		// }
+
+		var self = this;
+		setTimeout( function () {
+			setMutation( self.data.model.schemaName );
+		}, 30 );
 	};
 
 	GroupWidget.prototype.addItems = function ( items ) {
@@ -3090,7 +3073,28 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return $( '#visualdataform-wrapper-' + FormID ).is( ':visible' );
 	}
 
-	function mutationChange() {
+	function setMutation( schemaName ) {
+		var escapedSchemaName = escapeJsonPointer( schemaName );
+		var el = window.document.querySelector( '#' +
+			jQuery.escapeSelector( makeElementId( escapedSchemaName ) ) );
+
+		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+
+		if ( MutationObserver ) {
+			var observer = new MutationObserver( function ( mutations, thisObserver ) {
+				onMutationChange();
+			} );
+
+			// observe only current tab/schema
+			observer.observe( el, {
+				subtree: true,
+				childList: true,
+				attributes: true
+			} );
+		}
+	}
+
+	function onMutationChange() {
 		if ( !isVisible() ) {
 			Initialized = false;
 		} else if ( !Initialized ) {
@@ -3185,7 +3189,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 
 		if ( Form.options.view === 'popup' ) {
-
 			var popupButton = new OO.ui.ButtonWidget( {
 				icon: 'edit',
 				label: Form.options.title
@@ -3475,8 +3478,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		getCategories,
 		// updateForms,
 		updateSchemas,
-		updatePanels,
-		mutationChange
+		updatePanels
 	};
 };
 
@@ -3550,24 +3552,6 @@ $( function () {
 			}
 
 			instances.push( visualDataForm );
-		}
-
-		// *** this allows to render forms when they
-		// are contained within not visible elements
-		// like datatables cells, or dialogs
-		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
-
-		if ( MutationObserver ) {
-			var observer = new MutationObserver( function ( mutations, thisObserver ) {
-				for ( var instance of instances ) {
-					instance.mutationChange();
-				}
-			} );
-
-			observer.observe( document, {
-				subtree: true,
-				childList: true
-			} );
 		}
 
 		return instances;

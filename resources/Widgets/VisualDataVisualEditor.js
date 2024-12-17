@@ -136,6 +136,9 @@
 
 	// @see PageForms PF_submit.js
 	VisualDataVisualEditor.prototype.getEditor = function () {
+		if ( !( 'getVEInstances' in $.fn ) ) {
+			return null;
+		}
 		if ( this.Editor ) {
 			return this.Editor;
 		}
