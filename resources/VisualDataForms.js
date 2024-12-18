@@ -52,9 +52,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var SchemasLayout;
 	var Initialized = false;
 	var PendingRecursive;
-	var QueuedWidgets = [];
+	var QueuedWidgets;
 	var Maps = [];
 	var TargetSlotField;
+	var MutationObservers = {};
 
 	function inArray( val, arr ) {
 		return arr.indexOf( val ) !== -1;
@@ -351,6 +352,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function updateFieldsVisibility( sourceModel ) {
+		if ( sourceModel.schemaName in MutationObservers ) {
+			MutationObservers[ sourceModel.schemaName ].disconnect();
+		}
+
 		var field = sourceModel.schema.wiki;
 
 		function escapeRegExp( string ) {
@@ -435,19 +440,28 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 				toggleVisibility( value, model_, field_ );
 			}
+
+			// resume observeMutation
+			setTimeout( function () {
+				setMutation( sourceModel.schemaName );
+			}, 30 );
 		} );
 	}
 
-	function clearDependentFields( pathNoIndex ) {
-		for ( var model of ModelFlatten ) {
-			var field = model.schema.wiki;
+	function clearDependentFields( model ) {
+		for ( var thisModel of ModelFlatten ) {
+			if ( thisModel.schemaName !== model.schemaName ) {
+				continue;
+			}
+
+			var field = thisModel.schema.wiki;
 			if ( !( 'options-query' in field ) ) {
 				continue;
 			}
 			var query = field[ 'options-query' ];
-			var regExp = new RegExp( '<' + pathNoIndex + '>' );
+			var regExp = new RegExp( '<' + model.pathNoIndex + '>' );
 			if ( regExp.test( query ) ) {
-				model.input.setValue( !model.multiselect ? '' : [] );
+				thisModel.input.setValue( !thisModel.multiselect ? '' : [] );
 			}
 		}
 	}
@@ -750,7 +764,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		inputWidget.on( 'change', function () {
 			updateFieldsVisibility( config.model );
-			clearDependentFields( config.model.pathNoIndex );
+			clearDependentFields( config.model );
 		} );
 
 		inputWidget.$element.find( 'input' ).on( 'blur', function () {
@@ -1337,9 +1351,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			id: makeElementId( data.path )
 		} );
 
-		this.layout = layout;
-
 		if ( data.root ) {
+			this.data.rootEl = layout.$element;
+
 			var $containerRight = $( '<div class="visualdata-form-container-right">' );
 			layout.$element.append( $containerRight );
 
@@ -1509,6 +1523,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	// OO.mixinClass( GroupWidget, OO.EventEmitter );
 
 	GroupWidget.prototype.formLoaded = function () {
+		var self = this;
+
 		setTimeout( function () {
 			VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
 		}, 30 );
@@ -1519,20 +1535,22 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			);
 		}, 30 );
 
-		// *** we use mutationChange instead
-		// for ( var model of ModelFlatten ) {
-		//	updateFieldsVisibility( model );
-		// }
-
 		loadMaps();
 
+		var schemaName = self.data.model.schemaName;
+
+		// @FIXME this is required in actin EditData
+		// but not required in popup or page forms
+		onMutationChange( schemaName );
+
 		for ( var model of ModelFlatten ) {
-			updateDependentFields( model );
+			if ( model.schemaName === schemaName ) {
+				updateDependentFields( model );
+			}
 		}
 
-		var self = this;
 		setTimeout( function () {
-			setMutation( self.data.model.schemaName );
+			setMutation( schemaName, self.data.rootEl.get( 0 ) );
 		}, 30 );
 	};
 
@@ -1587,14 +1605,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			Form.options.layout = 'tabs';
 		}
 
-		PendingRecursive = 0;
-		QueuedWidgets = [];
-		Maps = [];
 		function getWidgets() {
+			Maps = [];
+			PendingRecursive = 0;
+			QueuedWidgets = {};
 			var ret = {};
 
 			for ( var schemaName_ of Form.schemas ) {
-
+				QueuedWidgets[ schemaName_ ] = [];
 				var schema = Schemas[ schemaName_ ];
 				var previousSchema =
 					schemaName_ in PreviousSchemas ?
@@ -2372,7 +2390,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		pathNoIndex,
 		newItem
 	) {
+		QueuedWidgets[ schemaName ].push( widget );
 		PendingRecursive++;
+
 		if ( !( 'type' in schema ) ) {
 			schema.type = 'default' in schema ? 'string' : 'object';
 		}
@@ -2531,15 +2551,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// 	}
 		// }
 
-		QueuedWidgets.push( widget );
-		// inform queued widgets that the rendering of the form is complete
+		// inform the root widget that the rendering of the form is complete
 		if ( --PendingRecursive === 0 ) {
-			// for ( widget_ of QueuedWidgets ) {
 			// @see https://www.mediawiki.org/wiki/OOjs/Events
-
-			// widget_.emit( 'formLoaded' );
-			if ( QueuedWidgets.length ) {
-				QueuedWidgets[ 0 ].emit( 'formLoaded' );
+			if ( QueuedWidgets[ schemaName ].length ) {
+				QueuedWidgets[ schemaName ][ 0 ].emit( 'formLoaded' );
 			}
 		}
 	}
@@ -3073,16 +3089,50 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return $( '#visualdataform-wrapper-' + FormID ).is( ':visible' );
 	}
 
-	function setMutation( schemaName ) {
-		var escapedSchemaName = escapeJsonPointer( schemaName );
-		var el = window.document.querySelector( '#' +
-			jQuery.escapeSelector( makeElementId( escapedSchemaName ) ) );
+	function setMutation( schemaName, rootEl ) {
+		if ( schemaName in MutationObservers ) {
+			MutationObservers[ schemaName ].disconnect();
+		}
+
+		// the root element could be not yet appended when
+		// the form is loaded
+		if ( rootEl ) {
+			var el = rootEl;
+		} else {
+			var escapedSchemaName = escapeJsonPointer( schemaName );
+			var el = window.document.querySelector( '#' +
+				jQuery.escapeSelector( makeElementId( escapedSchemaName ) ) );
+		}
+
+		if ( !el ) {
+			// console.log( 'element not found ' + makeElementId( escapedSchemaName ) );
+			return;
+		}
 
 		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 
 		if ( MutationObserver ) {
+			var ignoredClasses = [ 've-for-all-waiting-for-update' ];
+
 			var observer = new MutationObserver( function ( mutations, thisObserver ) {
-				onMutationChange();
+				// we ignore the entire set of mutations "batched"
+				// with the class to ignore
+				var ignore = false;
+				for ( var mutation of mutations ) {
+					if ( mutation.type === 'attributes' && mutation.attributeName === 'class' ) {
+						if ( VisualDataFunctions.arrayIntersect(
+							mutation.target.classList, ignoredClasses ).length > 0
+						) {
+							// console.log( 'ignoring mutation with class in ' + mutation.target.classList );
+							ignore = true;
+							break;
+						}
+					}
+				}
+
+				if ( !ignore ) {
+					onMutationChange( schemaName );
+				}
 			} );
 
 			// observe only current tab/schema
@@ -3091,23 +3141,22 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				childList: true,
 				attributes: true
 			} );
+
+			MutationObservers[ schemaName ] = observer;
 		}
 	}
 
-	function onMutationChange() {
-		if ( !isVisible() ) {
-			Initialized = false;
-		} else if ( !Initialized ) {
-			initialize();
-		}
-
+	function onMutationChange( schemaName ) {
+		// *** MutationObservers[ sourceModel.schemaName ].disconnect()
+		// could be called here and resumed on completion
+		// of the loop and the updateFieldsVisibility (asynch) function
+		// however updateFieldsVisibility is also called on inputs
+		// change
 		for ( var model of ModelFlatten ) {
-			updateFieldsVisibility( model );
+			if ( model.schemaName === schemaName ) {
+				updateFieldsVisibility( model );
+			}
 		}
-
-		// for ( var model of ModelFlatten ) {
-		//	updateDependentFields( model );
-		// }
 	}
 
 	function initialize() {

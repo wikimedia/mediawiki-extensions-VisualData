@@ -838,6 +838,16 @@ VisualDataFunctions = ( function () {
 		} );
 	}
 
+	function arrayIntersect( arr1, arr2 ) {
+		var ret = [];
+		for ( var x of arr1 ) {
+			if ( arr2.indexOf( x ) !== -1 ) {
+				ret.push( x );
+			}
+		}
+		return ret;
+	}
+
 	function isEmpty( value ) {
 		switch ( typeof value ) {
 			case 'boolean':
@@ -903,6 +913,7 @@ VisualDataFunctions = ( function () {
 		sort,
 		objectValues,
 		escapeHTML,
-		isEmpty
+		isEmpty,
+		arrayIntersect
 	};
 }() );

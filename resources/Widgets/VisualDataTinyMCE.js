@@ -82,6 +82,9 @@
 	OO.mixinClass( VisualDataTinyMCE, OO.EventEmitter );
 
 	VisualDataTinyMCE.prototype.getValue = function () {
+		if ( typeof tinymce === 'undefined' ) {
+			return this.text;
+		}
 		var editor = tinymce.get( this.textareaId );
 		if ( editor && this.initialized ) {
 			return editor.getContent( this.textareaId );
