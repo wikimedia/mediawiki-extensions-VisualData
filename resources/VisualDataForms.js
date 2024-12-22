@@ -65,88 +65,83 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return VisualDataFunctions.escapeJsonPointer( str );
 	}
 
-	// @FIXME destroy/reinitialize on tab change
-	function showVisualEditor() {
-		function timeOut( i ) {
-			setTimeout( function () {
+	function showLazyWidget( constructorName ) {
+		var promises = [];
+		// @IMPORTANT use "let" if used with timeout !!
+		for ( let i in InputWidgets ) {
+			var constructorName_ = InputWidgets[ i ].constructorName ||
+				InputWidgets[ i ].constructor.name;
+
+			if ( constructorName_ === constructorName ||
+				( 'constructorName' in InputWidgets[ i ] &&
+					InputWidgets[ i ].constructorName === constructorName )
+			) {
 				if (
-					InputWidgets[ i ] &&
 					InputWidgets[ i ].$element.parent().is( ':visible' )
 				) {
-					InputWidgets[ i ].initialize();
+					promises.push( InputWidgets[ i ].initialize() );
 				}
-			}, 100 );
-		}
-
-		// @IMPORTANT use "let" with timeout !!
-		for ( let i in InputWidgets ) {
-			var constructorName = InputWidgets[ i ].constructorName || InputWidgets[ i ].constructor.name;
-			if ( constructorName === 'VisualDataVisualEditor' ||
-				( 'constructorName' in InputWidgets[ i ] &&
-					InputWidgets[ i ].constructorName === 'VisualDataVisualEditor' )
-			) {
-				timeOut( i );
 			}
 		}
+		return promises;
 	}
 
-	function loadMaps() {
-		function timeOut( obj ) {
-			// setTimeout( function () {
-			// @FIXME find a better way
-			var schemaName = obj.data.path.split( '/' )[ 0 ];
-			// if ( obj.element.is( ':visible' ) ) {
-			if ( schemaName === SelectedSchema ) {
-				if ( obj.data.schema.wiki.coordinates === false ) {
-					var latFieldId = makeElementId( `${ obj.data.path }/latitude` );
-					var lonFieldId = makeElementId( `${ obj.data.path }/longitude` );
-					var escapeSelector = jQuery.escapeSelector;
+	async function loadMaps() {
+		function initMap( obj ) {
+			if ( obj.data.schema.wiki.coordinates === false ) {
+				var latFieldId = makeElementId( `${ obj.data.path }/latitude` );
+				var lonFieldId = makeElementId( `${ obj.data.path }/longitude` );
+				var escapeSelector = jQuery.escapeSelector;
 
-					for ( let fieldId of [ latFieldId, lonFieldId ] ) {
-						let callbackCond = function () {
-							return $( '#' + escapeSelector( fieldId ) ).length;
-						};
-						let callback = function ( resolve, reject ) {
-							$( '#' + escapeSelector( fieldId ) ).hide();
-							resolve();
-						};
-						let callbackMaxAttempts = function ( resolve, reject ) {
-							$( '#' + escapeSelector( fieldId ) ).hide();
-						};
-						VisualDataFunctions.waitUntil(
-							callbackCond,
-							callback,
-							callbackMaxAttempts,
-							5
-						);
+				for ( let fieldId of [ latFieldId, lonFieldId ] ) {
+					let callbackCond = function () {
+						return $( '#' + escapeSelector( fieldId ) ).length;
+					};
+					let callback = function ( resolve, reject ) {
+						$( '#' + escapeSelector( fieldId ) ).hide();
+						resolve();
+					};
+					let callbackMaxAttempts = function ( resolve, reject ) {
+						$( '#' + escapeSelector( fieldId ) ).hide();
+					};
+					VisualDataFunctions.waitUntil(
+						callbackCond,
+						callback,
+						callbackMaxAttempts,
+						5
+					);
+				}
+			}
+			return ( new VisualDataMaptiler() )
+				.initialize( obj.element, obj.data );
+		}
+
+		return new Promise( ( resolve, reject ) => {
+			mw.loader.using( 'ext.VisualData.Maptiler', function () {
+				var promises = [];
+				// @IMPORTANT use "let" if used with timeout !!
+				for ( let obj of Maps ) {
+					// @FIXME find a better way
+					var schemaName = obj.data.path.split( '/' )[ 0 ];
+					// if ( obj.element.is( ':visible' ) ) {
+					if ( schemaName === SelectedSchema ) {
+						promises.push( initMap( obj ) );
 					}
 				}
-
-				mw.loader.using( 'ext.VisualData.Maptiler', function () {
-					var visualDataMaptiler = new VisualDataMaptiler();
-					visualDataMaptiler.initialize( obj.element, obj.data );
+				// Promise.allSettled
+				Promise.all( promises ).then( ( res ) => {
+					resolve();
 				} );
-			}
-			// }, 0 );
-		}
-
-		// @IMPORTANT use "let" with timeout !!
-		for ( let obj of Maps ) {
-			timeOut( obj );
-		}
+			} );
+		} );
 	}
 
-	function onSetPropertiesStack( item ) {
-		showVisualEditor();
-		// loadMaps();
-	}
+	function onSetPropertiesStack( item ) {}
 
 	function onChangePropertiesStack( items ) {}
 
 	function onTabSelect( selectedSchema ) {
 		SelectedSchema = selectedSchema;
-		showVisualEditor();
-		loadMaps();
 	}
 
 	function makeElementId( path ) {
@@ -351,11 +346,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return !( 'popup-help' in Form.options ? Form.options[ 'popup-help' ] : false );
 	}
 
-	function updateFieldsVisibility( sourceModel ) {
-		if ( sourceModel.schemaName in MutationObservers ) {
-			MutationObservers[ sourceModel.schemaName ].disconnect();
-		}
-
+	async function updateFieldsVisibility( sourceModel, callback ) {
 		var field = sourceModel.schema.wiki;
 
 		function escapeRegExp( string ) {
@@ -413,38 +404,35 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// *** attention, VEForAll was causing an infinite loop
 		// by adding the following class:
 		// ve-for-all-waiting-for-update
-		// mutation observer's disconnect(); and initialize
-		// again could be used
+		// use mutation observer's disconnect(); and
+		// initialize again
+		return new Promise( ( resolve, reject ) => {
+			ProcessModel.getValue( sourceModel ).then( function ( value ) {
+				for ( var i in sourceModel.parent ) {
+					var model_ = sourceModel.parent[ i ];
 
-		ProcessModel.getValue( sourceModel ).then( function ( value ) {
-			for ( var i in sourceModel.parent ) {
-				var model_ = sourceModel.parent[ i ];
+					if ( sourceModel.schemaName !== model_.schemaName ) {
+						continue;
+					}
 
-				if ( sourceModel.schemaName !== model_.schemaName ) {
-					continue;
+					var field_ = model_.schema.wiki;
+					if ( model_.schema.type === 'array' ) {
+						field_ = model_.schema.items.wiki;
+					}
+
+					if ( !( 'showif-field' in field_ ) ) {
+						continue;
+					}
+
+					// consider only same level
+					if ( field_[ 'showif-field' ] !== field.name ) {
+						continue;
+					}
+
+					toggleVisibility( value, model_, field_ );
 				}
-
-				var field_ = model_.schema.wiki;
-				if ( model_.schema.type === 'array' ) {
-					field_ = model_.schema.items.wiki;
-				}
-
-				if ( !( 'showif-field' in field_ ) ) {
-					continue;
-				}
-
-				// consider only same level
-				if ( field_[ 'showif-field' ] !== field.name ) {
-					continue;
-				}
-
-				toggleVisibility( value, model_, field_ );
-			}
-
-			// resume observeMutation
-			setTimeout( function () {
-				setMutation( sourceModel.schemaName );
-			}, 30 );
+				resolve();
+			} );
 		} );
 	}
 
@@ -763,7 +751,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		var inputWidget = getInputWidget( config );
 
 		inputWidget.on( 'change', function () {
-			updateFieldsVisibility( config.model );
+			// updateFieldsVisibility( config.model );
 			clearDependentFields( config.model );
 		} );
 
@@ -1535,23 +1523,17 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			);
 		}, 30 );
 
-		loadMaps();
-
 		var schemaName = self.data.model.schemaName;
 
-		// @FIXME this is required in actin EditData
-		// but not required in popup or page forms
-		onMutationChange( schemaName );
+		setTimeout( function () {
+			onMutationChange( schemaName, self.data.rootEl.get( 0 ) );
+		}, 30 );
 
 		for ( var model of ModelFlatten ) {
 			if ( model.schemaName === schemaName ) {
 				updateDependentFields( model );
 			}
 		}
-
-		setTimeout( function () {
-			setMutation( schemaName, self.data.rootEl.get( 0 ) );
-		}, 30 );
 	};
 
 	GroupWidget.prototype.addItems = function ( items ) {
@@ -1991,6 +1973,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					label: '',
 					items: items
 				} );
+
+				setTimeout( function () {
+					showLazyWidget( 'VisualDataVisualEditor' );
+				}, 50 );
 		}
 
 		this.isEmpty = false;
@@ -2896,8 +2882,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	ProcessDialog.prototype.initialize = function () {
 		ProcessDialog.super.prototype.initialize.apply( this, arguments );
-		// this.$body.append(this.data.OuterStack.$element);
-		// showVisualEditor();
+		// this.$body.append( this.data.OuterStack.$element );
 	};
 
 	ProcessDialog.prototype.getActionProcess = function ( action ) {
@@ -3090,10 +3075,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function setMutation( schemaName, rootEl ) {
-		if ( schemaName in MutationObservers ) {
-			MutationObservers[ schemaName ].disconnect();
-		}
-
 		// the root element could be not yet appended when
 		// the form is loaded
 		if ( rootEl ) {
@@ -3112,27 +3093,14 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
 
 		if ( MutationObserver ) {
-			var ignoredClasses = [ 've-for-all-waiting-for-update' ];
-
 			var observer = new MutationObserver( function ( mutations, thisObserver ) {
-				// we ignore the entire set of mutations "batched"
-				// with the class to ignore
-				var ignore = false;
+				var matchedClasses = [];
 				for ( var mutation of mutations ) {
 					if ( mutation.type === 'attributes' && mutation.attributeName === 'class' ) {
-						if ( VisualDataFunctions.arrayIntersect(
-							mutation.target.classList, ignoredClasses ).length > 0
-						) {
-							// console.log( 'ignoring mutation with class in ' + mutation.target.classList );
-							ignore = true;
-							break;
-						}
+						matchedClasses.concat( mutation.target.classList );
 					}
 				}
-
-				if ( !ignore ) {
-					onMutationChange( schemaName );
-				}
+				onMutationChange( schemaName, el, matchedClasses );
 			} );
 
 			// observe only current tab/schema
@@ -3146,17 +3114,37 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		}
 	}
 
-	function onMutationChange( schemaName ) {
+	function onMutationChange( schemaName, rootEl, matchedClasses ) {
+		// *** this unfortunately does not solve the issue
+		// so we pause the observer with disconnect
+		// var VisualEditorIgnoreClasses = [ 've-for-all-waiting-for-update' ];
+		// if ( Array.isArray( matchedClasses ) &&
+		// 	VisualDataFunctions.arrayIntersect( matchedClasses, VisualEditorIgnoreClasses ).length
+		// ) {
+		// 	return;
+		// }
+		if ( schemaName in MutationObservers ) {
+			MutationObservers[ schemaName ].disconnect();
+		}
+
+		var promises = [ loadMaps() ]
+			.concat( showLazyWidget( 'VisualDataVisualEditor' ) )
+			.concat( showLazyWidget( 'VisualDataTinyMCE' ) );
+
 		// *** MutationObservers[ sourceModel.schemaName ].disconnect()
 		// could be called here and resumed on completion
 		// of the loop and the updateFieldsVisibility (asynch) function
 		// however updateFieldsVisibility is also called on inputs
 		// change
-		for ( var model of ModelFlatten ) {
-			if ( model.schemaName === schemaName ) {
-				updateFieldsVisibility( model );
-			}
+		var models = ModelFlatten.filter( ( x ) => x.schemaName === schemaName );
+		for ( var i in models ) {
+			promises.push( updateFieldsVisibility( models[ i ] ) );
 		}
+
+		// Promise.allSettled
+		Promise.all( promises ).then( ( res ) => {
+			setMutation( schemaName, rootEl );
+		} );
 	}
 
 	function initialize() {
@@ -3419,7 +3407,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 			// eslint-disable-next-line no-jquery/no-global-selector
 			$( '#mw-rcfilters-spinner-wrapper' ).remove();
-			// showVisualEditor();
 
 			return true;
 		}
@@ -3516,8 +3503,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// }
 
 		$( '#mw-rcfilters-spinner-wrapper' ).remove();
-
-		// showVisualEditor();
 
 		return true;
 	}

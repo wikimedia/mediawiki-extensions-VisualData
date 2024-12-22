@@ -800,10 +800,24 @@ html-num-fmt
 						}
 					}
 
+					// *** url params are passed for the use
+					// with the template ResultPrinter which
+					// may use the "urlget" parser function or similar
+
+					// do not use VisualDataFunctions.objectEntries
+					var searchParams = new URLSearchParams( location.search );
+					var urlParams = {};
+					for ( const [ k, v ] of searchParams ) {
+						urlParams[ k ] = v;
+					}
+					delete urlParams.title;
+					delete urlParams.action;
+
 					visualdataDatatables.callApi(
 						$.extend( payloadData, {
 							datatableData,
-							cacheKey: thisCacheKey
+							cacheKey: thisCacheKey,
+							urlParams
 						} ),
 						callback,
 						preloadData,

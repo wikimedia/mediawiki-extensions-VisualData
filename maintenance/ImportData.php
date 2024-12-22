@@ -52,6 +52,7 @@ class ImportData extends Maintenance {
 		$this->addOption( 'main-slot', 'whether to save to main slot', false, false );
 		$this->addOption( 'limit', 'limit pages to be imported', false, true );
 		$this->addOption( 'category-field', 'field to be used to assign categories (at root level)', false, true );
+		$this->addOption( 'csv-array-field-separator', 'defaut separator for array fields (csv)', false, true, );
 	}
 
 	/**
@@ -65,6 +66,7 @@ class ImportData extends Maintenance {
 		$mainSlot = $this->getOption( 'main-slot' ) ?? false;
 		$limit = $this->getOption( 'limit' ) ?? false;
 		$categoryField = $this->getOption( 'category-field' ) ?? false;
+		$csvArrayFieldSeparator = $this->getOption( 'csv-array-field-separator' ) ?? ',';
 
 		$limit = ( $limit === false ? INF : (int)$limit );
 		$contents = file_get_contents( $path );
@@ -104,6 +106,8 @@ class ImportData extends Maintenance {
 			'main-slot' => $mainSlot,
 			'limit' => $limit,
 			'category-field' => $categoryField,
+			'csv-array-field-separator' => $csvArrayFieldSeparator,
+			'isCsv' => ( $ext === 'csv' )
 		];
 		$importer = new Importer( $user, $context, $schemaName, $options );
 

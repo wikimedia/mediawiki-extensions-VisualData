@@ -34,8 +34,14 @@
 		VisualDataFunctions.loadScripts( this.scripts );
 	};
 
-	VisualDataMaptiler.prototype.initialize = function ( $element, data ) {
+	VisualDataMaptiler.prototype.initialize = async function ( $element, data ) {
 		var self = this;
+
+		// only load scripts
+		if ( !self.$element.parent().is( ':visible' ) ) {
+			VisualDataFunctions.loadScripts( this.scripts );
+			return Promise.reject();
+		}
 
 		// *** prevents ajv error "Maximum call stack size exceeded"
 		var config = VisualDataFunctions.deepCopy( data.schema.wiki );
@@ -44,112 +50,115 @@
 		var zoomInput = data.model.properties.zoom.input;
 		var mapId = 'visualdata-maptiler-map-' + data.path;
 
-		VisualDataFunctions.loadScripts( this.scripts, function ( e ) {
-			if ( $( '#' + jQuery.escapeSelector( mapId ) ).length ) {
-				return;
-			}
+		if ( $( '#' + jQuery.escapeSelector( mapId ) ).length ) {
+			return Promise.resolve();
+		}
 
-			maptilersdk.config.apiKey = mw.config.get( 'visualdata-maptiler-apikey' );
-			var $container = $( '<div style="width:100%;height:400px" id="' + mapId + '" />' );
-			$element.append( $container );
+		return new Promise( ( resolve, reject ) => {
+			VisualDataFunctions.loadScripts( this.scripts, function ( e ) {
+				maptilersdk.config.apiKey = mw.config.get( 'visualdata-maptiler-apikey' );
+				var $container = $( '<div style="width:100%;height:400px" id="' + mapId + '" />' );
+				$element.append( $container );
 
-			config[ 'maptiler-map-config' ].container = mapId;
-			config[ 'maptiler-map-config' ].style = maptilersdk.MapStyle.HYBRID;
+				config[ 'maptiler-map-config' ].container = mapId;
+				config[ 'maptiler-map-config' ].style = maptilersdk.MapStyle.HYBRID;
 
-			var center = [ parseFloat( lngInput.getValue() ), parseFloat( latInput.getValue() ) ];
+				var center = [ parseFloat( lngInput.getValue() ), parseFloat( latInput.getValue() ) ];
 
-			var isValidCenter = !VisualDataFunctions.isNaN( center[ 0 ] ) && !VisualDataFunctions.isNaN( center[ 1 ] );
+				var isValidCenter = !VisualDataFunctions.isNaN( center[ 0 ] ) && !VisualDataFunctions.isNaN( center[ 1 ] );
 
-			if ( isValidCenter ) {
-				config[ 'maptiler-map-config' ].center = center;
-				config[ 'maptiler-map-config' ].zoom = parseInt( zoomInput.getValue() );
-				config[ 'maptiler-map-config' ].geolocate = false;
+				if ( isValidCenter ) {
+					config[ 'maptiler-map-config' ].center = center;
+					config[ 'maptiler-map-config' ].zoom = parseInt( zoomInput.getValue() );
+					config[ 'maptiler-map-config' ].geolocate = false;
 
-			} else {
-				if ( !( 'geolocate' in config[ 'maptiler-map-config' ] ) ) {
-					config[ 'maptiler-map-config' ].geolocate = true;
+				} else {
+					if ( !( 'geolocate' in config[ 'maptiler-map-config' ] ) ) {
+						config[ 'maptiler-map-config' ].geolocate = true;
+					}
 				}
-			}
 
-			const map = ( window.map = new maptilersdk.Map( config[ 'maptiler-map-config' ] ) );
-			config[ 'maptiler-map-config' ].marker = false;
+				const map = ( window.map = new maptilersdk.Map( config[ 'maptiler-map-config' ] ) );
+				config[ 'maptiler-map-config' ].marker = false;
 
-			var marker;
+				var marker;
 
-			if ( config[ 'reverse-geocoding' ] ) {
-				const gc = new maptilersdkMaptilerGeocoder.GeocodingControl( config[ 'maptiler-map-config' ] );
+				if ( config[ 'reverse-geocoding' ] ) {
+					const gc = new maptilersdkMaptilerGeocoder.GeocodingControl( config[ 'maptiler-map-config' ] );
 
-				map.on( 'zoomend', ( res ) => {
-					// console.log('zoomend:', res);
-					zoomInput.setValue( map.getZoom() );
-				} );
+					map.on( 'zoomend', ( res ) => {
+						// console.log('zoomend:', res);
+						zoomInput.setValue( map.getZoom() );
+					} );
 
-				// https://docs.maptiler.com/sdk-js/modules/geocoding/api/api-reference/#event:featuresListed
-				gc.addEventListener( 'response', ( res ) => {
-					// console.log("response:", res);
-				} );
+					// https://docs.maptiler.com/sdk-js/modules/geocoding/api/api-reference/#event:featuresListed
+					gc.addEventListener( 'response', ( res ) => {
+						// console.log("response:", res);
+					} );
 
-				gc.addEventListener( 'select', ( res ) => {
-					// console.log("select:", res );
-					if ( res.detail ) {
-						marker.setLngLat( res.detail.center );
+					gc.addEventListener( 'select', ( res ) => {
+						// console.log("select:", res );
+						if ( res.detail ) {
+							marker.setLngLat( res.detail.center );
+						}
+					} );
+
+					gc.addEventListener( 'pick', ( res ) => {
+						// console.log("pick:", res );
+					} );
+
+					gc.addEventListener( 'featuresListed', ( res ) => {
+						// console.log("featuresListed:", res);
+					} );
+
+					gc.addEventListener( 'featuresMarked', ( res ) => {
+						// console.log("featuresMarked:", res);
+					} );
+
+					map.addControl( gc, 'top-left' );
+				}
+
+				function onDragEnd() {
+					var lngLat = marker.getLngLat();
+					setTimeout( function () {
+						lngInput.setValue( lngLat.lng );
+						latInput.setValue( lngLat.lat );
+						zoomInput.setValue( map.getZoom() );
+					}, 100 );
+				}
+
+				map.on( 'load', function () {
+					if ( !marker ) {
+						marker = new maptilersdk.Marker( {
+							draggable: true
+						} )
+							.setLngLat( map.getCenter() )
+							.addTo( map );
+
+						marker.on( 'dragend', onDragEnd );
 					}
 				} );
 
-				gc.addEventListener( 'pick', ( res ) => {
-					// console.log("pick:", res );
-				} );
-
-				gc.addEventListener( 'featuresListed', ( res ) => {
-					// console.log("featuresListed:", res);
-				} );
-
-				gc.addEventListener( 'featuresMarked', ( res ) => {
-					// console.log("featuresMarked:", res);
-				} );
-
-				map.addControl( gc, 'top-left' );
-			}
-
-			function onDragEnd() {
-				var lngLat = marker.getLngLat();
-				setTimeout( function () {
-					lngInput.setValue( lngLat.lng );
-					latInput.setValue( lngLat.lat );
-					zoomInput.setValue( map.getZoom() );
-				}, 100 );
-			}
-
-			map.on( 'load', function () {
-				if ( !marker ) {
+				if ( isValidCenter ) {
 					marker = new maptilersdk.Marker( {
 						draggable: true
 					} )
-						.setLngLat( map.getCenter() )
+						.setLngLat( center )
 						.addTo( map );
 
 					marker.on( 'dragend', onDragEnd );
 				}
+
+				// update marker
+				data.model.properties.latitude.input.on( 'change', function ( value ) {
+					marker.setLngLat( [ lngInput.getValue(), value ] );
+				} );
+				data.model.properties.longitude.input.on( 'change', function ( value ) {
+					marker.setLngLat( [ value, latInput.getValue() ] );
+				} );
+
+				resolve();
 			} );
-
-			if ( isValidCenter ) {
-				marker = new maptilersdk.Marker( {
-					draggable: true
-				} )
-					.setLngLat( center )
-					.addTo( map );
-
-				marker.on( 'dragend', onDragEnd );
-			}
-
-			// update marker
-			data.model.properties.latitude.input.on( 'change', function ( value ) {
-				marker.setLngLat( [ lngInput.getValue(), value ] );
-			} );
-			data.model.properties.longitude.input.on( 'change', function ( value ) {
-				marker.setLngLat( [ value, latInput.getValue() ] );
-			} );
-
 		} );
 	};
 

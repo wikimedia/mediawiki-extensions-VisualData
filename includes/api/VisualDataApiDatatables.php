@@ -111,14 +111,10 @@ class VisualDataApiDatatables extends ApiBase {
 		$params['api'] = true;
 		$params['format'] = 'table';
 
-		// $results = \VisualData::getQueryResults( $params['schema'], $query, $printouts, $params_ );
-		// $schema = $params['schema'];
-
-		// limit, offset, order
-		// $params = array_merge( $params, [
-		// 	'schema' => $schema,
-		// 	'format' => 'table'
-		// ] );
+		// *** url params are restored for the use
+		// with the template ResultPrinter which
+		// may use the "urlget" parser function or similar
+		$_GET = $data['urlParams'];
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		// $templates = [];

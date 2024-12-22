@@ -59,7 +59,7 @@ class Importer {
 		$this->schemaName = $schemaName;
 		$this->options = $options;
 
-		$options = [ 'main-slot', 'limit', 'category-field' ];
+		$options = [ 'main-slot', 'limit', 'category-field', 'isCsv' ];
 		foreach ( $options as $value ) {
 			if ( !isset( $this->options[$value] ) ) {
 				$this->options[$value] = false;
@@ -106,6 +106,21 @@ class Importer {
 
 		$n = 0;
 		foreach ( $data as $key => $value ) {
+
+			if ( $this->options['isCsv'] ) {
+				$value = array_filter( $value );
+
+				// convert array fields
+				foreach ( $value as $k => $v ) {
+					if ( isset( $schema['properties'][$k]['type'] ) ) {
+						switch ( $schema['properties'][$k]['type'] ) {
+							case 'array':
+								$value[$k] = explode( $this->options['csv-array-field-separator'], $v );
+								break;
+						}
+					}
+				}
+			}
 			$flatten = $databaseManager->prepareData( $schema, $value );
 			$titleText = $submitForm->replacePageNameFormula( $flatten, $pagenameFormula, $properties );
 
@@ -175,7 +190,15 @@ class Importer {
 		try {
 			$this->importer->doImportSelf( $pagename, $contents );
 		} catch ( \Exception $e ) {
-			call_user_func( $this->showMsg, "error: $pagename " . $e->getMessage() );
+			call_user_func( $this->showMsg, "warning: $pagename import 2nd attempt" );
+
+			// @FIXME *sometimes* this is required and it works
+			// however is not clear *why*
+			try {
+				$this->importer->doImportSelf( $pagename, $contents );
+			} catch ( \Exception $e ) {
+				call_user_func( $this->showMsg, "error: $pagename " . $e->getMessage() );
+			}
 		}
 
 		return $pagename;

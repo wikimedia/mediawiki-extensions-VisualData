@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright © 2023, https://wikisphere.org
+ * @copyright Copyright © 2023-2024, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */
@@ -48,49 +48,38 @@
 		this.$element.append( this.VEInstance.append( this.textarea ) );
 		this.Editor = null;
 		this.initialized = false;
-
-		setTimeout( function () {
-			if ( self.$element.parent().is( ':visible' ) ) {
-				self.initialize();
-			}
-		}, 50 );
 	};
 
 	OO.inheritClass( VisualDataVisualEditor, OO.ui.Widget );
 	OO.mixinClass( VisualDataVisualEditor, OO.EventEmitter );
 
 	// @see https://github.com/Open-CSP/FlexForm/blob/main/Modules/FlexForm.general.js
-	VisualDataVisualEditor.prototype.initialize = async function () {
-		if ( this.initialized ) {
-			return;
-		}
-		this.destroyEditor();
+	VisualDataVisualEditor.prototype.initialize = async function ( destroy ) {
 		var self = this;
-		self.initialized = true;
+		if ( destroy ) {
+			this.destroyEditor();
+		}
 
-		this.loadVEForAll().then( function () {
-			// if (!self.isHtml) {
-			// 	return;
-			// }
-			// var callbackCond = function () {
-			// 	return self.getEditor();
-			// };
-			// var callback = function (resolve, reject) {
-			// 	setTimeout(function() {
-			// 		self.getEditor().createWithHtmlContent(self.text);
-			// 	}, 100);
-			// 	resolve();
-			// };
-			// var callbackMaxAttempts = function (resolve, reject) {
-			// 	reject();
-			// };
+		if ( this.initialized ) {
+			return Promise.resolve( true );
+		}
 
-			// VisualDataFunctions.waitUntil(
-			// 	callbackCond,
-			// 	callback,
-			// 	callbackMaxAttempts,
-			// 	8
-			// );
+		if ( !self.$element.parent().is( ':visible' ) ) {
+			return Promise.reject();
+		}
+
+		return new Promise( ( resolve, reject ) => {
+			this.loadVEForAll().then( function () {
+				var editor = self.getEditor();
+				if ( editor ) {
+					editor.initCallbacks.push( function () {
+						self.initialized = true;
+						resolve();
+					} );
+				} else {
+					reject();
+				}
+			} );
 		} );
 	};
 
@@ -122,6 +111,7 @@
 	};
 
 	VisualDataVisualEditor.prototype.destroyEditor = function () {
+		this.initialized = false;
 		if ( typeof $.fn.getVEInstances === 'function' ) {
 			var visualEditors = $.fn.getVEInstances();
 			for ( var i in visualEditors ) {
@@ -146,30 +136,29 @@
 		for ( var editor of visualEditors ) {
 			if ( $( editor.$node ).attr( 'name' ) === this.config.name ) {
 				// eslint-disable-next-line no-return-assign
-				return this.Editor = editor.target;
+				return this.Editor = editor;
 			}
 		}
 	};
 
-	VisualDataVisualEditor.prototype.getValue = function () {
+	VisualDataVisualEditor.prototype.getValue = async function () {
 		var self = this;
 		var editor = this.getEditor();
 
-		if ( !this.initialized || !editor ) {
+		if ( !this.initialized || !( 'target' in editor ) ) {
 			return this.textarea.val();
 		}
 
 		// if (this.isHtml) {
-		// 	return VisualDataFunctions.decodeHTMLEntities( editor.getSurface().getHtml() );
+		// 	return VisualDataFunctions.decodeHTMLEntities( editor.target.getSurface().getHtml() );
 		// }
 
 		return new Promise( ( resolve, reject ) => {
-			$.when( editor.updateContent() ).then( function () {
+			$.when( editor.target.updateContent() ).then( function () {
 				// @see ext.veforall.target.js
 				// *** sometimes convertToWikiText is not called
 				// based on focus
-				editor.$node.addClass( 've-for-all-waiting-for-update' );
-
+				editor.target.$node.addClass( 've-for-all-waiting-for-update' );
 				resolve( self.textarea.val() );
 			} );
 		} );

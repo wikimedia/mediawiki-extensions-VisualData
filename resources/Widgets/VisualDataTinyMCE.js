@@ -46,40 +46,55 @@
 		this.$element.append( this.textarea );
 
 		var mw_extensionAssetsPath = mw.config.get( 'wgExtensionAssetsPath' );
-		var basePath = mw_extensionAssetsPath + '/VisualData/resources/tinymce';
+		this.basePath = mw_extensionAssetsPath + '/VisualData/resources/tinymce';
 
 		this.scripts = [
-			basePath + '/tinymce.min.js'
+			this.basePath + '/tinymce.min.js'
 		];
-
-		VisualDataFunctions.loadScripts( this.scripts, function ( e ) {
-			this.tinymce = tinymce.init( {
-				base_url: basePath,
-				statusbar: false,
-				selector: '#' + jQuery.escapeSelector( self.textareaId ),
-				object_resizing: true,
-				allow_html_in_named_anchor: true,
-				browser_spellcheck: true,
-				automatic_uploads: true,
-				paste_data_images: true,
-				showPlaceholders: false,
-				decodeHtmlEntitiesOnInput: false,
-				auto_focus: true,
-				visual: false,
-				setup: function ( editor ) {
-					editor.on( 'init', function () {
-						self.initialized = true;
-						// editor.setContent( self.text );
-					} );
-				}
-				// license_key: 'gpl|<your-license-key>',
-			} );
-
-		} );
 	};
 
 	OO.inheritClass( VisualDataTinyMCE, OO.ui.Widget );
 	OO.mixinClass( VisualDataTinyMCE, OO.EventEmitter );
+
+	VisualDataTinyMCE.prototype.initialize = async function () {
+		var self = this;
+		if ( self.initialized ) {
+			return Promise.resolve();
+		}
+
+		// only load scripts
+		if ( !self.$element.parent().is( ':visible' ) ) {
+			VisualDataFunctions.loadScripts( this.scripts );
+			return Promise.reject();
+		}
+
+		return new Promise( ( resolve, reject ) => {
+			VisualDataFunctions.loadScripts( this.scripts, function ( e ) {
+				this.tinymce = tinymce.init( {
+					base_url: this.basePath,
+					statusbar: false,
+					selector: '#' + jQuery.escapeSelector( self.textareaId ),
+					object_resizing: true,
+					allow_html_in_named_anchor: true,
+					browser_spellcheck: true,
+					automatic_uploads: true,
+					paste_data_images: true,
+					showPlaceholders: false,
+					decodeHtmlEntitiesOnInput: false,
+					auto_focus: true,
+					visual: false,
+					setup: function ( editor ) {
+						editor.on( 'init', function () {
+							self.initialized = true;
+							// editor.setContent( self.text );
+							resolve();
+						} );
+					}
+					// license_key: 'gpl|<your-license-key>',
+				} );
+			} );
+		} );
+	};
 
 	VisualDataTinyMCE.prototype.getValue = function () {
 		if ( typeof tinymce === 'undefined' ) {
