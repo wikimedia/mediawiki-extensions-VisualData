@@ -38,7 +38,7 @@
 		var self = this;
 
 		// only load scripts
-		if ( !self.$element.parent().is( ':visible' ) ) {
+		if ( !$element.parent().is( ':visible' ) ) {
 			VisualDataFunctions.loadScripts( this.scripts );
 			return Promise.reject();
 		}
