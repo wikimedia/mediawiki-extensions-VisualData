@@ -625,7 +625,7 @@ VisualDataFunctions = ( function () {
 		$( '#' + id ).empty();
 	}
 
-	// https://medium.com/javascript-inside/safely-accessing-deeply-nested-values-in-javascript-99bf72a0855a
+	// @credits https://medium.com/javascript-inside/safely-accessing-deeply-nested-values-in-javascript-99bf72a0855a
 	function getNestedProp( path, obj ) {
 		return path.reduce( ( xs, x ) => ( xs && xs[ x ] ? xs[ x ] : null ), obj );
 	}
@@ -754,7 +754,7 @@ VisualDataFunctions = ( function () {
 		} );
 	}
 
-	// https://stackoverflow.com/questions/359788/how-to-execute-a-javascript-function-when-i-have-its-name-as-a-string
+	// @ref https://stackoverflow.com/questions/359788/how-to-execute-a-javascript-function-when-i-have-its-name-as-a-string
 	function executeFunctionByName( functionName, context, args ) {
 		var namespaces = functionName.split( '.' );
 
@@ -873,6 +873,25 @@ VisualDataFunctions = ( function () {
 		}
 	}
 
+	// @credits https://stackoverflow.com/questions/66672931/alternative-for-promise-allsettled
+	function promisesAllSettled( promises ) {
+		var allSettled = promises.map( function ( promise ) {
+			return promise.then( ( value ) => ( {
+				status: 'fulfilled',
+				value
+			} ) ).catch( function ( reason ) {
+				// eslint-disable-next-line no-console
+				console.error( 'promisesAllSettled catch', reason );
+				return {
+					status: 'rejected',
+					reason
+				};
+			} );
+		} );
+
+		return Promise.all( allSettled );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -914,6 +933,7 @@ VisualDataFunctions = ( function () {
 		objectValues,
 		escapeHTML,
 		isEmpty,
-		arrayIntersect
+		arrayIntersect,
+		promisesAllSettled
 	};
 }() );

@@ -518,16 +518,37 @@
 		}
 	},
 	"config": {
-		"VisualDataDisableSidebarLink": false,
-		"VisualDataDisableSlotsNavigation": false,
-		"VisualDataDisableVersionCheck": false,
-		"VisualDataCreateJobsWarningLimit": 0,
-		"VisualDataEditDataNamespaces": [ 0, 4, 2226, 2230 ],
-		"VisualDataTrackingCategoryJsonData": false,
-		"VisualDataTrackingCategoryForms": true,
-		"VisualDataTrackingCategoryQueries": true,
-		"VisualDataTrackingCategoryButtons": true,
-		"VisualDataMaptilerApiKey": null
+		"VisualDataDisableSidebarLink": {
+			"value": false
+		},
+		"VisualDataDisableSlotsNavigation": {
+			"value": false
+		},
+		"VisualDataDisableVersionCheck": {
+			"value": false
+		},
+		"VisualDataCreateJobsWarningLimit": {
+			"value": 0
+		},
+		"VisualDataEditDataNamespaces": {
+			"value": [ 0, 4, 2226, 2230 ],
+			"merge_strategy": "provide_default"
+		},
+		"VisualDataTrackingCategoryJsonData": {
+			"value": false
+		},
+		"VisualDataTrackingCategoryForms": {
+			"value": true
+		},
+		"VisualDataTrackingCategoryQueries": {
+			"value": true
+		},
+		"VisualDataTrackingCategoryButtons": {
+			"value": true
+		},
+		"VisualDataMaptilerApiKey": {
+			"value": null
+		}
 	},
-	"manifest_version": 1
+	"manifest_version": 2
 }

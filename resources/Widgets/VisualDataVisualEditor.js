@@ -65,7 +65,7 @@
 		}
 
 		if ( !self.$element.parent().is( ':visible' ) ) {
-			return Promise.reject();
+			return Promise.reject( 'VEForAll element not visible' );
 		}
 
 		return new Promise( ( resolve, reject ) => {
@@ -77,7 +77,7 @@
 						resolve();
 					} );
 				} else {
-					reject();
+					reject( 'VEForAll no editor' );
 				}
 			} );
 		} );

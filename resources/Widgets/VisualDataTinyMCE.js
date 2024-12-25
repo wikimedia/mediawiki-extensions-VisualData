@@ -65,7 +65,7 @@
 		// only load scripts
 		if ( !self.$element.parent().is( ':visible' ) ) {
 			VisualDataFunctions.loadScripts( this.scripts );
-			return Promise.reject();
+			return Promise.reject( 'TinyMCE element not visible' );
 		}
 
 		return new Promise( ( resolve, reject ) => {

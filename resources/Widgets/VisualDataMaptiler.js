@@ -40,7 +40,7 @@
 		// only load scripts
 		if ( !$element.parent().is( ':visible' ) ) {
 			VisualDataFunctions.loadScripts( this.scripts );
-			return Promise.reject();
+			return Promise.reject( 'Maptiler element not visible' );
 		}
 
 		// *** prevents ajv error "Maximum call stack size exceeded"

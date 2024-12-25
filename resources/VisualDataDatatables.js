@@ -332,8 +332,8 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 				return 0;
 			} );
 		}
-		// @FIXME
-		return null;
+
+		return ret;
 	};
 
 	var setPanesOptions = function ( data, searchPanesOptions, columnDefs ) {
@@ -350,9 +350,9 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 				columnDefs[ i ].searchPanes.options.push( {
 					label: searchPanesOptions[ i ][ ii ].label,
 					value: function ( rowData, rowIdx ) {
-						// return rowData[i] === searchPanesOptions[i][ii].value;
 						return (
-							objectValues( data[ rowIdx ] )[ i ] === searchPanesOptions[ i ][ ii ].value
+							objectValues( data[ rowIdx ] )[ i ].indexOf(
+								searchPanesOptions[ i ][ ii ].value ) !== -1
 						);
 					}
 				} );

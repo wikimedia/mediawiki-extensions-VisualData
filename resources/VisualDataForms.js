@@ -123,14 +123,18 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				for ( let obj of Maps ) {
 					// @FIXME find a better way
 					var schemaName = obj.data.path.split( '/' )[ 0 ];
-					// if ( obj.element.is( ':visible' ) ) {
+					// *** load only if the form/tab is visible
+					// to prevent inconsistencies of display
 					if ( schemaName === SelectedSchema ) {
 						promises.push( initMap( obj ) );
 					}
 				}
-				// Promise.allSettled
-				Promise.all( promises ).then( ( res ) => {
+
+				VisualDataFunctions.promisesAllSettled( promises ).then( ( res ) => {
 					resolve();
+				} ).catch( ( err ) => {
+					// eslint-disable-next-line no-console
+					console.error( err );
 				} );
 			} );
 		} );
@@ -142,6 +146,9 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	function onTabSelect( selectedSchema ) {
 		SelectedSchema = selectedSchema;
+		setTimeout( function () {
+			onMutationChange( selectedSchema );
+		}, 30 );
 	}
 
 	function makeElementId( path ) {
@@ -1512,7 +1519,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 	GroupWidget.prototype.formLoaded = function () {
 		var self = this;
-
 		setTimeout( function () {
 			VisualDataFunctions.removeNbspFromLayoutHeader( 'form' );
 		}, 30 );
@@ -3141,9 +3147,11 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			promises.push( updateFieldsVisibility( models[ i ] ) );
 		}
 
-		// Promise.allSettled
-		Promise.all( promises ).then( ( res ) => {
+		VisualDataFunctions.promisesAllSettled( promises ).then( ( res ) => {
 			setMutation( schemaName, rootEl );
+		} ).catch( ( err ) => {
+			// eslint-disable-next-line no-console
+			console.log( err );
 		} );
 	}
 
