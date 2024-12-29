@@ -121,6 +121,10 @@ class Importer {
 					}
 				}
 			}
+
+			// required for the use by createArticle
+			$value = DatabaseManager::castDataRec( $schema, $value );
+
 			$flatten = $databaseManager->prepareData( $schema, $value );
 			$titleText = $submitForm->replacePageNameFormula( $flatten, $pagenameFormula, $properties );
 

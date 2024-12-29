@@ -1490,7 +1490,9 @@ e.g.
 						$value = self::parseDateTime( $value, 'Y-m-d' );
 						break;
 					case 'datetime':
-						$value = self::parseDateTime( $value, DATE_RFC3339 );
+						// 'Y-m-d H:i:s' \DATE_ISO8601
+						// *** this ensures consistency with mw.widgets.datetime.DateTimeInputWidget
+						$value = self::parseDateTime( $value, 'Y-m-d\TH:i:s.v\Z' );
 						break;
 					case 'url':
 						$value = filter_var( $value, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );
@@ -1513,7 +1515,7 @@ e.g.
 	 * @param string $format
 	 * @return string
 	 */
-	public static function parseDateTime( string $dateHeader, $format ) {
+	public static function parseDateTime( string $dateHeader, $format = \DATE_RFC3339 ) {
 		if ( empty( \trim( $dateHeader ) ) ) {
 			return '';
 		}
@@ -1524,7 +1526,7 @@ e.g.
 			return $dateHeader;
 		}
 
-		$dateHeaderRfc3339 = \date( DATE_RFC3339, $dateHeaderUnixtimestamp );
+		$dateHeaderRfc3339 = \date( $format, $dateHeaderUnixtimestamp );
 
 		if ( !$dateHeaderRfc3339 ) {
 			return $dateHeader;

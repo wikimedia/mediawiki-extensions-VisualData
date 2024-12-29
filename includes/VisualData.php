@@ -1389,7 +1389,8 @@ class VisualData {
 
 			if ( $role === SLOT_ROLE_VISUALDATA_JSONDATA
 				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA
-				|| $modelId === 'json' ) {
+				|| $modelId === 'json'
+			) {
 				$content = $content_;
 				break;
 			}
@@ -1535,10 +1536,12 @@ class VisualData {
 			return false;
 		}
 
+		$context = RequestContext::getMain();
 		$obj = [];
 		foreach ( $slotsData as $slotName => $value ) {
 			if ( $value['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA
-				&& is_array( $value['content'] ) ) {
+				&& is_array( $value['content'] )
+			) {
 				$keys = [ 'schemas', 'schemas-data', 'categories' ];
 				foreach ( $keys as $key ) {
 					if ( empty( $value['content'][$key] ) ) {
@@ -1556,20 +1559,31 @@ class VisualData {
 							// @FIXME save untrasformed values for each schema
 							$schemaName = self::unescapeJsonKey( substr( $k, 0, strpos( $k, '/' ) ) );
 							if ( is_array( $value['content']['schemas'] )
-								&& !array_key_exists( $schemaName, $value['content']['schemas'] ) ) {
+								&& !array_key_exists( $schemaName, $value['content']['schemas'] )
+							) {
 								unset( $value['content']['schemas-data']['untransformed'][$k] );
 							}
 						}
 					}
 					if ( array_key_exists( 'untransformed', $value['content']['schemas-data'] )
-						&& empty( $value['content']['schemas-data']['untransformed'] ) ) {
+						&& empty( $value['content']['schemas-data']['untransformed'] )
+					) {
 						unset( $value['content']['schemas-data']['untransformed'] );
 					}
 				}
 
 				if ( empty( $value['content'] ) ) {
 					$slotsData[$slotName]['content'] = null;
+
 				} else {
+					// traverse and cast data
+					if ( isset( $value['content']['schemas'] ) ) {
+						foreach ( $value['content']['schemas'] as $schemaName => &$schemaData ) {
+							$schema_ = self::getSchema( $context, $schemaName );
+							$schemaData = DatabaseManager::castDataRec( $schema_, $schemaData );
+						}
+					}
+
 					$obj = $value['content'];
 					$slotsData[$slotName]['content'] = json_encode( $value['content'] );
 				}
@@ -1621,7 +1635,8 @@ class VisualData {
 			}
 
 			if ( $emptySlots && !count( array_diff( array_keys( $existingSlots ),
-				array_keys( $slotsData ) ) ) ) {
+				array_keys( $slotsData ) ) )
+			) {
 				$reason = '';
 				self::deletePage( $wikiPage, $user, $reason );
 				return;
@@ -1630,7 +1645,8 @@ class VisualData {
 			// remove SLOT_ROLE_VISUALDATA_JSONDATA if
 			// jsondata have been moved to main
 			if ( isset( $slotsData[SlotRecord::MAIN] )
-				&& $slotsData[SlotRecord::MAIN]['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+				&& $slotsData[SlotRecord::MAIN]['model'] === CONTENT_MODEL_VISUALDATA_JSONDATA
+			) {
 				foreach ( $existingSlots as $slotName => $value ) {
 					if ( $slotName === SLOT_ROLE_VISUALDATA_JSONDATA ) {
 						$pageUpdater->removeSlot( $slotName );
@@ -2080,9 +2096,9 @@ class VisualData {
 
 		// load all schemas also if context is !== than 'EditData'
 		// to display them in ask query schemas and other inputs
-		if ( ( $user->isAllowed( 'visualdata-caneditdata' )
-				|| $user->isAllowed( 'visualdata-canmanageschemas' )
-			) ) {
+		if ( $user->isAllowed( 'visualdata-caneditdata' )
+			|| $user->isAllowed( 'visualdata-canmanageschemas' )
+		) {
 			$loadedData[] = 'schemas';
 			// this will retrieve all schema pages without contents
 			// without content @TODO set a limit

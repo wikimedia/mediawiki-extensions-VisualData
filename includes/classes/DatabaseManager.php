@@ -972,37 +972,31 @@ class DatabaseManager {
 
 		switch ( $propType ) {
 			case 'number':
+			case 'range':
 				$propType = 'numeric';
 				break;
-			case 'color':
-				$propType = 'text';
+			case 'date':
+				$propType = 'date';
 				break;
+			case 'datetime':
 			case 'datetime-local':
 				$propType = 'datetime';
 				break;
-			case 'email':
-				$propType = 'text';
-				break;
+			case 'week':
 			case 'month':
 				$propType = 'integer';
 				break;
 			case 'password':
-				$propType = 'text';
-				break;
-			case 'number':
-				$propType = 'numeric';
-				break;
-			case 'range':
-				$propType = 'numeric';
-				break;
+			case 'color':
+			case 'email':
 			case 'tel':
-				$propType = 'text';
-				break;
+			case 'text':
 			case 'url':
 				$propType = 'text';
 				break;
-			case 'week':
-				$propType = 'integer';
+			case 'textarea':
+				$propType = 'textarea';
+				break;
 		}
 
 		return [ $this->tableTypeToId( $propType ), $propType ];
@@ -1015,8 +1009,9 @@ class DatabaseManager {
 	 * @param string $path
 	 * @param string $printout
 	 * @param function $callback
+	 * @param function $callbackValue
 	 */
-	public static function traverseData( $schema, &$data, $path, $printout, $callback ) {
+	public static function traverseData( $schema, &$data, $path, $printout, $callback, $callbackValue ) {
 		switch ( $schema['type'] ) {
 			case 'object':
 				if ( isset( $schema['properties'] ) ) {
@@ -1026,7 +1021,7 @@ class DatabaseManager {
 						$printout_ = ( $printout ? "$printout/$keyEscaped" : $keyEscaped );
 						$subSchema = $schema['properties'][$key];
 						$callback( $subSchema, $data, $currentPath, $printout_, $key );
-						self::traverseData( $subSchema, $data[$key], $currentPath, $printout_, $callback );
+						self::traverseData( $subSchema, $data[$key], $currentPath, $printout_, $callback, $callbackValue );
 					}
 				}
 				break;
@@ -1042,16 +1037,33 @@ class DatabaseManager {
 					if ( is_array( $data ) ) {
 						foreach ( $data as $key => $value ) {
 							$currentPath = "$path/$key";
-							self::traverseData( $subSchema, $data[$key], $currentPath, $printout, $callback );
+							self::traverseData( $subSchema, $data[$key], $currentPath, $printout, $callback, $callbackValue );
 						}
 					}
 				}
 				break;
 			default:
-				// $pathArr = explode( '/', $path );
-				// $key = array_pop( $pathArr );
-				// $callback( $schema, $data, $path, $printout, $key );
+				$pathArr = explode( '/', $path );
+				$key = array_pop( $pathArr );
+				$callbackValue( $schema, $data, $path, $printout, $key );
 		}
+	}
+
+	/**
+	 * @param array $schema
+	 * @param array $data
+	 * @return array
+	 */
+	public static function castDataRec( $schema, $data ) {
+		$callback = static function ( $schema, &$data, $newPath, $printout, $newKey ) {
+		};
+		$callbackValue = static function ( $schema, &$value, $newPath, $printout, $newKey ) {
+			$value = self::castValue( $schema, $value );
+		};
+		$printout = '';
+		$path = '';
+		self::traverseData( $schema, $data, $path, $printout, $callback, $callbackValue );
+		return $data;
 	}
 
 	/**
@@ -1235,7 +1247,7 @@ class DatabaseManager {
 	 * @param string|int|bool|number|null $value
 	 * @return int
 	 */
-	private function castValue( $schema, $value ) {
+	private static function castValue( $schema, $value ) {
 		SchemaProcessor::castType( $value, $schema );
 		return $value;
 	}
@@ -1447,7 +1459,7 @@ class DatabaseManager {
 					$tables[$propType][] = [
 						'page_id' => $articleId,
 						'prop_id' => $propId,
-						'value' => $this->castValue( $val['schema'], $val['value'] ),
+						'value' => self::castValue( $val['schema'], $val['value'] ),
 						'created_at' => $this->dateTime,
 					];
 				} else {
@@ -1460,7 +1472,7 @@ class DatabaseManager {
 						$tables[$propType][] = [
 							'page_id' => $articleId,
 							'prop_id' => $propId,
-							'value' => $this->castValue( $val['schema'], $v ),
+							'value' => self::castValue( $val['schema'], $v ),
 							'created_at' => $this->dateTime,
 						];
 					}

@@ -132,7 +132,7 @@ class TableResultPrinter extends ResultPrinter {
 
 		// keep temporarily headers to group values
 		// in the same cell
-		$this->json[count( $this->json ) - 1][$path][] = $value;
+		$this->json[count( $this->json ) - 1][$path][] = ( is_string( $value ) ? trim( $value ) : $value );
 
 		return $value;
 	}

@@ -162,7 +162,9 @@ class UpdateDataJob extends Job {
 
 					$printout = '';
 					$path = '';
-					DatabaseManager::traverseData( $schema, $jsonData['schemas'], $path, $printout, $callback );
+					$callbackValue = static function ( $schema, &$data, $newPath, $printout, $newKey ) {
+					};
+					DatabaseManager::traverseData( $schema, $jsonData['schemas'], $path, $printout, $callback, $callbackValue );
 
 					$targetSlot = \VisualData::getTargetSlot( $title );
 					$slots = [

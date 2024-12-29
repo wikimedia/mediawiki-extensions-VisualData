@@ -49,6 +49,9 @@ class RebuildData extends Maintenance {
 	/** @var string */
 	private $excludePrefix;
 
+	/** @var bool */
+	private $recastData;
+
 	/** @var array */
 	private $excludeSchemas;
 
@@ -68,6 +71,7 @@ class RebuildData extends Maintenance {
 		//	$this->addOption( 'format', 'import format (csv or json)', true, true );
 
 		$this->addOption( 'exclude-prefix', 'exclude prefix', false, true );
+		$this->addOption( 'recast-data', 'recast data', false, false );
 
 		// @TODO this require selective deletion of data
 		// in tables instead than dropping / creating them
@@ -80,6 +84,8 @@ class RebuildData extends Maintenance {
 	 */
 	public function execute() {
 		$excludePrefix = $this->getOption( 'exclude-prefix' ) ?? '';
+		$this->recastData = $this->getOption( 'recast-data' ) ?? false;
+
 		// $excludeSchemas = $this->getOption( 'exclude-schemas' ) ?? '';
 		// $onlySchemas = $this->getOption( 'only-schemas' ) ?? '';
 		$excludeSchemas = '';
@@ -231,7 +237,7 @@ class RebuildData extends Maintenance {
 			$revisionRecord = $wikiPage->getRevisionRecord();
 			$this->handlePagePropertiesSlot( $wikiPage, $revisionRecord );
 
-			$slotData = $this->getSlotData( $revisionRecord );
+			[ $slotData, $slotName, $modelId ] = $this->getSlotData( $revisionRecord );
 
 			if ( !$slotData ) {
 				continue;
@@ -271,11 +277,47 @@ class RebuildData extends Maintenance {
 				}
 			}
 
+			if ( $this->recastData ) {
+				$this->saveSlotContent( $context, $wikiPage, $title_, $data, $slotName, $modelId );
+			}
+
 			echo 'rebuilding data for ' . $title_->getFullText() . PHP_EOL;
 
 			$errors = [];
 			\VisualData::rebuildArticleData( $this->user, $title_, $data, $errors );
 		}
+	}
+
+	/**
+	 * @param Context $context
+	 * @param WikiPage $wikiPage
+	 * @param Title $title
+	 * @param array $data
+	 * @param string $slotName
+	 * @param string $modelId
+	 * @return bool|void
+	 */
+	private function saveSlotContent( $context, $wikiPage, $title, $data, $slotName, $modelId ) {
+		if ( !isset( $data['schemas'] ) ) {
+			return;
+		}
+		echo 'recast data ' . $title->getFullText() . PHP_EOL;
+
+		foreach ( $data['schemas'] as $schemaName => &$schemaData ) {
+			$schema_ = \VisualData::getSchema( $context, $schemaName );
+			$schemaData = DatabaseManager::castDataRec( $schema_, $schemaData );
+		}
+
+		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
+		$slotContent = ContentHandler::makeContent( json_encode( $data ), $title, $modelId );
+		$pageUpdater->setContent( $slotName, $slotContent );
+		$summary = '';
+		$flags = EDIT_INTERNAL;
+		$comment = CommentStoreComment::newUnsavedComment( $summary );
+		$newRevision = $pageUpdater->saveRevision( $comment, $flags );
+		$status = $pageUpdater->getStatus();
+
+		return $status->isOK();
 	}
 
 	/**
@@ -357,11 +399,10 @@ class RebuildData extends Maintenance {
 		$slots = $revisionRecord->getSlots()->getSlots();
 
 		if ( array_key_exists( SLOT_ROLE_VISUALDATA_JSONDATA, $slots ) ) {
-			return $slots[SLOT_ROLE_VISUALDATA_JSONDATA];
+			return [ $slots[SLOT_ROLE_VISUALDATA_JSONDATA], SLOT_ROLE_VISUALDATA_JSONDATA, CONTENT_MODEL_VISUALDATA_JSONDATA ];
 		}
 
 		// rebuild only if main slot contains json data
-
 		try {
 			$modelId = $revisionRecord->getSlot( SlotRecord::MAIN )->getContent()->getContentHandler()->getModelID();
 		} catch ( Exception $e ) {
@@ -369,7 +410,7 @@ class RebuildData extends Maintenance {
 			return null;
 		}
 		if ( $modelId === 'json' || $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
-			return $slots[SlotRecord::MAIN];
+			return [ $slots[SlotRecord::MAIN], SlotRecord::MAIN, $modelId ];
 		}
 
 		return null;
