@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2023-2024, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData\Utils;
@@ -63,8 +63,11 @@ class HtmlTable {
 	 * @param array $attributes
 	 */
 	public function cell( $content = '', $attributes = [] ) {
-		$this->formatContent( $content );
-		$this->cells[] = Html::Element( 'td', $attributes, $content );
+		if ( $content !== '' ) {
+			$this->cells[] = Html::Element( 'td', $attributes, $content );
+		} else {
+			$this->cellRaw( $content, $attributes );
+		}
 	}
 
 	/**
