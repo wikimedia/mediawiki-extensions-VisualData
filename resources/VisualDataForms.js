@@ -3081,8 +3081,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function setMutation( schemaName, rootEl ) {
-		// the root element could be not yet appended when
-		// the form is loaded
+		if ( schemaName in MutationObservers ) {
+			MutationObservers[ schemaName ].disconnect();
+		}
+
+		// the root element may not have been yet
+		// appended when the form is loaded
 		if ( rootEl ) {
 			var el = rootEl;
 		} else {
