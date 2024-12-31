@@ -49,6 +49,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 			case 'mw.widgets.TitleInputWidget':
 			case 'mw.widgets.DateInputWidget':
 			case 'OO.ui.TextInputWidget':
+			case 'LookupElement':
 				var ret = {
 					accessKey: [ 'string', 'The access key' ],
 					autocomplete: [
@@ -338,6 +339,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 			case 'mw.widgets.CategoryMultiselectWidget':
 			case 'OO.ui.TagMultiselectWidget':
 			case 'OO.ui.MenuTagMultiselectWidget':
+			case 'MenuTagSearchMultiselect':
 				var ret = {
 					allowArbitrary: [
 						'boolean',
