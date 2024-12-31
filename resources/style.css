@@ -259,3 +259,11 @@ body > .oo-ui-windowManager,
 .PanelPropertiesStackPanelTabs .oo-ui-tabOptionWidget {
 	display: inline-block;
 }
+
+.oo-ui-image-destructive.oo-ui-icon-bell {
+	background-image: url( ./OOjs_UI_icon_bell-destructive.svg );
+}
+
+.oo-ui-image-destructive.oo-ui-icon-reload {
+	background-image: url( ./reload-destructive.svg );
+}

@@ -54,6 +54,11 @@ class VisualDataApiDatatables extends ApiBase {
 		// $output = $this->getContext()->getOutput();
 
 		$data = json_decode( $apiParams['data'], true );
+
+		if ( !empty( $data['synch'] ) ) {
+			return $this->synchData( $data, $result );
+		}
+
 		$datatableData = $data['datatableData'];
 		$cacheKey = $data['cacheKey'];
 		$settings = $data['settings'];
@@ -71,7 +76,6 @@ class VisualDataApiDatatables extends ApiBase {
 
 		// filter the query
 		$queryConjunction = [];
-
 		if ( !empty( $datatableData['search']['value'] ) ) {
 			$queryDisjunction = [];
 			foreach ( $columnDefs as $key => $value ) {
@@ -108,7 +112,7 @@ class VisualDataApiDatatables extends ApiBase {
 		$params['limit'] = max( $datatableData['length'], $params['limit'] );
 		$params['offset'] = $datatableData['start'];
 		$params['order'] = implode( ' ', $order );
-		$params['api'] = true;
+		$params['api'] = $data['api'];
 		$params['format'] = 'table';
 
 		// *** url params are restored for the use
@@ -137,7 +141,12 @@ class VisualDataApiDatatables extends ApiBase {
 			return null;
 		}
 
-		$rows = $resultPrinter->getResults();
+		$ret = $resultPrinter->getResults();
+
+		if ( empty( $params['api'] ) ) {
+			$result->addValue( [ $this->getModuleName() ], 'result', $ret );
+			return;
+		}
 
 		if ( !empty( $datatableData['search']['value'] ) || count( $queryConjunction ) ) {
 			$count = $resultPrinter->getCount();
@@ -152,7 +161,7 @@ class VisualDataApiDatatables extends ApiBase {
 		// @see https://datatables.net/extensions/scroller/examples/initialisation/server-side_processing.html
 		$ret = [
 			'draw' => $datatableData['draw'],
-			'data' => $rows,
+			'data' => $ret,
 			'recordsTotal' => $settings['count'],
 			'recordsFiltered' => $count,
 			'cacheKey' => $cacheKey,
@@ -161,6 +170,75 @@ class VisualDataApiDatatables extends ApiBase {
 
 		$result->addValue( [ $this->getModuleName() ], 'result', $ret );
 		$result->addValue( [ $this->getModuleName() ], 'log', $log );
+	}
+
+	/**
+	 * @param array $data
+	 * @param MediaWiki/MediaWikiServices/ApiResult $result
+	 * @return void
+	 */
+	private function synchData( $data, $result ) {
+		$query = $data['query'];
+		$params = $data['params'];
+		$printouts = $data['printouts'];
+		$sourcePage = $data['sourcePage'];
+		$templates = $data['templates'];
+		$context = RequestContext::getMain();
+
+		// *** url params are restored for the use
+		// with the template ResultPrinter which
+		// may use the "urlget" parser function or similar
+		$_GET = $data['urlParams'];
+
+		$params['api'] = $data['api'];
+		$params['format'] = ( $params['api'] ? 'table' : 'datatable' );
+
+		if ( !empty( $data['api'] ) ) {
+			$query .= '[[Creation date > ' . $data['queryTime'] . ']]';
+		}
+
+		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
+
+		// @see ApiExpandTemplates
+		$parserOptions = ParserOptions::newFromContext( $context );
+		$titleObj = Title::newFromText( $sourcePage );
+		$parser->startExternalParse( $titleObj, $parserOptions, Parser::OT_PREPROCESS );
+
+		$resultPrinter = \VisualData::getResults(
+			$parser,
+			$context,
+			$query,
+			$templates,
+			$printouts,
+			$params
+		);
+
+		if ( !$resultPrinter ) {
+			return;
+		}
+
+		if ( !empty( $data['api'] ) ) {
+			$count = $resultPrinter->getCount();
+			$ret = [
+				'queryTime' => date( 'Y-m-d H:i:s' ),
+				'count' => $count
+			];
+
+			// purge page, clear cache
+			if ( $count ) {
+				$wikiPage = \VisualData::getWikiPage( $titleObj );
+				if ( $wikiPage ) {
+					$wikiPage->doPurge();
+				}
+			}
+
+		} else {
+			$results = $resultPrinter->getResults();
+			$ret = [
+				'data' => $results
+			];
+		}
+		$result->addValue( [ $this->getModuleName() ], 'result', $ret );
 	}
 
 	/**

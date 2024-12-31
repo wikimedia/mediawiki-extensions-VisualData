@@ -227,10 +227,11 @@
 				"oojs-ui-core",
 				"oojs-ui-widgets",
 				"mediawiki.storage",
-				"oojs-ui.styles.icons-movement",
+				"oojs-ui.styles.icons-alerts",
 				"oojs-ui.styles.icons-interactions",
 				"oojs-ui.styles.icons-editing-core",
 				"oojs-ui.styles.icons-layout",
+				"oojs-ui.styles.icons-movement",
 				"oojs-ui-toolbars",
 				"oojs-ui-windows"
 			],
@@ -489,6 +490,9 @@
 			],
 			"dependencies": [
 				"ext.VisualData.PrintResults"
+			],
+			"messages": [
+				"visualdata-jsmodule-datatables-buttons-reload-table-label"
 			]
 		},
 		"ext.VisualData.Maptiler": {

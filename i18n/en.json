@@ -475,5 +475,6 @@
 	"visualdata-jsmodule-dialog-cancel": "cancel",
 	"visualdata-jsmodule-dialog-main": "main",
 	"visualdata-special-browse-pager-noschema": "no schema",
-	"visualdata-datatatables-searchpanes-empty-message": "empty"
+	"visualdata-datatatables-searchpanes-empty-message": "empty",
+	"visualdata-jsmodule-datatables-buttons-reload-table-label": "reload table"
 }

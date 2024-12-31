@@ -448,5 +448,6 @@
 	"visualdata-jsmodule-dialog-cancel": "A label message",
 	"visualdata-jsmodule-dialog-main": "A label message",
 	"visualdata-special-browse-pager-noschema": "A label message",
-	"visualdata-datatatables-searchpanes-empty-message": "A label message"
+	"visualdata-datatatables-searchpanes-empty-message": "A label message",
+	"visualdata-jsmodule-datatables-buttons-reload-table-label": "A label message"
 }

@@ -21,8 +21,14 @@
 
 /* eslint-disable no-unused-vars */
 
-const VisualDataDatatables = function ( Table, TableData, Datatable ) {
+const VisualDataDatatables = function ( el ) {
+	var Datatable;
 	var CacheLimit = 40000;
+	var Table = $( el );
+	var TableData = Table.data();
+	var SynchInterval;
+	var FaviconHref;
+	// var Datatable = $.fn.dataTable.ext;
 
 	var getCacheLimit = function ( obj ) {
 		return CacheLimit;
@@ -136,7 +142,7 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 
 				if ( displayLog ) {
 					// eslint-disable-next-line no-console
-					console.log( 'json', json );
+					console.log( 'result', json );
 					// eslint-disable-next-line no-console
 					console.log( 'log', log );
 				}
@@ -144,8 +150,9 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 				// cache all retrieved rows for each sorting
 				// dimension (column/dir), up to a fixed
 				// threshold (CacheLimit)
-
-				if ( data.datatableData.search.value === '' ) {
+				if ( 'search' in data.datatableData &&
+					data.datatableData.search.value === ''
+				) {
 					preloadData[ json.cacheKey ] = {
 						data: preloadData[ json.cacheKey ].data
 							.slice( 0, data.datatableData.start )
@@ -161,11 +168,103 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 				json.searchPanes = {
 					options: searchPanesOptions
 				};
+
 				callback( json );
 			} )
 			.fail( function ( error ) {
 				// eslint-disable-next-line no-console
-				console.error( 'visualdata-datatables', error );
+				console.error( 'visualdata-datatables-api', error );
+			} );
+	};
+
+	var restoreBadge = function () {
+		function drawBadge( favicon ) {
+			if ( favicon ) {
+				favicon.parentNode.removeChild( favicon );
+			}
+			var newLink = document.createElement( 'link' );
+			newLink.href = FaviconHref;
+			newLink.rel = 'icon';
+			document.head.appendChild( newLink );
+		}
+		if ( FaviconHref ) {
+			var link = document.querySelector( "link[rel~='icon']" );
+			drawBadge( link );
+		}
+	};
+
+	// @credits https://www.sitelint.com/blog/add-a-badge-to-the-browser-tab-favicon-using-javascript
+	// @credits https://stackoverflow.com/questions/260857/changing-website-favicon-dynamically
+	var addBadge = function () {
+		document.head = document.head || document.getElementsByTagName( 'head' )[ 0 ];
+
+		function drawBadge( favicon ) {
+			const faviconSize = 32;
+			const canvas = document.createElement( 'canvas' );
+			canvas.width = faviconSize;
+			canvas.height = faviconSize;
+			const context = canvas.getContext( '2d' );
+			const img = document.createElement( 'img' );
+
+			const createBadge = () => {
+				context.drawImage( img, 0, 0, faviconSize, faviconSize );
+
+				context.beginPath();
+				context.arc( canvas.width - faviconSize / 6, faviconSize / 6, faviconSize / 6, 0, 2 * Math.PI );
+				context.fillStyle = '#e30';
+				context.fill();
+
+				if ( favicon ) {
+					favicon.parentNode.removeChild( favicon );
+				}
+				var newIcon = document.createElement( 'link' );
+				newIcon.href = canvas.toDataURL( 'image/png' );
+				newIcon.rel = 'icon';
+				document.head.appendChild( newIcon );
+			};
+
+			img.addEventListener( 'load', createBadge );
+			img.src = favicon.href;
+			FaviconHref = favicon.href;
+		}
+
+		var link = document.querySelector( "link[rel~='icon']" );
+		drawBadge( link );
+	};
+
+	var callApiSynch = function (
+		data,
+		callback,
+		displayLog
+	) {
+		if ( displayLog ) {
+			// eslint-disable-next-line no-console
+			console.log( 'payload data', data );
+		}
+
+		var payload = {
+			action: 'visualdata-datatables',
+			data: JSON.stringify( data )
+		};
+
+		new mw.Api()
+			.postWithToken( 'csrf', payload )
+			.done( function ( res ) {
+				var result = res[ payload.action ].result;
+				var log = res[ payload.action ].log;
+
+				if ( displayLog ) {
+					// eslint-disable-next-line no-console
+					console.log( 'result', result );
+					// eslint-disable-next-line no-console
+					console.log( 'log', log );
+				}
+
+				callback( result );
+			} )
+			.fail( function ( error ) {
+				// eslint-disable-next-line no-console
+				console.error( 'visualdata-datatables-api-synch', error );
 			} );
 	};
 
@@ -175,7 +274,7 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 		} );
 	}
 
-	var initColumnSort = function ( table, order, headers ) {
+	var initColumnSort = function ( order, headers ) {
 		var ret = [];
 		// eg. new_property asc, new_property_2 desc
 		var values = order.split( /\s*,\s*/ );
@@ -194,10 +293,10 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 			}
 		}
 		if ( ret.length > 0 ) {
-			table.data( 'order', ret );
+			Table.data( 'order', ret );
 		} else {
 			// default @see https://datatables.net/reference/option/order
-			table.data( 'order', [ [ 0, 'asc' ] ] );
+			Table.data( 'order', [ [ 0, 'asc' ] ] );
 		}
 	};
 
@@ -411,13 +510,13 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 		return ret;
 	};
 
-	var renderCards = function ( table, headers ) {
-		if ( table.hasClass( 'cards' ) ) {
+	var renderCards = function ( headers ) {
+		if ( Table.hasClass( 'cards' ) ) {
 			var labels = VisualDataFunctions.objectValues( headers );
 
 			// Add data-label attribute to each cell
 			// (will be used by .visualdata.datatable.cards td:before)
-			$( 'tbody tr', table ).each( function () {
+			$( 'tbody tr', Table ).each( function () {
 				$( this ).find( 'td' ).each( function ( column ) {
 					$( this ).attr( 'data-label', labels[ column ] );
 				} );
@@ -425,63 +524,36 @@ const VisualDataDatatables = function ( Table, TableData, Datatable ) {
 
 			// set same heigth for all cards
 			var max = 0;
-			$( 'tbody tr', table ).each( function () {
+			$( 'tbody tr', Table ).each( function () {
 				max = Math.max( $( this ).height(), max );
 			} ).height( max );
 		}
 	};
 
-	return {
-		getCacheKey,
-		callApi,
-		getCacheLimit,
-		initSearchPanesColumns,
-		getPanesOptions,
-		setPanesOptions,
-		initColumnSort,
-		searchPanesOptionsServer,
-		renderCards,
-		exportAction
-	};
-};
-
-$( function () {
-	$( '.visualdata.datatable' ).each( function () {
+	var render = function () {
 		var preloadData = {};
-
-		var table = $( this );
-		var tableData = table.data();
-		var count = tableData.count;
-		var conf = tableData.conf;
-		var query = tableData.query;
-		var data = tableData.json;
-		var params = tableData.params;
-		var printouts = tableData.printouts;
-		var templates = tableData.templates;
-		var mapPathSchema = tableData.mapPathSchema;
-		var headers = tableData.headers;
-		// var headersRaw = tableData.headersRaw;
-		var headersRaw = VisualDataFunctions.objectValues( tableData.headersRaw );
-		var printoutsOptions = tableData.printoutsOptions;
-		var searchPanesOptions = tableData.searchPanesOptions;
-		var useAjax = count > data.length;
-
-		var visualdataDatatables = new VisualDataDatatables(
-			table,
-			tableData,
-
-			// *** calling the same from the function exportAction
-			// Datatable.buttons has undefined properties
-			$.fn.dataTable.ext
-		);
+		var count = TableData.count;
+		var conf = TableData.conf;
+		var query = TableData.query;
+		var data = TableData.json;
+		var params = TableData.params;
+		var printouts = TableData.printouts;
+		var templates = TableData.templates;
+		var mapPathSchema = TableData.mapPathSchema;
+		var headers = TableData.headers;
+		// var headersRaw = TableData.headersRaw;
+		var headersRaw = VisualDataFunctions.objectValues( TableData.headersRaw );
+		var printoutsOptions = TableData.printoutsOptions;
+		var searchPanesOptions = TableData.searchPanesOptions;
+		var useAjax = ( count > data.length );
 
 		var displayLog = params.displayLog;
 		if ( displayLog ) {
 			// eslint-disable-next-line no-console
-			console.log( 'tableData', tableData );
+			console.log( 'TableData', TableData );
 		}
-		visualdataDatatables.initColumnSort( table, query.params.order, headers );
-		var order = table.data( 'order' );
+		initColumnSort( query.params.order, headers );
+		var order = Table.data( 'order' );
 
 		function isObject( obj ) {
 			return obj !== null && typeof obj === 'object' && !Array.isArray( obj );
@@ -498,6 +570,7 @@ $( function () {
 		}
 
 		var searchPanes = isObject( conf.searchPanes );
+		var synch = isObject( conf.synch );
 
 		var searchBuilder = conf.searchBuilder;
 		if ( searchBuilder ) {
@@ -649,6 +722,93 @@ html-num-fmt
 			conf.responsive = false;
 		}
 
+		// *** url params are passed for the use
+		// with the template ResultPrinter which
+		// may use the "urlget" parser function or similar
+
+		// do not use VisualDataFunctions.objectEntries
+		var searchParams = new URLSearchParams( location.search );
+		var urlParams = {};
+		for ( const [ k, v ] of searchParams ) {
+			urlParams[ k ] = v;
+		}
+		delete urlParams.title;
+		delete urlParams.action;
+
+		if ( synch ) {
+			var payloadDataSync = {
+				synch: true,
+				params,
+				query: query.query,
+				templates,
+				printouts,
+				urlParams,
+				sourcePage: mw.config.get( 'wgPageName' )
+			};
+
+			// https://datatables.net/reference/feature/buttons.buttons
+			conf.buttons.push( {
+				text: mw.msg( 'visualdata-jsmodule-datatables-buttons-reload-label' ),
+				attr: {
+					id: 'visualdata-datatables-buttons-reload',
+					style: 'display: none'
+				},
+				action: function ( e, dt, node, config ) {
+					// called from the OOUII button
+				}
+			} );
+
+			// call each n seconds, if new items
+			// exist, show the update button to
+			// retrieve again the original query
+			SynchInterval = setInterval( function () {
+				var callback = function ( result ) {
+					// update time
+					conf.queryTime = result.queryTime;
+					// *** for now we leave it, we retrieve
+					// instead the all table
+					// $( self ).DataTable( conf ).row.add( json.data ).draw( false );
+
+					if ( result.count > 0 ) {
+						clearInterval( SynchInterval );
+						addBadge();
+						// $( '#visualdata-datatables-buttons-reload' ).show();
+						var reloadButton = new OO.ui.ButtonWidget( {
+							label: mw.msg( 'visualdata-jsmodule-datatables-buttons-reload-table-label' ),
+							// or bell
+							icon: 'reload',
+							flags: [ 'destructive' ]
+						} );
+
+						reloadButton.on( 'click', function () {
+							var thisCallback = function ( thisResult ) {
+								Datatable.destroy();
+								restoreBadge();
+								el = $( el ).replaceWithPush( thisResult.data );
+								// eslint-disable-next-line no-new
+								new VisualDataDatatables( el );
+							};
+							callApiSynch( $.extend( payloadDataSync, {
+								api: false
+							} ),
+							thisCallback,
+							displayLog
+							);
+						} );
+
+						$( '#visualdata-datatables-buttons-reload' ).replaceWith( reloadButton.$element );
+					}
+				};
+				callApiSynch( $.extend( payloadDataSync, {
+					queryTime: conf.queryTime,
+					api: true
+				} ),
+				callback,
+				displayLog
+				);
+			}, conf.synch.interval * 1000 );
+		}
+
 		// default layout
 		// https://datatables.net/reference/option/layout
 		if ( conf.buttons.length &&
@@ -668,21 +828,21 @@ html-num-fmt
 				features: 'searchPanes'
 			};
 
-			visualdataDatatables.initSearchPanesColumns( columnDefs, conf );
+			initSearchPanesColumns( columnDefs, conf );
 
 			if ( !useAjax ) {
-				searchPanesOptions = visualdataDatatables.getPanesOptions(
+				searchPanesOptions = getPanesOptions(
 					data,
 					columnDefs,
 					conf
 				);
-				visualdataDatatables.setPanesOptions(
+				setPanesOptions(
 					data,
 					searchPanesOptions,
 					columnDefs
 				);
 			} else {
-				searchPanesOptions = visualdataDatatables.searchPanesOptionsServer(
+				searchPanesOptions = searchPanesOptionsServer(
 					searchPanesOptions,
 					columnDefs,
 					conf,
@@ -695,9 +855,12 @@ html-num-fmt
 
 		conf.drawCallback = function ( settings ) {
 			if ( conf.cards ) {
-				visualdataDatatables.renderCards( table, headers );
+				renderCards( headers );
 			}
 		};
+
+		// conf.destroy = true;
+		// conf.retrieve = false;
 
 		if ( !useAjax ) {
 			conf.serverSide = false;
@@ -716,7 +879,7 @@ html-num-fmt
 					case 'csv':
 						conf.buttons[ i ] = {
 							extend: conf.buttons[ i ],
-							action: visualdataDatatables.exportAction
+							action: exportAction
 						};
 				}
 			}
@@ -726,7 +889,7 @@ html-num-fmt
 			// cache using the column index and sorting
 			// method, as pseudo-multidimensional array
 			// column index + dir (asc/desc) + searchPanes (empty selection)
-			var cacheKey = visualdataDatatables.getCacheKey( {
+			var cacheKey = getCacheKey( {
 				order: order.map( ( x ) => {
 					return { column: x[ 0 ], dir: x[ 1 ] };
 				} )
@@ -758,9 +921,9 @@ html-num-fmt
 				// deferLoading: table.data("count"),
 				processing: true,
 				serverSide: true,
-				ajax: function ( datatableData, callback, settings ) {
+				ajax: function ( datatableData, thisCallback, settings ) {
 					// must match initial cacheKey
-					var thisCacheKey = visualdataDatatables.getCacheKey( datatableData );
+					var thisCacheKey = getCacheKey( datatableData );
 
 					if ( !( thisCacheKey in preloadData ) ) {
 						preloadData[ thisCacheKey ] = { data: [] };
@@ -773,7 +936,7 @@ html-num-fmt
 						datatableData.start + datatableData.length <=
 							preloadData[ thisCacheKey ].data.length
 					) {
-						return callback( {
+						return thisCallback( {
 							draw: datatableData.draw,
 							data: preloadData[ thisCacheKey ].data.slice(
 								datatableData.start,
@@ -793,33 +956,20 @@ html-num-fmt
 					for ( var ii in preloadData ) {
 						var totalSize = preloadData[ ii ].data.length;
 
-						if ( totalSize > visualdataDatatables.getCacheLimit() ) {
+						if ( totalSize > getCacheLimit() ) {
 							// eslint-disable-next-line no-console
 							console.log( 'flushing datatables cache!' );
 							preloadData[ ii ] = {};
 						}
 					}
-
-					// *** url params are passed for the use
-					// with the template ResultPrinter which
-					// may use the "urlget" parser function or similar
-
-					// do not use VisualDataFunctions.objectEntries
-					var searchParams = new URLSearchParams( location.search );
-					var urlParams = {};
-					for ( const [ k, v ] of searchParams ) {
-						urlParams[ k ] = v;
-					}
-					delete urlParams.title;
-					delete urlParams.action;
-
-					visualdataDatatables.callApi(
+					callApi(
 						$.extend( payloadData, {
 							datatableData,
 							cacheKey: thisCacheKey,
-							urlParams
+							urlParams,
+							api: true
 						} ),
-						callback,
+						thisCallback,
 						preloadData,
 						searchPanesOptions,
 						displayLog
@@ -827,10 +977,27 @@ html-num-fmt
 				}
 			} );
 		}
+
 		if ( displayLog ) {
 			// eslint-disable-next-line no-console
 			console.log( 'conf', conf );
 		}
-		$( this ).DataTable( conf );
+
+		Datatable = $( el ).DataTable( conf );
+	};
+
+	render();
+};
+
+$( function () {
+	// https://stackoverflow.com/questions/6118778/jquery-replacewith-find-new-element
+	$.fn.replaceWithPush = function ( a ) {
+		var $a = $( a );
+		this.replaceWith( $a );
+		return $a;
+	};
+	$( '.visualdata.datatable' ).each( function () {
+		// eslint-disable-next-line no-new
+		new VisualDataDatatables( this );
 	} );
 } );

@@ -354,6 +354,18 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'required' => false,
 			'default' => false,
 		],
+		// ***custom parameter
+		'datatables-synch' => [
+			'type' => 'boolean',
+			'required' => false,
+			'default' => false,
+		],
+		// seconds
+		'datatables-synch.interval' => [
+			'type' => 'integer',
+			'required' => false,
+			'default' => 100,
+		],
 	];
 
 	/**
@@ -397,6 +409,9 @@ class DatatableResultPrinter extends TableResultPrinter {
 		// *** attention !!! "data-data" will conflict with
 		// datatables internal conf
 		$tableAttrs['data-json'] = json_encode( $this->json );
+
+		// used by synch
+		$tableAttrs['data-query-time'] = date( 'Y-m-d H:i:s', time() );
 
 		$tableAttrs['data-query'] = json_encode( $this->query );
 		$tableAttrs['width'] = '100%';

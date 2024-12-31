@@ -96,6 +96,14 @@ class QueryProcessor {
 	/** @var bool */
 	private $debug;
 
+	/** @var array */
+	private $specialPrefixes = [
+		'Creation date',
+		'CreationDate',
+		'Modification date',
+		'ModificationDate'
+	];
+
 	/**
 	 * @param array $schema
 	 * @param string $query
@@ -378,9 +386,10 @@ class QueryProcessor {
 	 * @param string $exp
 	 * @param string $field
 	 * @param string|null $dataType string
+	 * @param function|null $callbackValue null
 	 * @return string
 	 */
-	private function parseCondition( $exp, $field, $dataType = 'string' ) {
+	private function parseCondition( $exp, $field, $dataType = 'string', $callbackValue = null ) {
 		// use $this->dbr->buildLike( $prefix, $this->dbr->anyString() )
 		// if $value contains ~
 		$likeBefore = false;
@@ -409,11 +418,10 @@ class QueryProcessor {
 				// https://www.semantic-mediawiki.org/wiki/Help:Search_operators#User_manual
 
 				$patterns = [
-					// '/^(>>)\s*(.+)$/' => '>',
+					'/^(=)\s*(.+)$/' => '=',
 					'/^(>)\s*(.+)$/' => '>',
 					'/^(>=)\s*(.+)$/' => '>=',
 					'/^(<)\s*(.+)$/' => '<',
-					// '/^(<<)\s*(.+)$/' => '<',
 					'/^(<=)\s*(.+)$/' => '<=',
 					'/^(!)\s*(.+)$/' => '!=',
 				];
@@ -426,6 +434,9 @@ class QueryProcessor {
 				preg_match( $regex, $exp, $match_ );
 
 				if ( !empty( $match_ ) ) {
+					if ( $callbackValue ) {
+						$match_[2] = $callbackValue( $match_[2] );
+					}
 					return "$field {$sql} " . $this->dbr->addQuotes( $match_[2] );
 				}
 			}
@@ -446,15 +457,83 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param string $str
+	 * @return bool|string
+	 */
+	private function parseSpecialPrefix( $str ) {
+		// only escape the following https://www.php.net/manual/en/regexp.reference.meta.php
+		$patterns = [
+			'/^\s*(.+?)\s*=\s*(.+?)\s*$/' => '=',
+			'/^\s*(.+?)\s*>\s*(.+?)\s*$/' => '>',
+			'/^\s*(.+?)\s*>=\s*(.+?)\s*$/' => '>=',
+			'/^\s*(.+?)\s*<\s*(.+?)\s*$/' => '<',
+			'/^\s*(.+?)\s*<=\s*(.+?)\s*$/' => '<=',
+			'/^\s*(.+?)\s*!\s*(.+?)\s*$/' => '!=',
+		];
+		foreach ( $patterns as $regex => $sql ) {
+			preg_match( $regex, $str, $match_ );
+			if ( !empty( $match_ ) ) {
+				if ( !in_array( $match_[1], $this->specialPrefixes ) ) {
+					continue;
+				}
+				$prefix = $match_[1];
+				$value = $match_[2];
+				switch ( $prefix ) {
+					case 'ModificationDate':
+					case 'Modification date':
+						$fields_ = [
+							'rev_timestamp' => 'MAX(rev_timestamp)',
+						];
+						break;
+					case 'CreationDate':
+					case 'Creation date':
+						$fields_ = [
+							'rev_timestamp' => 'MIN(rev_timestamp)',
+						];
+						break;
+				}
+				$time = strtotime( $value );
+				// MW_TS
+				// $value = date( 'YmdHis', $time );
+				$value = $this->dbr->timestamp( $time );
+
+				$tables_ = [ 'revision' ];
+				$conds_ = [ 'rev_page = rev_alias.rev_page' ];
+				$options_ = [ 'LIMIT 1' ];
+				$field = $this->dbr->buildSelectSubquery(
+					$tables_,
+					$fields_,
+					$conds_,
+					__METHOD__,
+					$options_,
+				);
+				return "$field $sql $value";
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * @param string $value
 	 * @param array &$orConds
 	 * @param array &$tables
 	 * @param array &$joins
+	 * @param array &$fields
 	 * @param array &$categories
 	 */
-	private function processTitle( $value, &$orConds, &$tables, &$joins, &$categories ) {
-		$title = Title::newFromText( $value );
+	private function processTitle( $value, &$orConds, &$tables, &$joins, &$fields, &$categories ) {
+		// match "Creation date"
+		$specialPrefix = $this->parseSpecialPrefix( $value );
+		if ( $specialPrefix !== false ) {
+			$tables['rev_alias'] = 'revision';
+			$joins['rev_alias'] = [ 'JOIN', [
+				'rev_alias.rev_page = t0.page_id',
+				$specialPrefix
+			] ];
+			return;
+		}
 
+		$title = Title::newFromText( $value );
 		if ( $title &&
 			( $title->isKnown() || $title->getNamespace() === NS_CATEGORY )
 		) {
@@ -493,15 +572,16 @@ class QueryProcessor {
 	 * @param array &$conds
 	 * @param array &$tables
 	 * @param array &$joins
+	 * @param array &$fields
 	 */
-	private function getConditions( $mapConds, &$conds, &$tables, &$joins ) {
+	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields ) {
 		foreach ( $this->AndConditions as $i => $value ) {
 			$orConds = [];
 			$categories = [];
 			foreach ( $value as $printout => $values ) {
 				if ( !array_key_exists( $printout, $mapConds ) && $printout === 'page_title' ) {
 					foreach ( $values as $v ) {
-						$this->processTitle( $v, $orConds, $tables, $joins, $categories );
+						$this->processTitle( $v, $orConds, $tables, $joins, $fields, $categories );
 					}
 
 				} elseif ( array_key_exists( $printout, $mapConds ) ) {
@@ -838,7 +918,7 @@ class QueryProcessor {
 			}
 		}
 
-		$this->getConditions( $mapConds, $conds, $tables, $joins );
+		$this->getConditions( $mapConds, $conds, $tables, $joins, $fields );
 
 		$method = ( !$this->debug ? ( !$this->count ? 'select' : 'selectField' )
 			: 'selectSQLText' );
