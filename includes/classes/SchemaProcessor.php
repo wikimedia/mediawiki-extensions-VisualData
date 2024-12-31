@@ -1515,8 +1515,11 @@ e.g.
 	 * @param string $format
 	 * @return string
 	 */
-	public static function parseDateTime( string $dateHeader, $format = \DATE_RFC3339 ) {
-		if ( empty( \trim( $dateHeader ) ) ) {
+	public static function parseDateTime( $dateHeader, $format = \DATE_RFC3339 ) {
+		if ( is_string( $dateHeader ) ) {
+			$dateHeader = \trim( $dateHeader );
+		}
+		if ( empty( $dateHeader ) ) {
 			return '';
 		}
 
