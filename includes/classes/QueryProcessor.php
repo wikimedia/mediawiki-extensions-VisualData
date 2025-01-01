@@ -118,6 +118,7 @@ class QueryProcessor {
 			'order' => [ '', 'string' ],
 			'pagetitle' => [ 'pagetitle', 'string' ],
 			'hierarchical-conditions' => [ true, 'bool' ],
+			'printouts-from-conditions' => [ false, 'bool' ],
 			'count-printout' => [ false, 'bool' ],
 			'count-printout-min' => [ 1, 'integer' ],
 			'debug' => [ false, 'bool' ]
@@ -240,13 +241,15 @@ class QueryProcessor {
 
 				foreach ( $arr as $key => $value ) {
 					if ( strpos( $value, '::' ) === false ) {
+						$value = trim( $value );
 						// $orConditionsSubjects[] = $value;
 						$orConditions['page_title'][] = $value;
 						$this->conditionSubjects[] = $value;
+
 					} else {
 						[ $prop, $value ] = explode( '::', $value );
-						$orConditions[$prop][] = $value;
-						$this->conditionProperties[] = $prop;
+						$orConditions[$prop][] = trim( $value );
+						$this->conditionProperties[] = trim( $prop );
 					}
 				}
 				if ( count( $orConditions ) ) {
@@ -694,6 +697,15 @@ class QueryProcessor {
 			}
 		}
 
+		if ( $this->params['printouts-from-conditions'] ) {
+			foreach ( $this->AndConditions as $key => $values ) {
+				foreach ( $values as $k => $v ) {
+					$this->printouts[] = $k;
+				}
+			}
+			return;
+		}
+
 		// retrieve all, but order according to the schema
 		// descriptor
 		if ( empty( $this->printouts ) ) {
@@ -835,7 +847,8 @@ class QueryProcessor {
 				$joinConds[] = "t$key.schema_id=t0.schema_id";
 				$joinConds[] = "t$key.page_id=t0.page_id";
 				if ( $this->params['hierarchical-conditions']
-					&& array_key_exists( 'parent', $v ) ) {
+					&& array_key_exists( 'parent', $v )
+				) {
 					$parentKey = $v['parent'];
 					if ( !$v['isSibling'] ) {
 						$joinConds[] = "LOCATE( t$parentKey.path_parent, t$key.path_parent ) = 1";
@@ -959,6 +972,12 @@ class QueryProcessor {
 				'count' => ( !$this->treeFormat ?
 					'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
 			];
+		}
+
+		// prevents error "Error 1116: Too many tables"
+		if ( count( $tables ) > 61 ) {
+			$this->errors[] = 'Too many tables in the sql, try to specify at least one valid printout or less printouts';
+			return;
 		}
 
 		$res = $this->dbr->$method(

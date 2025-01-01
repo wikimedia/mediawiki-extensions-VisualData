@@ -61,7 +61,9 @@ class VisualDataHooks {
 			'json-raw' => 'JsonRawResultPrinter',
 			'lua' => 'LuaResultPrinter',
 			'carousel' => 'CarouselResultPrinter',
-			'count' => 'CountResultPrinter'
+			'count' => 'CountResultPrinter',
+			'pageid' => 'PageidResultPrinter',
+			'pagetitle' => 'PagetitleResultPrinter'
 		];
 	}
 

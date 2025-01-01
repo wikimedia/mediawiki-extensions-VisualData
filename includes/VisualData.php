@@ -1230,7 +1230,17 @@ class VisualData {
 		}
 		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
-		$queryProcessor = new QueryProcessor( $schema, $query, array_keys( $printouts ), $params );
+
+		$printoutsQuery = array_keys( $printouts );
+
+		switch ( $params['format'] ) {
+			case 'pageid':
+			case 'title':
+				$params['printouts-from-conditions'] = true;
+				break;
+		}
+
+		$queryProcessor = new QueryProcessor( $schema, $query, $printoutsQuery, $params );
 
 		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions );
 	}
