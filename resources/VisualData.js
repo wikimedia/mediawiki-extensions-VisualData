@@ -31,6 +31,20 @@ VisualData = ( function () {
 		return dataToLoad.filter( ( x ) => !VisualDataFunctions.inArray( x, config.loadedData ) );
 	}
 
+	function adjustSchemas( schemas ) {
+		// adjust schema, to ensure it can be handled
+		// @FIXME put in VisualDataSchemas, redesign assignement
+		// to Schemas in VisualDataForms -> loadDataBeforeSelect
+		for ( var i in schemas ) {
+			if ( !( 'wiki' in schemas[ i ] ) ) {
+				schemas[ i ].wiki = {};
+			}
+			if ( !( 'name' in schemas[ i ].wiki ) ) {
+				schemas[ i ].wiki.name = i;
+			}
+		}
+	}
+
 	function loadData( config, dataToLoad ) {
 		return new Promise( ( resolve, reject ) => {
 			var payload = {
@@ -46,6 +60,9 @@ VisualData = ( function () {
 						var data = res[ payload.action ];
 						for ( var i in data ) {
 							data[ i ] = JSON.parse( data[ i ] );
+						}
+						if ( 'schemas' in data ) {
+							adjustSchemas( data.schemas );
 						}
 						config.loadedData = config.loadedData.concat( dataToLoad );
 						resolve( data );
@@ -77,6 +94,7 @@ VisualData = ( function () {
 				.done( function ( res ) {
 					if ( payload.action in res ) {
 						var thisSchemas = JSON.parse( res[ payload.action ].schemas );
+						adjustSchemas( thisSchemas );
 						for ( var i in thisSchemas ) {
 							Schemas[ i ] = thisSchemas[ i ];
 						}

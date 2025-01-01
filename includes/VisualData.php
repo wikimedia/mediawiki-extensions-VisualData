@@ -788,8 +788,15 @@ class VisualData {
 
 		$databaseManager = new DatabaseManager();
 
+		if ( !empty( $params['schema'] ) ) {
+			self::adjustSchemaName( $params['schema'] );
+		}
+
 		if ( !$isButton ) {
 			$schemas = preg_split( '/\s*,\s*/', $values[0], -1, PREG_SPLIT_NO_EMPTY );
+			foreach ( $schemas as &$value ) {
+				self::adjustSchemaName( $value );
+			}
 		} else {
 			$schemas = ( !empty( $params['schema'] ) ? [ $params['schema'] ] : [] );
 		}
@@ -1060,6 +1067,8 @@ class VisualData {
 			return $returnError( 'schema not set' );
 		}
 
+		self::adjustSchemaName( $params['schema'] );
+
 		if ( !array_key_exists( $params['format'], $GLOBALS['wgVisualDataResultPrinterClasses'] ) ) {
 			return 'format not supported';
 		}
@@ -1116,6 +1125,13 @@ class VisualData {
 		}
 
 		return [ $results, 'isHTML' => $isHtml ];
+	}
+
+	/**
+	 * @param string &$name
+	 */
+	public static function adjustSchemaName( &$name ) {
+		$name = str_replace( '_', ' ', (string)$name );
 	}
 
 	/**
@@ -1203,6 +1219,8 @@ class VisualData {
 		if ( empty( $params['schema'] ) || empty( $params['format'] ) ) {
 			return false;
 		}
+		self::adjustSchemaName( $params['schema'] );
+
 		$schema = self::getSchema( $context, $params['schema'] );
 		if ( !$schema ) {
 			return false;
@@ -1226,6 +1244,7 @@ class VisualData {
 	 */
 	public static function getQueryResults( $schema, $query, $printouts = [], $params = [] ) {
 		$context = RequestContext::getMain();
+		self::adjustSchemaName( $schema );
 
 		// limit, offset, order
 		$params = array_merge( $params, [
@@ -1419,7 +1438,10 @@ class VisualData {
 	 */
 	public static function getSchema( $context, $name ) {
 		self::getSchemas( $context, [ $name ] );
-		if ( array_key_exists( $name, self::$schemas ) && !empty( self::$schemas[$name] ) ) {
+		if ( array_key_exists( $name, self::$schemas )
+			// @FIXME make consistent with setSchemas
+			&& !empty( self::$schemas[$name] )
+		) {
 			return self::$schemas[$name];
 		}
 	}
@@ -1580,7 +1602,9 @@ class VisualData {
 					if ( isset( $value['content']['schemas'] ) ) {
 						foreach ( $value['content']['schemas'] as $schemaName => &$schemaData ) {
 							$schema_ = self::getSchema( $context, $schemaName );
-							$schemaData = DatabaseManager::castDataRec( $schema_, $schemaData );
+							if ( !empty( $schema_ ) ) {
+								$schemaData = DatabaseManager::castDataRec( $schema_, $schemaData );
+							}
 						}
 					}
 
@@ -1734,7 +1758,8 @@ class VisualData {
 			$content = $slots[$role]->getContent();
 			$modelId = $content->getContentHandler()->getModelID();
 			if ( $role === SLOT_ROLE_VISUALDATA_JSONDATA
-				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA ) {
+				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA
+			) {
 					return $role;
 			}
 		}
@@ -2230,7 +2255,8 @@ class VisualData {
 			$titleText = $title->getText();
 
 			if ( array_key_exists( $titleText, self::$schemas )
-				&& !empty( self::$schemas[$titleText] ) ) {
+				&& !empty( self::$schemas[$titleText] )
+			) {
 				continue;
 			}
 
@@ -2241,12 +2267,18 @@ class VisualData {
 			}
 
 			$text = self::getWikipageContent( $title );
-			if ( !empty( $text ) ) {
-				$json = json_decode( $text, true );
-				if ( $json ) {
-					self::$schemas[$titleText] = $schemaProcessor->processSchema( $json, $titleText );
-				}
+			if ( empty( $text ) ) {
+				self::$schemas[$titleText] = [];
+				continue;
 			}
+
+			$json = json_decode( $text, true );
+			if ( empty( $json ) ) {
+				self::$schemas[$titleText] = [];
+				continue;
+			}
+
+			self::$schemas[$titleText] = $schemaProcessor->processSchema( $json, $titleText );
 		}
 	}
 
@@ -2718,17 +2750,31 @@ class VisualData {
 	}
 
 	/**
-	 * @param Wikipage $wikipage
+	 * @param Title $title
 	 * @param User $user
 	 * @param string $reason
 	 * @return void
 	 */
-	public static function deletePage( $wikipage, $user, $reason ) {
+	public static function deleteArticle( $title, $user, $reason ) {
+		$wikiPage = self::getWikiPage( $title );
+		return self::deletePage( $wikiPage, $user, $reason );
+	}
+
+	/**
+	 * @param WikiPage $wikiPage
+	 * @param User $user
+	 * @param string $reason
+	 * @return void
+	 */
+	public static function deletePage( $wikiPage, $user, $reason ) {
+		if ( !( $wikiPage instanceof wikiPage ) ) {
+			return;
+		}
 		if ( version_compare( MW_VERSION, '1.35', '<' ) ) {
 			$error = '';
-			$wikipage->doDeleteArticle( $reason, false, null, null, $error, $user );
+			$wikiPage->doDeleteArticle( $reason, false, null, null, $error, $user );
 		} else {
-			$wikipage->doDeleteArticleReal( $reason, $user );
+			$wikiPage->doDeleteArticleReal( $reason, $user );
 		}
 	}
 

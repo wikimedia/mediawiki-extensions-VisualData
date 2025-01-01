@@ -201,6 +201,18 @@ class RebuildData extends Maintenance {
 		foreach ( $res as $row ) {
 			$title_ = Title::newFromRow( $row );
 			$IDs[] = $title_->getArticleID();
+
+			// ensure schema is not empty
+			$text_ = \VisualData::getWikipageContent( $title_ );
+			if ( empty( $text_ ) ) {
+				\VisualData::deleteArticle( $title_, $this->user, 'no page' );
+				continue;
+			}
+
+			$json = json_decode( $text_, true );
+			if ( empty( $json ) ) {
+				\VisualData::deleteArticle( $title_, $this->user, 'no contents' );
+			}
 		}
 
 		$range = range( 1, $maxByPageId );

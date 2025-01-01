@@ -52,6 +52,8 @@ class VisualDataApiQueryOptions extends ApiBase {
 
 		$data = json_decode( $params['data'], true );
 
+		\VisualData::adjustSchemaName( $data['schema'] );
+
 		$wiki = [
 			'options-query' => $data['query'],
 			'query-schema' => $data['schema'],

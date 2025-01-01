@@ -55,6 +55,9 @@ class VisualDataApiQueryResults extends ApiBase {
 				$params_[$value] = $params[$value];
 			}
 		}
+
+		\VisualData::adjustSchemaName( $params['schema'] );
+
 		$results = \VisualData::getQueryResults( $params['schema'], $params['query'], $printouts, $params_ );
 		$result->addValue( [ $this->getModuleName() ], 'result', $results );
 	}

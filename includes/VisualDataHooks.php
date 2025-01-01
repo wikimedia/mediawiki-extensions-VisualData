@@ -107,7 +107,9 @@ class VisualDataHooks {
 	public static function onBeforeInitialize( \Title &$title, $unused, \OutputPage $output, \User $user, \WebRequest $request, $mediaWiki ) {
 		\VisualData::initialize();
 
-		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] )
+			&& !empty( $_GET['slot'] )
+		) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 
@@ -134,7 +136,9 @@ class VisualDataHooks {
 		\VisualData::$pageForms = [];
 		\VisualData::$queries = [];
 
-		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) && !empty( $_GET['slot'] ) ) {
+		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] )
+			&& !empty( $_GET['slot'] )
+		) {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 

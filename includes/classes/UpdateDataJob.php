@@ -80,6 +80,10 @@ class UpdateDataJob extends Job {
 
 		$schemaProcessor = new SchemaProcessor( $context );
 
+		if ( !empty( $this->params['schema'] ) ) {
+			\VisualData::adjustSchemaName( $this->params['schema'] );
+		}
+
 		$errors = [];
 		switch ( $this->params['action'] ) {
 			case 'delete-schema':

@@ -65,9 +65,19 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$context->setTitle( $sourcePage );
 		}
 
+		\VisualData::adjustSchemaName( $params['schema'] );
+
 		$schema = json_decode( $params['schema'], true );
 		$dialogAction = $params['dialog-action'];
 		$previousLabel = $params['previous-label'];
+
+		if ( ( $dialogAction === 'delete' || $dialogAction === 'rename' )
+			&& empty( $previousLabel )
+		) {
+			$result->addValue( [ $this->getModuleName() ], 'result-action', 'error' );
+			$result->addValue( [ $this->getModuleName() ], 'error', 'no schema label' );
+			return true;
+		}
 
 		if ( $dialogAction !== 'delete' && ( empty( $schema['wiki']['name'] ) || !count( $schema['properties'] ) ) ) {
 			$this->dieWithError( 'apierror-visualdata-permissions-error' );
@@ -87,9 +97,8 @@ class VisualDataApiSaveSchema extends ApiBase {
 			}
 
 			$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
-			$wikiPage_ = \VisualData::getWikiPage( $title_ );
-			$reason = '';
-			\VisualData::deletePage( $wikiPage_, $user, $reason );
+			$reason = 'deleted through ManageSchemas';
+			\VisualData::deleteArticle( $title_, $user, $reason );
 
 			$jobsCount = $databaseManager->deleteSchema( $user, $previousLabel, false );
 
@@ -105,7 +114,8 @@ class VisualDataApiSaveSchema extends ApiBase {
 		$label = $pageTitle->getText();
 
 		if ( ucfirst( str_replace( ' ', '_', $label_ ) )
-			!== ucfirst( str_replace( ' ', '_', $label ) ) ) {
+			!== ucfirst( str_replace( ' ', '_', $label ) )
+		) {
 			$result->addValue( [ $this->getModuleName() ], 'result-action', 'error' );
 			$result->addValue( [ $this->getModuleName() ], 'error', 'invalid title' );
 			return true;
