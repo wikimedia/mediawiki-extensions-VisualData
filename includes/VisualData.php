@@ -2767,7 +2767,7 @@ class VisualData {
 	 * @return void
 	 */
 	public static function deletePage( $wikiPage, $user, $reason ) {
-		if ( !( $wikiPage instanceof wikiPage ) ) {
+		if ( !( $wikiPage instanceof WikiPage ) ) {
 			return;
 		}
 		if ( version_compare( MW_VERSION, '1.35', '<' ) ) {
