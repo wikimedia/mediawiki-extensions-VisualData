@@ -2625,11 +2625,12 @@ class VisualData {
 			$options
 		);
 
-		if ( $row === false ) {
-			return $title;
+		if ( $row !== false ) {
+			$titleStr .= (string)( (int)$row->substr_count + 1 );
+		} else {
+			$titleStr .= '1';
 		}
 
-		$titleStr .= ( (int)$row->substr_count + 1 );
 		return Title::newFromText( $titleStr, $nsIndex );
 	}
 
