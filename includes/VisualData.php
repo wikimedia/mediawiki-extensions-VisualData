@@ -2566,6 +2566,74 @@ class VisualData {
 	}
 
 	/**
+	 * @param string &$titleStr
+	 * @return int
+	 */
+	public static function getRegisteredNamespace( &$titleStr ) {
+		$arr = explode( ':', $titleStr, 2 );
+		if ( count( $arr ) < 2 ) {
+			return NS_MAIN;
+		}
+		$formattedNamespaces = MediaWikiServices::getInstance()
+			->getContentLanguage()->getFormattedNamespaces();
+
+		$nameSpace = array_shift( $arr );
+		// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
+		$nsIndex = array_search( $nameSpace, $formattedNamespaces );
+		if ( $nsIndex === false ) {
+			return NS_MAIN;
+		}
+		$titleStr = implode( ':', $arr );
+		return $nsIndex;
+	}
+
+	/**
+	 * @param string &$titleStr
+	 * @return null|Title
+	 */
+	public static function parseTitleCounter( &$titleStr ) {
+		if ( !preg_match( '/#count\s*$/', $titleStr ) ) {
+			return Title::newFromText( $titleStr );
+		}
+
+		$titleStr = preg_replace( '/#count\s*$/', '', $titleStr );
+		$nsIndex = self::getRegisteredNamespace( $titleStr );
+		$title = Title::newFromText( $titleStr, $nsIndex );
+
+		if ( !$title || !$title->canExist() ) {
+			return null;
+		}
+
+		$dbr = self::getDB( DB_REPLICA );
+
+		$conds = [
+			'page_title REGEXP ' . $dbr->addQuotes( "$titleStr\d+" ),
+			'page_namespace' => $nsIndex
+		];
+
+		$options = [
+			'USE INDEX' => ( version_compare( MW_VERSION, '1.36', '<' ) ? 'name_title' : 'page_name_title' ),
+			'ORDER BY' => 'substr_count DESC',
+			'LIMIT' => 1
+		];
+
+		$row = $dbr->selectRow(
+			'page',
+			[ 'page_title', 'SUBSTRING(page_title, ' . ( strlen( $titleStr ) + 1 ) . ') + 0 as substr_count' ],
+			$conds,
+			__METHOD__,
+			$options
+		);
+
+		if ( $row === false ) {
+			return $title;
+		}
+
+		$titleStr .= ( (int)$row->substr_count + 1 );
+		return Title::newFromText( $titleStr, $nsIndex );
+	}
+
+	/**
 	 * @param Title $title
 	 * @param bool $exclude_current
 	 * @return array

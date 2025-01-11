@@ -412,7 +412,7 @@ class SubmitForm {
 			];
 		}
 
-		// user-defined title
+		// user-defined title from mw.widgets.TitleInputWidget
 		$userDefinedTitle = null;
 		if (
 			// !empty( $data['options']['action'] )
@@ -486,7 +486,8 @@ class SubmitForm {
 				$this->replacePageNameFormula( $data['flatten'], $data['options']['pagename-formula'], $pagenameFormulaProperties )
 			);
 
-			$pagenameFormulaTitle = Title::newFromText( $pagenameFormula );
+			$pagenameFormulaTitle = \VisualData::parseTitleCounter( $pagenameFormula );
+			// $pagenameFormulaTitle = Title::newFromText( $pagenameFormula );
 		}
 
 		$targetTitle = null;

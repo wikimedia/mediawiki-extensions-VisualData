@@ -128,8 +128,9 @@ class Importer {
 			$flatten = $databaseManager->prepareData( $schema, $value );
 			$titleText = $submitForm->replacePageNameFormula( $flatten, $pagenameFormula, $properties );
 
-			$title_ = Title::newFromText( $titleText );
-			if ( !$title_->canExist() ) {
+			$title_ = \VisualData::parseTitleCounter( $titleText );
+
+			if ( !$title_ ) {
 				$showMsg( 'wrong title ' . $titleText );
 				continue;
 			}

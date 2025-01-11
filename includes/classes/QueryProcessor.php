@@ -28,7 +28,6 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
-use MediaWiki\MediaWikiServices;
 use Title;
 
 class QueryProcessor {
@@ -85,9 +84,6 @@ class QueryProcessor {
 	private $mapKeyToPrintout;
 
 	/** @var array */
-	private $formattedNamespaces;
-
-	/** @var array */
 	private $mapPathNoIndexTable = [];
 
 	/** @var int */
@@ -133,8 +129,6 @@ class QueryProcessor {
 		$this->printoutsOriginal = $this->printouts;
 		$this->params = $params;
 		$this->dbr = \VisualData::getDB( DB_REPLICA );
-		$this->formattedNamespaces = MediaWikiServices::getInstance()
-			->getContentLanguage()->getFormattedNamespaces();
 
 		$this->parseQuery();
 		$this->prepareQuery();
@@ -555,16 +549,11 @@ class QueryProcessor {
 			// @FIXME replace underscore inside parseCondition
 			$value = str_replace( ' ', '_', $value );
 
-			// @TODO ...
 			// check if is a registered namespace
-			$arr = explode( ':', $value );
-			if ( count( $arr ) > 1 ) {
-				$nameSpace = array_shift( $arr );
-				// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
-				if ( ( $nsIndex = array_search( $nameSpace, $this->formattedNamespaces ) ) !== false ) {
-					$value = implode( ':', $arr );
-					$orConds_[] = "page_alias.page_namespace = $nsIndex";
-				}
+			$nsIndex = \VisualData::getRegisteredNamespace( $value );
+
+			if ( $nsIndex !== NS_MAIN ) {
+				$orConds_[] = "page_alias.page_namespace = $nsIndex";
 			}
 			$orConds[] = $this->parseCondition( $value, 'page_title' );
 		}
