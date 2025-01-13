@@ -1931,6 +1931,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 						if ( !( 'freetext' in Model ) ) {
 							return;
 						}
+
 						var thisInputWidget;
 						var freetextValue = Model.freetext.getValue();
 
@@ -1946,6 +1947,12 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 								contentModel: value,
 								value: freetextValue
 							} );
+
+							// *** this is not caught by the mutation
+							setTimeout( function () {
+								showLazyWidget( 'VisualDataVisualEditor' );
+							}, 50 );
+
 						// @TODO use TinyMCE for html
 						} else {
 							thisInputWidget = getFreeTextInput( false, {
