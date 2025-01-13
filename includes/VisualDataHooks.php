@@ -23,6 +23,8 @@
  */
 
 use MediaWiki\Extension\VisualData\DatabaseManager;
+use MediaWiki\Extension\VisualData\PageForms\PFArrayMap;
+use MediaWiki\Extension\VisualData\PageForms\PFArrayMapTemplate;
 use MediaWiki\Extension\VisualData\SchemaProcessor;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\RevisionRecord;
@@ -95,6 +97,10 @@ class VisualDataHooks {
 		$parser->setFunctionHook( 'visualdataqueryurl', [ \VisualData::class, 'parserFunctionQueryUrl' ] );
 		$parser->setFunctionHook( 'visualdatabase64encode', [ \VisualData::class, 'parserFunctionBase64Encode' ] );
 		$parser->setFunctionHook( 'visualdatabase64decode', [ \VisualData::class, 'parserFunctionBase64Decode' ] );
+
+		// @credits https://www.mediawiki.org/wiki/Extension:Page_Forms
+		$parser->setFunctionHook( 'arraymap', [ PFArrayMap::class, 'run' ], Parser::SFH_OBJECT_ARGS );
+		$parser->setFunctionHook( 'arraymaptemplate', [ PFArrayMapTemplate::class, 'run' ], Parser::SFH_OBJECT_ARGS );
 	}
 
 	/**

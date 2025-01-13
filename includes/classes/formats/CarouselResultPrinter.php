@@ -371,14 +371,14 @@ class CarouselResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processParent( $title, $schema, $properties, $path, $recPaths = [] ) {
+	public function processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast ) {
 		return '';
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
 		if ( array_key_exists( $key, $this->mapProperties ) ) {
 			if ( $this->mapProperties[$key] === 'file' ) {
 				$this->obj[$this->mapProperties[$key]][] = [ $title, (string)$properties[$key] ];

@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2024-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -543,9 +543,9 @@ class QueryProcessor {
 
 		} else {
 			// we got something in this form A:A/~
-			$tables['page_alias'] = 'page';
+			// $tables['page_alias'] = 'page';
 			// 'USE INDEX' => ( version_compare( MW_VERSION, '1.36', '<' ) ? 'name_title' : 'page_name_title' ),
-			$joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
+			// $joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
 			// @FIXME replace underscore inside parseCondition
 			$value = str_replace( ' ', '_', $value );
 
@@ -927,13 +927,14 @@ class QueryProcessor {
 
 		$options = $this->getOptions();
 
+		// *** join always, it ensures that the related article exists
 		// join page table also when sorting by mainlabel
-		if ( !empty( $options['ORDER BY'] )
-			&& strpos( $options['ORDER BY'], 'page_title' ) !== false
-		) {
+		// if ( !empty( $options['ORDER BY'] )
+		// 	&& strpos( $options['ORDER BY'], 'page_title' ) !== false
+		// ) {
 			$tables['page_alias'] = 'page';
 			$joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
-		}
+		// }
 
 		if ( $this->treeFormat && !$this->count ) {
 			$options['GROUP BY'] = 't0.page_id';

@@ -55,6 +55,7 @@
 	},
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\VisualData\\": "includes/classes/",
+		"MediaWiki\\Extension\\VisualData\\PageForms\\": "includes/classes/PageForms/",
 		"MediaWiki\\Extension\\VisualData\\ResultPrinters\\": "includes/classes/formats/",
 		"MediaWiki\\Extension\\VisualData\\Utils\\": "includes/utils/",
 		"MediaWiki\\Extension\\VisualData\\Pagers\\": "includes/specials/pagers/",

@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023-2024, https://wikisphere.org
+ * @copyright Copyright ©2024-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
@@ -52,7 +52,7 @@ class TableResultPrinter extends ResultPrinter {
 		'mode' => [
 			'type' => 'string',
 			'required' => false,
-			// auto, tree, plain
+			// auto, plain, nested
 			'default' => 'auto',
 		],
 	];
@@ -85,56 +85,114 @@ class TableResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
+	public function processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast ) {
+		$value = parent::processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast );
+
+		if ( !empty( $this->printouts[$path] ) ) {
+			// it's not clear if there is an use for that ...
+			// if ( !isset( $this->json[count( $this->json ) - 1][$path] ) ) {
+			// 	$this->json[count( $this->json ) - 1][$path][] = $value;
+			// }
+		}
+
+		$isRoot = ( $path === '' );
+
+		if ( !$isRoot ) {
+			// *** important, return for later use
+			return $value;
+		}
+
+		// expand cell template as it was the root parent in template format
+		foreach ( $this->printouts as $key_ => $value_ ) {
+			if ( !empty( $value_ )
+				&& !isset( $this->json[count( $this->json ) - 1][$key_] )
+			) {
+				if ( $this->hasTemplate( $key_ ) ) {
+					$this->json[count( $this->json ) - 1][$key_][] =
+						parent::processParent( $title, $schema, $properties, $key_, $recPaths, $isFirst, $isLast );
+				}
+			}
+		}
+
+		return $value;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
+		$value = parent::processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast );
+
 		// skip printouts as "a="
 		if ( empty( $this->printouts[$path] ) ) {
-			return '';
+			// *** important, return for use by the parent
+			return $value;
 		}
 
-		$value = parent::processChild( $title, $schema, $key, $properties, $path, $isArray );
+		// if ( $isArray ) {
+		// 	$key = $path;
+		// }
 
-		if ( $isArray ) {
-			$key = $path;
+		$fieldName = $this->getFieldName( $schema, $path );
+		$this->headers[$path] = $fieldName;
+		$this->headersRaw[$path] = $this->isHeaderRaw( $schema, $path );
+
+		$this->mapPathSchema[$path] = $schema;
+
+		if ( $this->hasTemplate( $path ) ) {
+			$value = Parser::stripOuterParagraph(
+				$this->parser->recursiveTagParseFully( $value )
+			);
 		}
 
+		$this->json[count( $this->json ) - 1][$path][] =
+			( is_string( $value ) ? trim( $value ) : $value );
+
+		return $value;
+	}
+
+	/**
+	 * @param string $schema
+	 * @param string $path
+	 * @return string
+	 */
+	protected function isHeaderRaw( $schema, $path ) {
+		if ( $this->hasTemplate( $path ) ) {
+			return true;
+		}
+
+		// @TODO add printout option |+ html
+		// @see DatatableResultPrinter -> getPrintoutsOptions
+		if ( !empty( $schema['wiki']['preferred-input'] )
+			&& in_array( $schema['wiki']['preferred-input'], $this->htmlInputs )
+		) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param string $schema
+	 * @param string $path
+	 * @return string
+	 */
+	protected function getFieldName( $schema, $path ) {
 		// @TODO $this->printouts[$path] should be null if not
 		// set by the user
 		// label from printout (|?a=b)
 		if ( $this->printouts[$path] !== $path ) {
-			$key = $this->printouts[$path];
+			return $this->printouts[$path];
+		}
 
 		// label from schema title
-		} elseif ( array_key_exists( 'title', $schema )
+		if ( array_key_exists( 'title', $schema )
 			&& !empty( $schema['title'] )
 		) {
-			$key = $schema['title'];
+			return $schema['title'];
 		}
 
-		$this->headers[$path] = $key;
-		$this->mapPathSchema[$path] = $schema;
-
-		if ( !$this->hasTemplate( $path ) ) {
-			// @TODO add printout option |+ html
-			// @see DatatableResultPrinter -> getPrintoutsOptions
-			if ( empty( $schema['wiki']['preferred-input'] )
-				|| !in_array( $schema['wiki']['preferred-input'], $this->htmlInputs )
-			) {
-				$this->headersRaw[$path] = false;
-			} else {
-				$this->headersRaw[$path] = true;
-			}
-		} else {
-			$value = Parser::stripOuterParagraph(
-				$this->parser->recursiveTagParseFully( $value )
-			);
-			$this->headersRaw[$path] = true;
-		}
-
-		// keep temporarily headers to group values
-		// in the same cell
-		$this->json[count( $this->json ) - 1][$path][] = ( is_string( $value ) ? trim( $value ) : $value );
-
-		return $value;
+		return $path;
 	}
 
 	/**
@@ -191,7 +249,7 @@ class TableResultPrinter extends ResultPrinter {
 	 * @param array $validPrintouts
 	 */
 	private function determineMode( $validPrintouts ) {
-		if ( in_array( $this->params['mode'], [ 'tree', 'plain' ] ) ) {
+		if ( in_array( $this->params['mode'], [ 'nested', 'plain' ] ) ) {
 			return;
 		}
 
@@ -207,7 +265,6 @@ class TableResultPrinter extends ResultPrinter {
 				}
 			}
 		};
-
 		$printout = '';
 		$path = '';
 		DatabaseManager::traverseSchema( $this->schema, $path, $printout, $callback );
@@ -216,12 +273,12 @@ class TableResultPrinter extends ResultPrinter {
 		// are on the same level and one or more of
 		// them is an array
 
-		// @TODO tree mode could be used in all cases
+		// @TODO nested mode could be used in all cases
 		// of nested printouts provided that results
-		// are consistent and that branches can be
+		// are consistent and that children can be
 		// rendered using templates
 		$this->params['mode'] = ( $multipleValues && count( $paths ) === 1
-			? 'tree' : 'plain' );
+			? 'nested' : 'plain' );
 	}
 
 	/**
@@ -247,12 +304,23 @@ class TableResultPrinter extends ResultPrinter {
 		}
 
 		$this->htmlTable = new htmlTable();
+		$this->initializeHeaders();
+
+		return $this->processResults( $results, $this->schema );
+	}
+
+	protected function initializeHeaders() {
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			$this->headers[''] = $this->params['pagetitle'];
 			$this->headersRaw[''] = true;
 		}
 
-		return $this->processResults( $results, $this->schema );
+		foreach ( $this->printouts as $key => $value ) {
+			if ( !empty( $value ) ) {
+				$this->headers[$key] = $value;
+				$this->headersRaw[$key] = true;
+			}
+		}
 	}
 
 	/**
@@ -260,6 +328,7 @@ class TableResultPrinter extends ResultPrinter {
 	 */
 	public function processResults( $results, $schema ) {
 		$ret = [];
+
 		foreach ( $results as $value ) {
 			[ $title_, $row ] = $value;
 
@@ -287,6 +356,7 @@ class TableResultPrinter extends ResultPrinter {
 		}
 
 		$headersRaw = array_values( $this->headersRaw );
+
 		foreach ( $this->json as $row ) {
 			$this->htmlTable->row();
 			foreach ( $row as $key => $cell ) {

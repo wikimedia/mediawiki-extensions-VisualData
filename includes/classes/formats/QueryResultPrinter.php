@@ -60,7 +60,7 @@ class QueryResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
 		$this->fields[$path] = $properties[$key];
 	}
 

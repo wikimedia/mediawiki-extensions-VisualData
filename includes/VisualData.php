@@ -18,7 +18,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2021-2024, https://wikisphere.org
+ * @copyright Copyright ©2021-2025, https://wikisphere.org
  */
 
 if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
@@ -1016,7 +1016,7 @@ class VisualData {
 				// |?name is equal to |?name=name, where name is replaced
 				// with the corresponding schema title if is set
 				// |?name= is processed in templates but not rendered
-				// |?name=abc abc is the field name
+				// |?name=abc abc is the field alias
 				$value = substr( $val, 1 );
 				$printoutsOptions[$value] = $parsePrintoutsOptions( $value );
 
@@ -2310,7 +2310,36 @@ class VisualData {
 	 */
 	public static function plainToNested( $items, $unescapeJsonKeys = false, $token = '/' ) {
 		$ret = [];
-		foreach ( $items as $key => $value ) {
+
+		// order
+		// [2] => a
+		// [0] => a/b
+		// to
+		// [0] => a/b
+		// [2] => a
+		// and remove parent keys
+		// this ensure that $ref[$part][''] = null
+		// does not target the parent item
+		// as string
+		uksort( $items, static function ( $a, $b ) use ( $token ) {
+			$countA = substr_count( $a, $token );
+			$countB = substr_count( $b, $token );
+			if ( $countA === $countB ) {
+				return 0;
+			}
+			return ( $countA > $countB ? -1 : 1 );
+		} );
+
+		$result = [];
+		foreach ( $items as $key => $item ) {
+			if ( !count( array_filter( $result, static function ( $parent ) use ( $key, $token ) {
+				return ( strpos( $parent, "$key$token" ) === 0 );
+			}, ARRAY_FILTER_USE_KEY ) ) ) {
+				$result[$key] = $item;
+			}
+		}
+
+		foreach ( $result as $key => $value ) {
 			$ref = &$ret;
 			$parts = explode( $token, $key );
 

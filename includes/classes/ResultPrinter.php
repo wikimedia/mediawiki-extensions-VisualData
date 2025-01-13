@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023, https://wikisphere.org
+ * @copyright Copyright ©2024-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -89,6 +89,18 @@ class ResultPrinter {
 	public static $parametersAlias = [
 		'params',
 		'_params'
+	];
+
+	/** @var array */
+	public static $isFirstAlias = [
+		'isfirst',
+		'_isfirst'
+	];
+
+	/** @var array */
+	public static $isLastAlias = [
+		'islast',
+		'_islast'
 	];
 
 	/**
@@ -285,9 +297,11 @@ class ResultPrinter {
 	 * @param Title $title
 	 * @param string $path
 	 * @param array $arr
+	 * @param bool $isFirst
+	 * @param bool $isLast
 	 * @return array
 	 */
-	protected function getTemplateParams( $title, $path, $arr ) {
+	protected function getTemplateParams( $title, $path, $arr, $isFirst = true, $isLast = true ) {
 		$ret = [];
 		$flattenRec = static function ( $arr, $path = '' ) use ( &$ret, &$flattenRec ) {
 			foreach ( $arr as $key => $value ) {
@@ -313,6 +327,14 @@ class ResultPrinter {
 			}
 		}
 
+		foreach ( self::$isFirstAlias as $text ) {
+			$ret[$text] = $isFirst;
+		}
+
+		foreach ( self::$isLastAlias as $text ) {
+			$ret[$text] = $isLast;
+		}
+
 		$retCopy = $ret;
 		foreach ( self::$parametersAlias as $text ) {
 			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
@@ -330,19 +352,28 @@ class ResultPrinter {
 	 * @param array $arr
 	 * @param string $path
 	 * @param string $pathNoIndex
+	 * @param bool $isFirst true
+	 * @param bool $isLast true
 	 * @return string
 	 */
-	protected function processSchemaRecTree( $title, $schema, $arr, $path, $pathNoIndex ) {
+	protected function processSchemaRecTree( $title, $schema, $arr, $path, $pathNoIndex, $isFirst = true, $isLast = true ) {
 		$isArray = $schema['type'] === 'array';
 
 		// reset indexes
 		if ( $isArray ) {
 			$arr = array_values( $arr );
 		}
+
 		$ret = [];
 		$recPaths = [];
+		$n = 0;
 		foreach ( $arr as $key => $value ) {
 			$currentPath = $path ? "$path/$key" : $key;
+
+			// passed as template params
+			$isFirst_ = ( $n === 0 );
+			$isLast_ = ( $n === count( $arr ) - 1 );
+			$n++;
 
 			switch ( $schema['type'] ) {
 				case 'object':
@@ -365,7 +396,7 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				[ $ret[$key], $recPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex );
+				[ $ret[$key], $recPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex, $isFirst_, $isLast_ );
 
 			} else {
 				$ret[$key] = $this->processChild(
@@ -374,7 +405,9 @@ class ResultPrinter {
 					$key,
 					$arr,
 					$currentPathNoIndex,
-					$isArray
+					$isArray,
+					$isFirst_,
+					$isLast_
 				);
 
 				$recPaths[$currentPath] = $ret[$key];
@@ -382,11 +415,11 @@ class ResultPrinter {
 		}
 
 		$res = [
-			$this->processParent( $title, $schema, $ret, $pathNoIndex, $recPaths ),
+			$this->processParent( $title, $schema, $ret, $pathNoIndex, $recPaths, $isFirst, $isLast ),
 			$recPaths
 		];
 
-		return $pathNoIndex === '' ? $res[0] : $res;
+		return ( $pathNoIndex === '' ? $res[0] : $res );
 	}
 
 	/**
@@ -394,13 +427,22 @@ class ResultPrinter {
 	 * @param array $schema
 	 * @param array $arr
 	 * @param string $path
+	 * @param bool $isFirst true
+	 * @param bool $isLast true
 	 * @return string
 	 */
-	protected function processSchemaRec( $title, $schema, $arr, $path ) {
+	protected function processSchemaRec( $title, $schema, $arr, $path, $isFirst = true, $isLast = true ) {
 		$isArray = ( $schema['type'] === 'array' );
 		$ret = [];
+
+		$n = 0;
 		foreach ( $arr as $key => $value ) {
 			$currentPath = $path ? "$path/$key" : $key;
+
+			// passed as template params
+			$isFirst_ = ( $n === 0 );
+			$isLast_ = ( $n === count( $arr ) - 1 );
+			$n++;
 
 			switch ( $schema['type'] ) {
 				case 'object':
@@ -425,7 +467,7 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				$ret[$key] = $this->processSchemaRec( $title, $subschema, $value, $currentPath );
+				[ $ret[$key], $recPaths ] = $this->processSchemaRec( $title, $subschema, $value, $currentPath, $isFirst_, $isLast_ );
 			} else {
 				$ret[$key] = $this->processChild(
 					$title,
@@ -433,17 +475,20 @@ class ResultPrinter {
 					$key,
 					$arr,
 					$currentPath,
-					$isArray
+					$isArray,
+					$isFirst_,
+					$isLast,
 				);
+				$recPaths[$currentPath] = $ret[$key];
 			}
 		}
 
-		return $this->processParent(
-			$title,
-			$schema,
-			$ret,
-			$path
-		);
+		$res = [
+			$this->processParent( $title, $schema, $ret, $path, $recPaths, $isFirst, $isLast ),
+			$recPaths
+		];
+
+		return ( $path === '' ? $res[0] : $res );
 	}
 
 	/**
@@ -451,10 +496,12 @@ class ResultPrinter {
 	 * @param array $schema
 	 * @param array $properties
 	 * @param string $path
-	 * @param array $recPaths []
+	 * @param array $recPaths
+	 * @param bool $isFirst
+	 * @param bool $isLast
 	 * @return string
 	 */
-	public function processParent( $title, $schema, $properties, $path, $recPaths = [] ) {
+	public function processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast ) {
 		$isArray = ( $schema['type'] === 'array' );
 		$isRoot = ( $path === '' );
 
@@ -467,7 +514,7 @@ class ResultPrinter {
 		if ( $this->hasTemplate( $path ) ) {
 			$properties_ = array_merge( $properties, $recPaths );
 			$ret = $this->processTemplate( $this->templates[$path],
-				$this->getTemplateParams( $title, $path, $properties_ ) );
+				$this->getTemplateParams( $title, $path, $properties_, $isFirst, $isLast ) );
 
 		} else {
 			// *** the cleaning here has no effect
@@ -502,9 +549,11 @@ class ResultPrinter {
 	 * @param array $properties
 	 * @param string $path
 	 * @param bool $isArray
+	 * @param bool $isFirst
+	 * @param bool $isLast
 	 * @return string
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray ) {
+	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
 		$value = $properties[$key];
 
 		// apply template
@@ -515,7 +564,7 @@ class ResultPrinter {
 				$properties = [ array_pop( $arr_ ) => $value ];
 			}
 			$value = $this->processTemplate( $this->templates[$path],
-				$this->getTemplateParams( $title, $path, $properties ), false );
+				$this->getTemplateParams( $title, $path, $properties, $isFirst, $isLast ), false );
 		}
 
 		$value = (string)$value;
