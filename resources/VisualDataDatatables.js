@@ -28,7 +28,7 @@ const VisualDataDatatables = function ( el ) {
 	var TableData = Table.data();
 	var SynchInterval;
 	var FaviconHref;
-	// var Datatable = $.fn.dataTable.ext;
+	var DatatableLibrary = $.fn.dataTable.ext;
 
 	var getCacheLimit = function ( obj ) {
 		return CacheLimit;
@@ -73,13 +73,13 @@ const VisualDataDatatables = function ( el ) {
 				funcName = 'copyHtml5';
 				break;
 			case 'buttons-excel':
-				funcName = ( Datatable.buttons.excelHtml5.available( dt, config ) ? 'excelHtml5' : 'excelFlash' );
+				funcName = ( DatatableLibrary.buttons.excelHtml5.available( dt, config ) ? 'excelHtml5' : 'excelFlash' );
 				break;
 			case 'buttons-csv':
-				funcName = ( Datatable.buttons.csvHtml5.available( dt, config ) ? 'csvHtml5' : 'csvFlash' );
+				funcName = ( DatatableLibrary.buttons.csvHtml5.available( dt, config ) ? 'csvHtml5' : 'csvFlash' );
 				break;
 			case 'buttons-pdf':
-				funcName = ( Datatable.buttons.pdfHtml5.available( dt, config ) ? 'pdfHtml5' : 'pdfFlash' );
+				funcName = ( DatatableLibrary.buttons.pdfHtml5.available( dt, config ) ? 'pdfHtml5' : 'pdfFlash' );
 				break;
 			case 'buttons-print':
 				funcName = 'print';
@@ -100,7 +100,7 @@ const VisualDataDatatables = function ( el ) {
 			data.length = TableData.count;
 
 			dt.one( 'preDraw', function ( e3, settings ) {
-				Datatable.buttons[ funcName ].action.call( self, e3, dt, button, config, cb );
+				DatatableLibrary.buttons[ funcName ].action.call( self, e3, dt, button, config, cb );
 
 				dt.one( 'preXhr', function ( e4, s1, data1 ) {
 					// eslint-disable-next-line no-underscore-dangle
