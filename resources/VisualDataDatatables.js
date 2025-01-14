@@ -746,8 +746,12 @@ html-num-fmt
 				sourcePage: mw.config.get( 'wgPageName' )
 			};
 
+			if ( !Array.isArray( conf.buttons ) ) {
+				conf.buttons = [];
+			}
+
 			// https://datatables.net/reference/feature/buttons.buttons
-			conf.buttons.push( {
+			conf.buttons.unshift( {
 				text: mw.msg( 'visualdata-jsmodule-datatables-buttons-reload-label' ),
 				attr: {
 					id: 'visualdata-datatables-buttons-reload',
@@ -772,6 +776,7 @@ html-num-fmt
 					if ( result.count > 0 ) {
 						clearInterval( SynchInterval );
 						addBadge();
+
 						// $( '#visualdata-datatables-buttons-reload' ).show();
 						var reloadButton = new OO.ui.ButtonWidget( {
 							label: mw.msg( 'visualdata-jsmodule-datatables-buttons-reload-table-label' ),
@@ -781,7 +786,12 @@ html-num-fmt
 						} );
 
 						reloadButton.on( 'click', function () {
+							reloadButton.$element.find( '.oo-ui-iconElement-icon' ).addClass( 'rotating' );
+							reloadButton.setDisabled( true );
+
 							var thisCallback = function ( thisResult ) {
+								reloadButton.$element.find( '.oo-ui-iconElement-icon' ).removeClass( 'rotating' );
+								reloadButton.setDisabled( false );
 								Datatable.destroy();
 								restoreBadge();
 								el = $( el ).replaceWithPush( thisResult.data );
