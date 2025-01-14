@@ -366,6 +366,11 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'required' => false,
 			'default' => 100,
 		],
+		'datatables-synch.property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'Creation date',
+		],
 	];
 
 	/**

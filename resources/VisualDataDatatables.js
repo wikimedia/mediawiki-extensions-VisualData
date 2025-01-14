@@ -739,6 +739,7 @@ html-num-fmt
 			var payloadDataSync = {
 				synch: true,
 				params,
+				synchProperty: conf.synch.property,
 				query: query.query,
 				templates,
 				printouts,
@@ -889,7 +890,11 @@ html-num-fmt
 					case 'csv':
 						conf.buttons[ i ] = {
 							extend: conf.buttons[ i ],
-							action: exportAction
+							action: exportAction,
+							// @see https://datatables.net/extensions/buttons/examples/print/columns.html
+							exportOptions: {
+								columns: ':visible'
+							}
 						};
 				}
 			}

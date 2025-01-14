@@ -3577,6 +3577,7 @@ $( function () {
 
 			if ( !config.caneditdata ) {
 				// form.options.title
+				$( '#visualdataform-wrapper-' + formID ).addClass( 'visualdata-form-wrapper-cannot-edit' );
 				$( '#visualdataform-wrapper-' + formID ).html( mw.msg( 'visualdata-jsmodule-forms-cannot-edit-form' ) );
 				continue;
 			}

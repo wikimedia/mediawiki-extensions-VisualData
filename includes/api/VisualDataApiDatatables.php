@@ -193,8 +193,22 @@ class VisualDataApiDatatables extends ApiBase {
 		$params['api'] = $data['api'];
 		$params['format'] = ( $params['api'] ? 'table' : 'datatable' );
 
+		$synchProperty = 'Creation date';
+		$allowedSynchProperties = [
+			'CreationDate',
+			'Creation date',
+			'ModificationDate',
+			'Modification date'
+		];
+
+		if ( !empty( $data['synchProperty'] )
+			&& in_array( $data['synchProperty'], $allowedSynchProperties )
+		) {
+			$synchProperty = $data['synchProperty'];
+		}
+
 		if ( !empty( $data['api'] ) ) {
-			$query .= '[[Creation date > ' . $data['queryTime'] . ']]';
+			$query .= '[[' . $synchProperty . ' > ' . $data['queryTime'] . ']]';
 		}
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
@@ -217,6 +231,11 @@ class VisualDataApiDatatables extends ApiBase {
 			return;
 		}
 
+		$log = [
+			'query' => $query,
+			'params' => $params
+		];
+
 		if ( !empty( $data['api'] ) ) {
 			$count = $resultPrinter->getCount();
 			$ret = [
@@ -238,7 +257,9 @@ class VisualDataApiDatatables extends ApiBase {
 				'data' => $results
 			];
 		}
+
 		$result->addValue( [ $this->getModuleName() ], 'result', $ret );
+		$result->addValue( [ $this->getModuleName() ], 'log', $log );
 	}
 
 	/**
