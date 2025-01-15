@@ -870,34 +870,38 @@ html-num-fmt
 			}
 		};
 
-		// conf.destroy = true;
-		// conf.retrieve = false;
-
-		if ( !useAjax ) {
-			conf.serverSide = false;
-			conf.data = data;
-
-			// use Ajax only when required
-		} else {
-			// prevents double spinner
-			// $(container).find(".datatables-spinner").hide();
-
+		var extendButtons = function ( obj ) {
 			for ( var i in conf.buttons ) {
 				switch ( conf.buttons[ i ] ) {
 					case 'print':
 					case 'pdf':
 					case 'excel':
 					case 'csv':
-						conf.buttons[ i ] = {
+						conf.buttons[ i ] = $.extend( {
 							extend: conf.buttons[ i ],
-							action: exportAction,
 							// @see https://datatables.net/extensions/buttons/examples/print/columns.html
 							exportOptions: {
 								columns: ':visible'
 							}
-						};
+						}, obj );
 				}
 			}
+		};
+
+		// conf.destroy = true;
+		// conf.retrieve = false;
+		if ( !useAjax ) {
+			conf.serverSide = false;
+			conf.data = data;
+
+			extendButtons();
+
+			// use Ajax only when required
+		} else {
+			// prevents double spinner
+			// $(container).find(".datatables-spinner").hide();
+
+			extendButtons( { action: exportAction } );
 
 			var preloadData = {};
 
