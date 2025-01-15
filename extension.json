@@ -496,6 +496,19 @@
 				"visualdata-jsmodule-datatables-buttons-reload-table-label"
 			]
 		},
+		"ext.VisualData.Datatables.export.excel": {
+			"position": "top",
+			"scripts": [
+				"datatables/jszip.min.js"
+			]
+		},
+		"ext.VisualData.Datatables.export.pdf": {
+			"position": "top",
+			"scripts": [
+				"datatables/pdfmake.min.js",
+				"datatables/vfs_fonts.js"
+			]
+		},
 		"ext.VisualData.Maptiler": {
 			"position": "top",
 			"scripts": [

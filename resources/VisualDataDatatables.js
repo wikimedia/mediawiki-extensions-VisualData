@@ -1022,8 +1022,36 @@ $( function () {
 		this.replaceWith( $a );
 		return $a;
 	};
+
+	var buttons = [];
 	$( '.visualdata.datatable' ).each( function () {
-		// eslint-disable-next-line no-new
-		new VisualDataDatatables( this );
+		var data = $( this ).data();
+		if ( data.conf && ( 'buttons' in data.conf ) && Array.isArray( data.conf.buttons ) ) {
+			buttons = buttons.concat( data.conf.buttons );
+		}
 	} );
+
+	var modules = [];
+	if ( buttons.indexOf( 'pdf' ) !== -1 ) {
+		modules.push( 'ext.VisualData.Datatables.export.pdf' );
+	}
+
+	if ( buttons.indexOf( 'excel' ) !== -1 ) {
+		modules.push( 'ext.VisualData.Datatables.export.excel' );
+	}
+
+	function initialize() {
+		$( '.visualdata.datatable' ).each( function () {
+			// eslint-disable-next-line no-new
+			new VisualDataDatatables( this );
+		} );
+	}
+
+	if ( !modules.length ) {
+		initialize();
+	} else {
+		mw.loader.using( modules, function () {
+			initialize();
+		} );
+	}
 } );
