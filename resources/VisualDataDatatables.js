@@ -871,19 +871,26 @@ html-num-fmt
 		};
 
 		var extendButtons = function ( obj ) {
+			var defaultExtend = function ( name ) {
+				return {
+					extend: name,
+					// @see https://datatables.net/extensions/buttons/examples/print/columns.html
+					exportOptions: {
+						columns: ':visible'
+					}
+				};
+			};
+
 			for ( var i in conf.buttons ) {
+				// @see https://datatables.net/reference/button/?extn=buttons
 				switch ( conf.buttons[ i ] ) {
 					case 'print':
 					case 'pdf':
 					case 'excel':
 					case 'csv':
-						conf.buttons[ i ] = $.extend( {
-							extend: conf.buttons[ i ],
-							// @see https://datatables.net/extensions/buttons/examples/print/columns.html
-							exportOptions: {
-								columns: ':visible'
-							}
-						}, obj );
+					case 'copy':
+						conf.buttons[ i ] = $.extend( defaultExtend( conf.buttons[ i ] ), obj );
+						break;
 				}
 			}
 		};
