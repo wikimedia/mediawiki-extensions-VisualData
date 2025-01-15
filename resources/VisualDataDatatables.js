@@ -787,8 +787,8 @@ html-num-fmt
 						} );
 
 						reloadButton.on( 'click', function () {
-							reloadButton.$element.find( '.oo-ui-iconElement-icon' ).addClass( 'rotating' );
 							reloadButton.setDisabled( true );
+							reloadButton.$element.find( '.oo-ui-iconElement-icon' ).addClass( 'rotating' );
 
 							var thisCallback = function ( thisResult ) {
 								reloadButton.$element.find( '.oo-ui-iconElement-icon' ).removeClass( 'rotating' );
