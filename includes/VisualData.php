@@ -1568,6 +1568,12 @@ class VisualData {
 			return false;
 		}
 
+		// rename slot json-data to jsondata
+		if ( array_key_exists( 'json-data', $slotsData ) ) {
+			$slotsData[SLOT_ROLE_VISUALDATA_JSONDATA] = $slotsData['json-data'];
+			unset( $slotsData['json-data'] );
+		}
+
 		$context = RequestContext::getMain();
 		$obj = [];
 		foreach ( $slotsData as $slotName => $value ) {
@@ -2122,12 +2128,14 @@ class VisualData {
 			$obj['pageForms'] = self::processPageForms( $title, $obj['pageForms'], $obj['config'] );
 		}
 
-		// @TODO double-check in what cases this was necessary ?
-		// if ( isset( $_SESSION ) && !empty( $_SESSION['visualdataform-submissiondata'] ) ) {
-		// 	foreach ( $_SESSION['visualdataform-submissiondata'] as $formData ) {
-		// 		self::setSchemas( $schemaProcessor, $formData['schemas'] );
-		// 	}
-		// }
+		// *** this is necessary to preserve the json data
+		// on form submission error
+		$sessionData = self::getSessionData();
+		if ( $sessionData ) {
+			foreach ( $sessionData as $formData ) {
+				self::setSchemas( $schemaProcessor, $formData['schemas'] );
+			}
+		}
 
 		// load all schemas also if context is !== than 'EditData'
 		// to display them in ask query schemas and other inputs
@@ -2902,7 +2910,7 @@ class VisualData {
 		$pageUpdater->setContent( MediaWiki\Revision\SlotRecord::MAIN, $slotContent );
 
 		$summary = '';
-		$flags = EDIT_INTERNAL;
+		$flags = EDIT_INTERNAL | EDIT_AUTOSUMMARY;
 		$comment = CommentStoreComment::newUnsavedComment( $summary );
 		$newRevision = $pageUpdater->saveRevision( $comment, $flags );
 		$status = $pageUpdater->getStatus();

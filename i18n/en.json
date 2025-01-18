@@ -431,7 +431,7 @@
 	"visualdata-special-submit-contentsnotsaved": "contents not saved",
 	"visualdata-special-submit-publishfilejoberror": "publish file error: $1 (file $2)",
 
-	"visualdata-special-submit-article-exists": "article exists",
+	"visualdata-special-submit-article-exists": "[[$1|article]] exists",
 	"visualdata-special-submit-permission-error": "article cannot be edited, you may need to login or ask for permissions",
 
 	"visualdata-jsmodule-forms-validate": "validate",

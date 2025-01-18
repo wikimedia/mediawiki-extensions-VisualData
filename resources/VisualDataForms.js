@@ -2982,7 +2982,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 									} )
 									.fail( function ( thisRes ) {
 										// eslint-disable-next-line no-console
-										console.error( 'visualdata-submit-form', res );
+										console.error( 'visualdata-submit-form', thisRes );
 										reject( thisRes );
 									} );
 

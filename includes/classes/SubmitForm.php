@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2024-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -217,20 +217,27 @@ class SubmitForm {
 
 	/**
 	 * @param Title $title
+	 * @param string $content
+	 * @param string $contentModel
 	 * @param array &$errors
 	 * @return bool
 	 */
-	private function createEmptyRevision( $title, &$errors = [] ) {
+	private function createInitialRevision( $title, $content, $contentModel, &$errors = [] ) {
 		if ( !\VisualData::checkWritePermissions( $this->user, $title, $errors ) ) {
 			$errors[] = $this->context->msg( 'visualdata-special-submit-permission-error' )->text();
 			return false;
 		}
+
+		// @see https://github.com/wikimedia/mediawiki/blob/master/includes/page/WikiPage.php
+		$flags = EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY | EDIT_INTERNAL;
+		$summary = 'VisualData initial revision';
+
 		$wikiPage = \VisualData::getWikiPage( $title );
 		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
-		$main_content = ContentHandler::makeContent( '', $title );
+		$main_content = ContentHandler::makeContent( (string)$content, $title, $contentModel );
 		$pageUpdater->setContent( SlotRecord::MAIN, $main_content );
-		$comment = CommentStoreComment::newUnsavedComment( '' );
-		$revisionRecord = $pageUpdater->saveRevision( $comment, EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY );
+		$comment = CommentStoreComment::newUnsavedComment( $summary );
+		$revisionRecord = $pageUpdater->saveRevision( $comment, $flags );
 		$status = $pageUpdater->getStatus();
 		return $status->isOK();
 	}
@@ -295,9 +302,6 @@ class SubmitForm {
 	 * @return bool
 	 */
 	private function updateContentModel( $targetTitle, $wikiPage, $contentModel, &$errors ) {
-		if ( !$contentModel || $contentModel === $targetTitle->getContentModel() ) {
-			return false;
-		}
 		$status = $this->changeContentModel( $wikiPage, $contentModel );
 		if ( !$status->isOK() ) {
 			$errors_ = $status->getErrorsByType( 'error' );
@@ -331,7 +335,7 @@ class SubmitForm {
 		// * file upload
 		// * file rename
 		// * apply values-prefixes
-		// * update content-model
+		// * set/update content-model
 		// * record properties
 		// * redirect to return-page or display errors
 		// @see for the order: https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/VisualData/+/refs/heads/1.2.4d/includes/specials/SpecialVisualDataSubmit.php
@@ -356,9 +360,6 @@ class SubmitForm {
 			}
 		}
 
-		// $targetSlot = isset( $data['form']['target-slot'] ) ? $data['form']['target-slot']
-		// : \VisualData::getTargetSlot( $editTitle, $data['options']['target-slot'] );
-
 		if ( !empty( $data['form']['target-slot'] ) ) {
 			$targetSlot = $data['form']['target-slot'];
 
@@ -378,16 +379,16 @@ class SubmitForm {
 			$jsonData['categories'] = $data['options']['default-categories'];
 		}
 
-		// *** not used anymore
+		// *** used from popup form
 		if ( !empty( $data['options']['action'] ) && $data['options']['action'] === 'delete' ) {
-			// @FIXME remove only deleted schemas
-			// if context !== EditData
+			// *** not used anymore
 			if ( $data['config']['context'] === 'EditData' ) {
 				unset( $jsonData['schemas'] );
 				unset( $jsonData['schemas-data'] );
 				$databaseManager->deletePage( $editTitle );
+
 			} else {
-				// $data['schemas'] contains the recorded schemas
+				// $data['schemas'] contains the handled schemas
 				// or $jsonData['schemas'] = array_intersect_key( array_flip( $data['schemas'] ), $jsonData['schemas'] );
 				foreach ( $data['schemas'] as $v ) {
 					unset( $jsonData['schemas'][$v] );
@@ -404,11 +405,17 @@ class SubmitForm {
 
 			$ret = \VisualData::setJsonData( $this->user, $editTitle, $slots, $errors );
 
-			// @TODO update database
+			if ( $data['config']['context'] === 'EditData' ) {
+				$targetUrl = $editTitle->getFullUrl();
+
+			} else {
+				$title_ = Title::newFromText( $data['options']['origin-page'] );
+				$targetUrl = $title_->getFullUrl();
+			}
+
 			return [
 				'errors' => [],
-				'target-url' => $data['config']['context'] === 'EditData' ? $editTitle->getFullUrl()
-					: $data['options']['origin-url']
+				'target-url' => $targetUrl
 			];
 		}
 
@@ -453,7 +460,8 @@ class SubmitForm {
 			}
 
 			if ( !empty( $value['schema']['wiki']['value-formula'] )
-				|| !empty( $value['schema']['wiki']['value-prefix'] ) ) {
+				|| !empty( $value['schema']['wiki']['value-prefix'] )
+			) {
 				$untransformedValues[$path] = $value['value'];
 			}
 		}
@@ -490,6 +498,7 @@ class SubmitForm {
 			// $pagenameFormulaTitle = Title::newFromText( $pagenameFormula );
 		}
 
+		// determine targetTitle
 		$targetTitle = null;
 		if ( !empty( $userDefinedTitle ) ) {
 			$targetTitle = $userDefinedTitle;
@@ -501,28 +510,54 @@ class SubmitForm {
 			$errors[] = $this->context->msg( 'visualdata-special-submit-notitle' )->text();
 		}
 
-		// @FIXME once this will be managed by the api
-		// errors can be returned immediately
-		// if ( empty( $targetTitle ) ) {
-		// 	return [
-		// 		'errors' => $errors
-		// 	];
-		// }
+		// determine contentModel
+		if ( array_key_exists( 'content-model', $data['form'] ) ) {
+			$contentModel = $data['form']['content-model'];
+		} elseif ( $editTitle ) {
+			$contentModel = $editTitle->getContentModel();
+		} elseif ( empty( $data['options']['edit-content-model'] )
+			&& array_key_exists( 'default-content-model', $data['options'] )
+		) {
+			$contentModel = $data['options']['default-content-model'];
+		} else {
+			$contentModel = $data['config']['contentModel'];
+		}
+
+		// determine freetext
+		$freetext = ( array_key_exists( 'freetext', $data['form'] ) ? $data['form']['freetext']
+			: null );
+
+		if ( $data['options']['action'] === 'create'
+			&& !array_key_exists( 'freetext', $data['form'] )
+			&& !empty( $data['options']['preload'] )
+		) {
+			$title_ = \VisualData::getTitleIfKnown( $data['options']['preload'] );
+			if ( $title_ ) {
+				$freetext = \VisualData::getWikipageContent( $title_ );
+			}
+		}
 
 		$isNewPage = false;
-
 		if ( $targetTitle ) {
-			// create target page, in order to
-			// use a parser function like {{PAGEID}}
 			if ( !$targetTitle->isKnown() ) {
 				$isNewPage = true;
-				// @TODO save freetext at this stage if
-				// provided
 				if ( !count( $errors ) ) {
-					$this->createEmptyRevision( $targetTitle, $errors );
+					// create target page, in order to
+					// use a parser function like {{PAGEID}}
+					// $this->createEmptyRevision( $targetTitle, $errors );
+					// *** attention ! if the target slot for json-data
+					// is main, this will be overwritten with the new content
+					// and content-model, therefore $freetext could be set
+					// always to an empty string in this case (it won't be
+					// empty if the freetext was edited before assigning
+					// json data and the main slot to them)
+					$this->createInitialRevision( $targetTitle, $freetext, $contentModel, $errors );
 				}
-			} elseif ( empty( $editTitle ) && empty( $data['options']['overwrite-existing-article-on-create'] ) ) {
-				$errors[] = $this->context->msg( 'visualdata-special-submit-article-exists' )->text();
+
+			} elseif ( empty( $editTitle )
+				&& empty( $data['options']['overwrite-existing-article-on-create'] )
+			) {
+				$errors[] = $this->context->msg( 'visualdata-special-submit-article-exists', $targetTitle->getDBKey() )->parse();
 			}
 
 			$this->context->setTitle( $targetTitle );
@@ -548,28 +583,26 @@ class SubmitForm {
 		$transformedValues = \VisualData::plainToNested( $transformedValues, true );
 
 		// move files if needed
-		$walkRec = function ( $arr1, $arr2, $path ) use( &$walkRec, $data, &$errors ) {
-			foreach ( $arr2 as $key => $value ) {
-				$path_ = $path ? "$path/$key" : $key;
+		$walkRec = function ( $arrFrom, $arrTo, $path ) use( &$walkRec, $data, &$errors ) {
+			foreach ( $arrTo as $key => $value ) {
+				$path_ = ( $path ? "$path/$key" : $key );
 				if ( is_array( $value ) ) {
-					// if ( !isset( $arr1[$key] ) || !is_array( $arr1[$key] ) ) {
-					// 	$arr1[$key] = [];
-					// }
-					$walkRec( $arr1[$key], $value, $path_ );
+					// *** $arrFrom[$key] should be always set
+					if ( isset( $arrFrom[$key] ) && is_array( $arrFrom[$key] ) ) {
+						$walkRec( $arrFrom[$key], $value, $path_ );
+					}
 				}
 				if ( array_key_exists( $path_, $data['flatten'] )
 					&& array_key_exists( 'filekey', $data['flatten'][$path_] )
-					// *** double-check here, we should distinguish
-					// between replacing a file and renaming
+					// *** if the filekey is empty the file has
+					// been renamed, otherwise it has been replaced
 					&& empty( $data['flatten'][$path_]['filekey'] )
-					&& $arr1[$key] != $value
+					&& $arrFrom[$key] != $value
 				) {
 					// move file
-					$res = $this->movePageApi( $arr1[$key], $value, $errors );
+					$res = $this->movePageApi( $arrFrom[$key], $value, $errors );
 				}
-				// $arr1[$key] = $value;
 			}
-			return $arr1;
 		};
 
 		if ( !empty( $jsonData['schemas'] ) ) {
@@ -578,40 +611,18 @@ class SubmitForm {
 
 		// save new values
 		$schemas = array_replace_recursive( $data['data'], $transformedValues );
-
 		$jsonData = array_merge( $jsonData, [ 'schemas' => $schemas ] );
 
 		if ( !empty( $untransformedValues ) ) {
 			$jsonData['schemas-data']['untransformed'] = $untransformedValues;
 		}
 
-		if ( array_key_exists( 'content-model', $data['form'] ) ) {
-			$contentModel = $data['form']['content-model'];
-		} elseif ( $editTitle ) {
-			$contentModel = $editTitle->getContentModel();
-		} elseif ( empty( $data['options']['edit-content-model'] )
-			&& array_key_exists( 'default-content-model', $data['options'] ) ) {
-			$contentModel = $data['options']['default-content-model'];
-		} else {
-			$contentModel = $data['config']['contentModel'];
-		}
-
-		$freetext = array_key_exists( 'freetext', $data['form'] ) ? $data['form']['freetext']
-			: null;
-
-		if ( $data['options']['action'] === 'create'
-			&& !array_key_exists( 'freetext', $data['form'] )
-			&& !empty( $data['options']['preload'] )
+		// update content model if necessary
+		if ( $targetTitle
+			&& !$isNewPage
+			&& $contentModel
+			&& $contentModel !== $targetTitle->getContentModel()
 		) {
-			$title_ = \VisualData::getTitleIfKnown( $data['options']['preload'] );
-			if ( $title_ ) {
-				$freetext = \VisualData::getWikipageContent( $title_ );
-			}
-		}
-
-		if ( $targetTitle ) {
-			// @FIXME once this will be managed by the api
-			// this can be omitted
 			$wikiPage = \VisualData::getWikiPage( $targetTitle );
 			$this->updateContentModel( $targetTitle, $wikiPage, $contentModel, $errors );
 		}
@@ -627,10 +638,11 @@ class SubmitForm {
 			}
 
 			// @ATTENTION ! put this before setJsonData
-			// otherwise it will be delayes after $wikiPage->doPurge();
+			// otherwise it will be delayed after $wikiPage->doPurge();
 			// below !!
 			$databaseManager->recordProperties( $data['config']['context'], $targetTitle, $data['flatten'], $errors );
 
+			// for new pages
 			$slots = [
 				$targetSlot => [
 					'model' => CONTENT_MODEL_VISUALDATA_JSONDATA,
@@ -638,8 +650,8 @@ class SubmitForm {
 				]
 			];
 
-			// @ATTENTION !! if NULL the slot content
-			// must not be edited
+			// @ATTENTION !! if freetext is NULL the slot content
+			// must not be edited in order to keep it unchanged
 			if ( $targetSlot !== 'main' && $freetext !== null ) {
 				$slots[SlotRecord::MAIN] = [
 					'model' => $contentModel,
