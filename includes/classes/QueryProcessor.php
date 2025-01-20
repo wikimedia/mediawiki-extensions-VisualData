@@ -1058,6 +1058,7 @@ class QueryProcessor {
 				$row = (array)$row;
 				$ret[$row[$printoutKey]] = (int)$row['count'];
 			}
+			ksort( $ret );
 			$this->result = $ret;
 			return;
 		}

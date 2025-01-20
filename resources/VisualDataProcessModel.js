@@ -167,9 +167,17 @@ const VisualDataProcessModel = function (
 			loopA: for ( var error of AjvErrors ) {
 				var path = `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }`;
 
-				// ignore NaN values if the field is not required
-				if ( VisualDataFunctions.isNaN( Flatten[ path ].value ) && !Flatten[ path ].schema.wiki.required ) {
-					continue;
+				// check if multiselect
+				// @FIXME add specific reference to arrays
+				if ( !( path in Flatten ) && /\/\d+$/.test( path ) ) {
+					var path_ = path.split( '/' ).slice( 0, -1 ).join( '/' );
+
+					if ( ( path_ in Flatten ) &&
+						( 'multiselect' in Flatten[ path_ ] ) &&
+						Flatten[ path_ ].multiselect === true
+					) {
+						path = path_;
+					}
 				}
 
 				for ( var path_ of Removed ) {
@@ -185,6 +193,11 @@ const VisualDataProcessModel = function (
 
 				if ( !( path in Flatten ) ) {
 					hiddenErrors[ path ] = `${ error.instancePath.slice( 1 ) } ${ error.message }`;
+					continue;
+				}
+
+				// ignore NaN values if the field is not required
+				if ( VisualDataFunctions.isNaN( Flatten[ path ].value ) && !Flatten[ path ].schema.wiki.required ) {
 					continue;
 				}
 

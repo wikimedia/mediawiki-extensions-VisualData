@@ -115,7 +115,8 @@ class Importer {
 					if ( isset( $schema['properties'][$k]['type'] ) ) {
 						switch ( $schema['properties'][$k]['type'] ) {
 							case 'array':
-								$value[$k] = explode( $this->options['csv-array-field-separator'], $v );
+								$sep_ = preg_quote( $this->options['csv-array-field-separator'], '/' );
+								$value[$k] = preg_split( "/\s*$sep_\s*/", $v, -1, PREG_SPLIT_NO_EMPTY );
 								break;
 						}
 					}
