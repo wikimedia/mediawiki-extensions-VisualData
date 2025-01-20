@@ -540,6 +540,7 @@ const VisualDataDatatables = function ( el ) {
 		var printouts = TableData.printouts;
 		var templates = TableData.templates;
 		var mapPathSchema = TableData.mapPathSchema;
+		var categoryFields = TableData.categoryFields;
 		var headers = TableData.headers;
 		// var headersRaw = TableData.headersRaw;
 		var headersRaw = VisualDataFunctions.objectValues( TableData.headersRaw );
@@ -623,8 +624,7 @@ html-num-fmt
 		for ( var key in headers ) {
 			var datatablesFormat;
 			var columnType;
-			// mainlabel
-			if ( key !== '' ) {
+			if ( key in mapPathSchema ) {
 				columnType = mapPathSchema[ key ].type;
 				switch ( mapPathSchema[ key ].type ) {
 					case 'boolean':
@@ -672,6 +672,7 @@ html-num-fmt
 						datatablesFormat = 'string';
 				}
 			} else {
+				// or categories
 				columnType = 'page title';
 				datatablesFormat = 'html';
 			}
@@ -932,6 +933,7 @@ html-num-fmt
 				printouts,
 				params,
 				templates,
+				categoryFields,
 				sourcePage: mw.config.get( 'wgPageName' ),
 				settings: { count, displayLog }
 			};

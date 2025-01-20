@@ -29,6 +29,7 @@ use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 use MediaWiki\Extension\VisualData\Utils\HtmlTable;
 use Parser;
+use Title;
 
 class TableResultPrinter extends ResultPrinter {
 
@@ -46,6 +47,9 @@ class TableResultPrinter extends ResultPrinter {
 
 	/** @var array */
 	protected $htmlInputs = [ 'TinyMCE', 'VisualEditor' ];
+
+	/** @var array */
+	protected $categoryFields = [];
 
 	/** @var array */
 	public static $parameters = [
@@ -67,7 +71,7 @@ class TableResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processRow( $title, $value ) {
+	public function processRow( $title, $value, $categories ) {
 		$this->json[] = [];
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			// main label
@@ -79,14 +83,14 @@ class TableResultPrinter extends ResultPrinter {
 		$pathNoIndex = '';
 
 		$method = ( $this->params['mode'] === 'plain' ? 'processSchemaRec' : 'processSchemaRecTree' );
-		return $this->$method( $title, $this->schema, $value, $path, $pathNoIndex );
+		return $this->$method( $title, $this->schema, $value, $categories, $path, $pathNoIndex );
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast ) {
-		$value = parent::processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast );
+	public function processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast ) {
+		$value = parent::processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast );
 
 		if ( !empty( $this->printouts[$path] ) ) {
 			// it's not clear if there is an use for that ...
@@ -108,8 +112,29 @@ class TableResultPrinter extends ResultPrinter {
 				&& !isset( $this->json[count( $this->json ) - 1][$key_] )
 			) {
 				if ( $this->hasTemplate( $key_ ) ) {
-					$this->json[count( $this->json ) - 1][$key_][] =
-						parent::processParent( $title, $schema, $properties, $key_, $recPaths, $isFirst, $isLast );
+					$ret_ = parent::processParent( $title, $schema, $properties, $categories, $key_, $recPaths, $isFirst, $isLast );
+
+					// *** the following won't be applied in processParent
+					// since $key_ is not empty
+					$ret_ = Parser::stripOuterParagraph(
+							$this->parser->recursiveTagParseFully( $ret_ )
+						);
+					$this->json[count( $this->json ) - 1][$key_][] = $ret_;
+
+				} else {
+					// @TODO this could or should be moved to parent::processParent
+
+					// this is triggered in mode-nested or plain, in mode plain
+					// if the similar block below does not handle
+					// $this->json[count( $this->json ) - 1][$key_]
+					foreach ( self::$categoriesAliases as $alias ) {
+						if ( $key_ === $alias && !in_array( $alias, $this->getValidPrintouts() ) ) {
+							$this->json[count( $this->json ) - 1][$key_] = $this->formatCategories( $categories );
+							if ( !in_array( $key_, $this->categoryFields ) ) {
+								$this->categoryFields[] = $key_;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -118,10 +143,26 @@ class TableResultPrinter extends ResultPrinter {
 	}
 
 	/**
+	 * @param array $categories
+	 * @return array
+	 */
+	private function formatCategories( $categories ) {
+		$ret = [];
+		foreach ( $categories as $value ) {
+			if ( empty( $value ) ) {
+				continue;
+			}
+			$title_ = Title::newFromText( $value, NS_CATEGORY );
+			$ret[] = Linker::link( $title_, ( $title_ ? $title_->getText() : $value ) );
+		}
+		return $ret;
+	}
+
+	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
-		$value = parent::processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast );
+	public function processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast ) {
+		$value = parent::processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast );
 
 		// skip printouts as "a="
 		if ( empty( $this->printouts[$path] ) ) {
@@ -145,8 +186,18 @@ class TableResultPrinter extends ResultPrinter {
 			);
 		}
 
-		$this->json[count( $this->json ) - 1][$path][] =
-			( is_string( $value ) ? trim( $value ) : $value );
+		// this is triggered in mode-plain
+		if ( !in_array( $key, $this->getValidPrintouts() )
+			&& in_array( $key, self::$categoriesAliases )
+		) {
+			$this->json[count( $this->json ) - 1][$path] = $this->formatCategories( explode( ', ', $value ) );
+			if ( !in_array( $key, $this->categoryFields ) ) {
+				$this->categoryFields[] = $key;
+			}
+		} else {
+			$this->json[count( $this->json ) - 1][$path][] =
+				( is_string( $value ) ? trim( $value ) : $value );
+		}
 
 		return $value;
 	}
@@ -330,10 +381,10 @@ class TableResultPrinter extends ResultPrinter {
 		$ret = [];
 
 		foreach ( $results as $value ) {
-			[ $title_, $row ] = $value;
+			[ $title_, $row, $categories ] = $value;
 
 			// @TODO implement file value from mainlabel
-			$ret[] = $this->processRow( $title_, $row );
+			$ret[] = $this->processRow( $title_, $row, $categories );
 		}
 
 		if ( empty( $this->params['api'] ) ) {

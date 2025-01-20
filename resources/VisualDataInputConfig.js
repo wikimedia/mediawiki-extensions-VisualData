@@ -127,7 +127,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 				switch ( inputName ) {
 					case 'mw.widgets.DateInputWidget':
 						return jQuery.extend( ret, {
-							precision: [ 'day/month', " Date precision to use, 'day' or 'month'" ],
+							precision: [ 'day/month', "Date precision to use, 'day' or 'month'" ],
 							inputFormat: [
 								'string',
 								'Date format string to use for the textual input field'

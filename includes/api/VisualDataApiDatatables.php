@@ -66,6 +66,8 @@ class VisualDataApiDatatables extends ApiBase {
 		$printouts = $data['printouts'];
 		$query = $data['query']['query'];
 		$params = $data['params'];
+		$categoryFields = $data['categoryFields'];
+
 		$templates = $data['templates'];
 		// $queryParams = $data['query']['params'];
 		$sourcePage = $data['sourcePage'];
@@ -74,13 +76,27 @@ class VisualDataApiDatatables extends ApiBase {
 			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
 		}
 
+		$subjectExpression = static function ( $printout ) use ( $categoryFields ) {
+			// category
+			if ( in_array( $printout, $categoryFields ) ) {
+				return 'Category:';
+			}
+
+			// title
+			if ( $printout === '' ) {
+				return '';
+			}
+
+			return "$printout::";
+		};
+
 		// filter the query
 		$queryConjunction = [];
 		if ( !empty( $datatableData['search']['value'] ) ) {
 			$queryDisjunction = [];
 			foreach ( $columnDefs as $key => $value ) {
 				$printout = $value['name'];
-				$queryDisjunction[] = ( $printout !== '' ? $printout . '::' : '' ) . '~' . $datatableData['search']['value'] . '~';
+				$queryDisjunction[] = $subjectExpression( $printout ) . '~' . $datatableData['search']['value'] . '~';
 			}
 			$queryConjunction[] = '[[' . implode( '||', $queryDisjunction ) . ']]';
 		}
@@ -90,7 +106,7 @@ class VisualDataApiDatatables extends ApiBase {
 				$printout = $datatableData['columns'][$key]['name'];
 				// @TODO consider combiner
 				// https://www.semantic-mediawiki.org/wiki/Help:Unions_of_results#User_manual
-				$queryConjunction[] = '[[' . ( $printout !== '' ? $printout . '::' : '' ) . implode( '||', $values ) . ']]';
+				$queryConjunction[] = '[[' . $subjectExpression( $printout ) . implode( '||', $values ) . ']]';
 			}
 		}
 

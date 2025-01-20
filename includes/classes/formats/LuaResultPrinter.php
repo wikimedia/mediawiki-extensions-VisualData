@@ -72,11 +72,12 @@ class LuaResultPrinter extends ResultPrinter {
 	public function processResults( $results, $schema ) {
 		$rows = [];
 		foreach ( $results as $value ) {
-			[ $title_, $row ] = $value;
+			[ $title_, $row, $categories ] = $value;
 			$rows[] = [
 				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),
-				'data' => $row
+				'data' => $row,
+				'categories' => $categories
 			];
 		}
 		$rows = $this->returnRawResult( $rows );

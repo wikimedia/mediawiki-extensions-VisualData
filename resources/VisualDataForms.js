@@ -1399,12 +1399,22 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 
 		// @TODO toggle parent as well if all children
 		// aren't visible
-		this.toggle(
-			!VisualDataFunctions.getNestedProp(
-				[ 'schema', 'options', 'hidden' ],
-				data
-			)
-		);
+		if ( data.schema.type === 'array' ) {
+			this.toggle(
+				!VisualDataFunctions.getNestedProp(
+					[ 'schema', 'items', 'options', 'hidden' ],
+					data
+				)
+			);
+
+		} else {
+			this.toggle(
+				!VisualDataFunctions.getNestedProp(
+					[ 'schema', 'options', 'hidden' ],
+					data
+				)
+			);
+		}
 
 		messageWidget.toggle( false );
 

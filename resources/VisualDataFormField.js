@@ -1076,7 +1076,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			availableInputsInput.setDisabled( hidden );
 			requiredInput.setDisabled( hidden );
 			fieldMultipleValues.toggle( !hidden );
-			layoutParentSchema.toggle( !hidden && ( getPropertyValue( 'multiple-items' ) || parentSchema.type === 'array' ) );
+			// !hidden &&
+			layoutParentSchema.toggle( ( getPropertyValue( 'multiple-items' ) || parentSchema.type === 'array' ) );
 			nameInput.setDisabled( layoutParentSchema.isVisible() );
 			labelField.toggle( !hidden );
 			helpMessageField.toggle( !hidden );

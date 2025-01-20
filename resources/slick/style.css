@@ -25,7 +25,11 @@
 /* stylelint-disable declaration-no-important */
 
 .slick-slider {
-	overflow: hidden;
+	/*
+	*** keep hidden to ensure dots are rendered, however
+	double-check if this causes other problems
+	*/
+	/* overflow: hidden; */
 }
 
 .slick-prev::before,

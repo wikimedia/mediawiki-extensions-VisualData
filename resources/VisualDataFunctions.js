@@ -131,14 +131,27 @@ VisualDataFunctions = ( function () {
 
 	function getAvailableInputs( type, format, config ) {
 		var ret = [];
+
+		// the value in parentheses is parsed by inputNameFromLabel
+		// only the last segement after the space is parsed, month)
 		switch ( type ) {
 			case 'string':
 				switch ( format ) {
 					case 'color':
-						ret = [ 'OO.ui.TextInputWidget (color)' ];
+						ret = [
+							'OO.ui.TextInputWidget (color)',
+							'OO.ui.TagMultiselectWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
+						];
 						break;
 					case 'date':
-						ret = [ 'mw.widgets.DateInputWidget' ];
+						ret = [
+							'mw.widgets.DateInputWidget',
+							'OO.ui.TagMultiselectWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
+						];
 						break;
 					case 'datetime':
 						ret = [ 'mw.widgets.datetime.DateTimeInputWidget' ];
@@ -147,9 +160,16 @@ VisualDataFunctions = ( function () {
 						ret = [ 'mw.widgets.datetime.DateTimeInputWidget' ];
 						break;
 					case 'email':
-						ret = [ 'OO.ui.TextInputWidget (email)' ];
+						ret = [
+							'OO.ui.TextInputWidget (email)',
+							'OO.ui.TagMultiselectWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
+						];
 						break;
 					case 'month':
+						// the value in parentheses is parsed by inputNameFromLabel
+						// only the last segement after the space is parsed, month)
 						ret = [ 'mw.widgets.DateInputWidget (precision month)' ];
 						break;
 					case 'password':
@@ -159,7 +179,10 @@ VisualDataFunctions = ( function () {
 						ret = [
 							'OO.ui.NumberInputWidget',
 							'OO.ui.TextInputWidget (number)',
-							'RatingWidget'
+							'RatingWidget',
+							'OO.ui.TagMultiselectWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
 						];
 						break;
 					case 'range':
@@ -170,7 +193,9 @@ VisualDataFunctions = ( function () {
 						ret = [
 							'intl-tel-input',
 							'OO.ui.TextInputWidget (tel)',
-							'OO.ui.TagMultiselectWidget'
+							'OO.ui.TagMultiselectWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
 						];
 						break;
 					case 'text':
@@ -201,10 +226,22 @@ VisualDataFunctions = ( function () {
 						ret = [ 'mw.widgets.datetime.DateTimeInputWidget' ];
 						break;
 					case 'url':
-						ret = [ 'OO.ui.TextInputWidget (url)' ];
+						ret = [
+							'OO.ui.TextInputWidget (url)',
+							'OO.ui.TagMultiselectWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
+						];
 						break;
 					case 'week':
-						ret = [ 'OO.ui.TextInputWidget' ];
+						// should be in the form 04,2025
+						ret = [
+							// not supported
+							// 'mw.widgets.DateInputWidget (precision week)',
+							'OO.ui.TextInputWidget',
+							'LookupElement',
+							'MenuTagSearchMultiselect'
+						];
 						break;
 				}
 				break;

@@ -54,11 +54,12 @@ class JsonRawResultPrinter extends ResultPrinter {
 	public function processResults( $results, $schema ) {
 		$ret = [];
 		foreach ( $results as $value ) {
-			[ $title_, $row ] = $value;
+			[ $title_, $row, $categories ] = $value;
 			$ret[] = [
 				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),
-				'data' => $row
+				'data' => $row,
+				'categories' => $categories
 			];
 		}
 

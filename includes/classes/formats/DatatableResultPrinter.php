@@ -19,12 +19,13 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023-2024, https://wikisphere.org
+ * @copyright Copyright ©2023-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
 use MediaWiki\Extension\VisualData\QueryProcessor;
+use Title;
 
 class DatatableResultPrinter extends TableResultPrinter {
 
@@ -409,6 +410,8 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$tableAttrs['data-conf'] = json_encode( $this->conf );
 		$tableAttrs['data-count'] = $this->count;
 		$tableAttrs['data-params'] = json_encode( $this->params );
+		$tableAttrs['data-category-fields'] = json_encode( $this->categoryFields );
+
 		$tableAttrs['data-search-panes-options'] = json_encode( $this->getSearchPanesOptions() );
 
 		// *** attention !!! "data-data" will conflict with
@@ -589,12 +592,48 @@ class DatatableResultPrinter extends TableResultPrinter {
 	}
 
 	/**
+	 * @param array $params
+	 * @param string $printout
+	 * @return array|string
+	 */
+	private function newQuery( $params, $printout ) {
+		$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
+
+		if ( count( $queryProcessor->getValidPrintouts() ) !== 1 ) {
+			return [];
+		}
+
+		$results = $queryProcessor->getResults();
+
+		if ( $params['debug'] ) {
+			return $results;
+		}
+
+		if ( count( $queryProcessor->getErrors() ) ) {
+			return [];
+		}
+
+		$binLength = count( $results );
+		$uniqueRatio = $binLength / $this->count;
+
+		$threshold = ( !empty( $this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] ) ?
+			$this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] : $this->conf['searchPanes']['threshold'] );
+
+		if ( $uniqueRatio > $threshold ) {
+			return [];
+		}
+
+		return $results;
+	}
+
+	/**
 	 * @return array
 	 */
 	private function getSearchPanesOptions() {
 		if ( $this->count <= count( $this->json ) ) {
 			return [];
 		}
+
 		if ( empty( $this->conf['searchPanes'] ) ) {
 			return [];
 		}
@@ -608,25 +647,11 @@ class DatatableResultPrinter extends TableResultPrinter {
 			if ( empty( $label ) ) {
 				continue;
 			}
-			$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
-			if ( count( $queryProcessor->getValidPrintouts() ) !== 1 ) {
-				continue;
-			}
-			$results_ = $queryProcessor->getResults();
-			if ( count( $queryProcessor->getErrors() ) ) {
-				continue;
-			}
+
+			$results_ = $this->newQuery( $params, $printout );
+
 			if ( $params['debug'] ) {
-				$ret[$printout][] = $results_;
-				continue;
-			}
-			$binLength = count( $results_ );
-			$uniqueRatio = $binLength / $this->count;
-
-			$threshold = ( !empty( $this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] ) ?
-				$this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] : $this->conf['searchPanes']['threshold'] );
-
-			if ( $uniqueRatio > $threshold ) {
+				$ret[$printout] = $results;
 				continue;
 			}
 
@@ -642,6 +667,62 @@ class DatatableResultPrinter extends TableResultPrinter {
 				];
 			}
 		}
+
+		if ( !$this->params['categories'] ) {
+			return $ret;
+		}
+
+		$params = $this->query['params'];
+		$params['count-categories'] = true;
+		$params['count-printout-min'] = $this->conf['searchPanes']['minCount'];
+
+		$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [], $params );
+		$results = $queryProcessor->getResults();
+
+		if ( count( $queryProcessor->getErrors() ) ) {
+			return $ret;
+		}
+
+		if ( $params['debug'] ) {
+			foreach ( $this->categoryFields as $printout ) {
+				$ret[$printout] = $results;
+			}
+			return $ret;
+		}
+
+		$binLength = count( $results );
+		$uniqueRatio = $binLength / $this->count;
+
+		foreach ( $this->categoryFields as $printout ) {
+			$threshold_ = ( !empty( $this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] ) ?
+				$this->formattedPrintoutsOptions[$printout]['searchPanes']['threshold'] : $this->conf['searchPanes']['threshold'] );
+
+			if ( $uniqueRatio > $threshold_ ) {
+				continue;
+			}
+
+			foreach ( $results as $k => $v ) {
+				if ( empty( $k ) && empty( $this->conf['searchPanes']['showEmpty'] ) ) {
+					continue;
+				}
+
+				$label_ = $k;
+				if ( !empty( $k ) ) {
+					$title_ = Title::newFromText( $k, NS_CATEGORY );
+
+					// this should be always true
+					$label_ = ( $title_ ? $title_->getText() : $k );
+				}
+
+				$ret[$printout][] = [
+					'label' => ( $k !== '' ? $this->escapeCell( $printout, $label_ )
+						: "<i>{$this->conf['searchPanes']['emptyMessage']}</i>" ),
+					'value' => $k,
+					'count' => $v
+				];
+			}
+		}
+
 		return $ret;
 	}
 }

@@ -44,23 +44,23 @@ class QueryResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processRow( $title, $value ) {
+	public function processRow( $title, $value, $categories ) {
 		if ( count( $this->fields ) > 0 ) {
 			$this->rows[] = $this->fields;
 			$this->fields = [];
 		}
 
 		$path = '';
-		$this->fields = $this->getTemplateParams( $title, $path, $this->fields );
+		$this->fields = $this->getTemplateParams( $title, $path, $this->fields, $categories );
 
 		$pathNoIndex = '';
-		return $this->processSchemaRec( $title, $this->schema, $value, $path, $pathNoIndex );
+		return $this->processSchemaRec( $title, $this->schema, $value, $categories, $path, $pathNoIndex );
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
+	public function processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast ) {
 		$this->fields[$path] = $properties[$key];
 	}
 

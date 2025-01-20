@@ -115,8 +115,10 @@ class QueryProcessor {
 			'pagetitle' => [ 'pagetitle', 'string' ],
 			'hierarchical-conditions' => [ true, 'bool' ],
 			'printouts-from-conditions' => [ false, 'bool' ],
+			'categories' => [ false, 'bool' ],
 			'count-printout' => [ false, 'bool' ],
 			'count-printout-min' => [ 1, 'integer' ],
+			'count-categories' => [ false, 'bool' ],
 			'debug' => [ false, 'bool' ]
 		];
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
@@ -292,7 +294,9 @@ class QueryProcessor {
 	 * @return array
 	 */
 	private function getOptions() {
-		if ( $this->count || $this->params['count-printout'] ) {
+		if ( $this->count || $this->params['count-printout']
+			|| $this->params['count-categories']
+		) {
 			return [];
 		}
 
@@ -653,7 +657,7 @@ class QueryProcessor {
 				foreach ( $thisClass->mapPathNoIndexTable as $k => $v ) {
 					// @FIXME why this is necessary ? shouldn't be one to one match ?
 					//  || preg_match( "/^$pattern\//", $k )
-					if ( preg_match( "/^$pattern$/", $k ) ) {
+					if ( preg_match( '/^' . preg_quote( $pattern, '/' ) . '$/', $k ) ) {
 						// $thisClass->$varName[] = $k;
 						$thisClass->$varName[$key] = $k;
 						$replacements[$value] = $k;
@@ -695,6 +699,10 @@ class QueryProcessor {
 			return;
 		}
 
+		if ( $this->params['count-categories'] ) {
+			return;
+		}
+
 		// retrieve all, but order according to the schema
 		// descriptor
 		if ( empty( $this->printouts ) ) {
@@ -730,6 +738,36 @@ class QueryProcessor {
 		}
 	}
 
+	/**
+	 * @param array $fields
+	 * @param string|null $printoutKey
+	 * @return string|null
+	 */
+	private function getGroupBY( $fields, $printoutKey ) {
+		if ( $this->count ) {
+			return null;
+		}
+
+		if ( $this->params['count-printout'] ) {
+			return $printoutKey;
+		}
+
+		if ( $this->params['count-categories'] ) {
+			return 'categories';
+		}
+
+		if ( $this->treeFormat ) {
+			return 't0.page_id';
+		}
+
+		if ( $this->params['categories'] ) {
+			unset( $fields['categories'] );
+			return implode( ', ', array_values( $fields ) );
+		}
+
+		return null;
+	}
+
 	private function performQuery() {
 		if ( count( $this->errors ) ) {
 			return;
@@ -763,6 +801,7 @@ class QueryProcessor {
 		}
 
 		foreach ( $this->printouts as $pathNoIndex ) {
+			// *** this condition seems redundant, see above $parseEscapedPrintout
 			if ( array_key_exists( $pathNoIndex, $this->mapPathNoIndexTable ) ) {
 				$arr[$pathNoIndex] = true;
 			}
@@ -932,22 +971,31 @@ class QueryProcessor {
 		// if ( !empty( $options['ORDER BY'] )
 		// 	&& strpos( $options['ORDER BY'], 'page_title' ) !== false
 		// ) {
+		// if ( !$this->params['count-printout'] ) {
 			$tables['page_alias'] = 'page';
 			$joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
 		// }
 
-		if ( $this->treeFormat && !$this->count ) {
-			$options['GROUP BY'] = 't0.page_id';
+		if ( $this->params['categories'] && !$this->params['count-printout'] ) {
+			if ( !$this->params['count-categories'] ) {
+				$fields['categories'] = "GROUP_CONCAT(categorylinks_t0.cl_to SEPARATOR 0x1E)";
+
+			// used with searchPanes
+			} else {
+				$fields['categories'] = 'categorylinks_t0.cl_to';
+			}
+			$tables['categorylinks_t0'] = 'categorylinks';
+			$joins['categorylinks_t0'] = [ 'LEFT JOIN', [ 't0.page_id = categorylinks_t0.cl_from' ] ];
 		}
 
 		// used by datatables searchPanes
+		$printoutKey = null;
 		if ( $this->params['count-printout'] ) {
 			$fields['count'] = 'COUNT(*)';
 
 			foreach ( $combined as $k => $v ) {
 				if ( $v['isPrintout'] ) {
-					$groupPrintout = "v$k";
-					$options['GROUP BY'] = $groupPrintout;
+					$printoutKey = "v$k";
 					break;
 				}
 			}
@@ -955,6 +1003,19 @@ class QueryProcessor {
 			if ( $this->params['count-printout-min'] > 1 ) {
 				$options['HAVING'] = 'count >= ' . $this->params['count-printout-min'];
 			}
+		}
+
+		if ( $this->params['count-categories'] ) {
+			$fields['count'] = 'COUNT(*)';
+
+			if ( $this->params['count-printout-min'] > 1 ) {
+				$options['HAVING'] = 'count >= ' . $this->params['count-printout-min'];
+			}
+		}
+
+		$groupBy = $this->getGroupBy( $fields, $printoutKey );
+		if ( !empty( $groupBy ) ) {
+			$options['GROUP BY'] = $groupBy;
 		}
 
 		if ( $this->count ) {
@@ -986,6 +1047,7 @@ class QueryProcessor {
 
 		if ( $this->debug ) {
 			$this->result = (string)$res;
+			echo $this->result;
 			return;
 		}
 
@@ -994,7 +1056,17 @@ class QueryProcessor {
 			$ret = [];
 			foreach ( $res as $row ) {
 				$row = (array)$row;
-				$ret[$row[$groupPrintout]] = (int)$row['count'];
+				$ret[$row[$printoutKey]] = (int)$row['count'];
+			}
+			$this->result = $ret;
+			return;
+		}
+
+		if ( $this->params['count-categories'] ) {
+			$ret = [];
+			foreach ( $res as $row ) {
+				$row = (array)$row;
+				$ret[$row['categories']] = $row['count'];
 			}
 			$this->result = $ret;
 			return;
@@ -1014,10 +1086,16 @@ class QueryProcessor {
 		$separator = chr( hexdec( '0x1E' ) );
 		$titles = [];
 		foreach ( $res as $row ) {
+			$categories = [];
 			$row = (array)$row;
 			$row_ = [];
 			$pageId = $row['page_id'];
 			unset( $row['page_id'] );
+
+			if ( !empty( $row['categories'] ) ) {
+				$categories = array_values( array_unique( explode( $separator, $row['categories'] ) ) );
+			}
+			unset( $row['categories'] );
 
 			if ( !array_key_exists( $pageId, $titles ) ) {
 				$title_ = Title::newFromID( $pageId );
@@ -1053,7 +1131,8 @@ class QueryProcessor {
 
 			$this->result[] = [
 				$titles[$pageId],
-				\VisualData::plainToNested( $row_, true )
+				\VisualData::plainToNested( $row_, true ),
+				$categories
 			];
 		}
 

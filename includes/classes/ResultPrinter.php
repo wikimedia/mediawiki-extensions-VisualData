@@ -78,6 +78,14 @@ class ResultPrinter {
 	];
 
 	/** @var array */
+	public static $categoriesAliases = [
+		'_categories',
+		'categories',
+		'_cats',
+		'cats'
+	];
+
+	/** @var array */
 	public static $pageidAliases = [
 		'_pageid',
 		'pageid',
@@ -168,22 +176,24 @@ class ResultPrinter {
 	/**
 	 * @param Title $title
 	 * @param array $value
+	 * @param array $categories
 	 * @return string
 	 */
-	public function processRow( $title, $value ) {
+	public function processRow( $title, $value, $categories ) {
 		$path = '';
-		return $this->processSchemaRec( $title, $this->schema, $value, $path );
+		return $this->processSchemaRec( $title, $this->schema, $value, $categories, $path );
 	}
 
 	/**
 	 * @param Title $title
 	 * @param array $value
+	 * @param array $categories
 	 * @return string
 	 */
-	public function processRowTree( $title, $value ) {
+	public function processRowTree( $title, $value, $categories ) {
 		$path = '';
 		$pathNoIndex = '';
-		return $this->processSchemaRecTree( $title, $this->schema, $value, $path, $pathNoIndex );
+		return $this->processSchemaRecTree( $title, $this->schema, $value, $categories, $path, $pathNoIndex );
 	}
 
 	/**
@@ -194,8 +204,8 @@ class ResultPrinter {
 	public function processResults( $results, $schema ) {
 		$ret = [];
 		foreach ( $results as $value ) {
-			[ $title_, $row ] = $value;
-			$ret[] = $this->processRow( $title_, $row );
+			[ $title_, $row, $categories ] = $value;
+			$ret[] = $this->processRow( $title_, $row, $categories );
 		}
 
 		return $this->processRoot( $ret );
@@ -297,11 +307,12 @@ class ResultPrinter {
 	 * @param Title $title
 	 * @param string $path
 	 * @param array $arr
+	 * @param array $categories
 	 * @param bool $isFirst
 	 * @param bool $isLast
 	 * @return array
 	 */
-	protected function getTemplateParams( $title, $path, $arr, $isFirst = true, $isLast = true ) {
+	protected function getTemplateParams( $title, $path, $arr, $categories, $isFirst = true, $isLast = true ) {
 		$ret = [];
 		$flattenRec = static function ( $arr, $path = '' ) use ( &$ret, &$flattenRec ) {
 			foreach ( $arr as $key => $value ) {
@@ -314,18 +325,20 @@ class ResultPrinter {
 		};
 		$flattenRec( $arr );
 
-		// use the title and pageid aliases only
+		$thisClass = $this;
+		$replaceAliases = static function ( $arr, $str ) use( &$ret, $path, $thisClass ) {
+			foreach ( $arr as $text ) {
+				if ( !in_array( $path ? "$path/$text" : $text, $thisClass->getValidPrintouts() ) ) {
+					$ret[$text] = $str;
+				}
+			}
+		};
+
+		// use the title, pageid and categories aliases only
 		// when do not conflict with printout names
-		foreach ( self::$titleAliases as $text ) {
-			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
-				$ret[$text] = $title->getFullText();
-			}
-		}
-		foreach ( self::$pageidAliases as $text ) {
-			if ( !in_array( $path ? "$path/$text" : $text, $this->getValidPrintouts() ) ) {
-				$ret[$text] = $title->getArticleID();
-			}
-		}
+		$replaceAliases( self::$titleAliases, $title->getFullText() );
+		$replaceAliases( self::$categoriesAliases, implode( ', ', $categories ) );
+		$replaceAliases( self::$pageidAliases, $title->getArticleID() );
 
 		foreach ( self::$isFirstAlias as $text ) {
 			$ret[$text] = $isFirst;
@@ -350,13 +363,14 @@ class ResultPrinter {
 	 * @param Title $title
 	 * @param array $schema
 	 * @param array $arr
+	 * @param array $categories
 	 * @param string $path
 	 * @param string $pathNoIndex
 	 * @param bool $isFirst true
 	 * @param bool $isLast true
 	 * @return string
 	 */
-	protected function processSchemaRecTree( $title, $schema, $arr, $path, $pathNoIndex, $isFirst = true, $isLast = true ) {
+	protected function processSchemaRecTree( $title, $schema, $arr, $categories, $path, $pathNoIndex, $isFirst = true, $isLast = true ) {
 		$isArray = $schema['type'] === 'array';
 
 		// reset indexes
@@ -396,7 +410,7 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				[ $ret[$key], $recPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $currentPath, $currentPathNoIndex, $isFirst_, $isLast_ );
+				[ $ret[$key], $recPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $categories, $currentPath, $currentPathNoIndex, $isFirst_, $isLast_ );
 
 			} else {
 				$ret[$key] = $this->processChild(
@@ -404,6 +418,7 @@ class ResultPrinter {
 					$subschema,
 					$key,
 					$arr,
+					$categories,
 					$currentPathNoIndex,
 					$isArray,
 					$isFirst_,
@@ -415,7 +430,7 @@ class ResultPrinter {
 		}
 
 		$res = [
-			$this->processParent( $title, $schema, $ret, $pathNoIndex, $recPaths, $isFirst, $isLast ),
+			$this->processParent( $title, $schema, $ret, $categories, $pathNoIndex, $recPaths, $isFirst, $isLast ),
 			$recPaths
 		];
 
@@ -426,12 +441,13 @@ class ResultPrinter {
 	 * @param Title $title
 	 * @param array $schema
 	 * @param array $arr
+	 * @param array $categories
 	 * @param string $path
 	 * @param bool $isFirst true
 	 * @param bool $isLast true
 	 * @return string
 	 */
-	protected function processSchemaRec( $title, $schema, $arr, $path, $isFirst = true, $isLast = true ) {
+	protected function processSchemaRec( $title, $schema, $arr, $categories, $path, $isFirst = true, $isLast = true ) {
 		$isArray = ( $schema['type'] === 'array' );
 		$ret = [];
 
@@ -467,13 +483,14 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				[ $ret[$key], $recPaths ] = $this->processSchemaRec( $title, $subschema, $value, $currentPath, $isFirst_, $isLast_ );
+				[ $ret[$key], $recPaths ] = $this->processSchemaRec( $title, $subschema, $value, $categories, $currentPath, $isFirst_, $isLast_ );
 			} else {
 				$ret[$key] = $this->processChild(
 					$title,
 					$subschema,
 					$key,
 					$arr,
+					$categories,
 					$currentPath,
 					$isArray,
 					$isFirst_,
@@ -484,7 +501,7 @@ class ResultPrinter {
 		}
 
 		$res = [
-			$this->processParent( $title, $schema, $ret, $path, $recPaths, $isFirst, $isLast ),
+			$this->processParent( $title, $schema, $ret, $categories, $path, $recPaths, $isFirst, $isLast ),
 			$recPaths
 		];
 
@@ -495,13 +512,14 @@ class ResultPrinter {
 	 * @param Title $title
 	 * @param array $schema
 	 * @param array $properties
+	 * @param array $categories
 	 * @param string $path
 	 * @param array $recPaths
 	 * @param bool $isFirst
 	 * @param bool $isLast
 	 * @return string
 	 */
-	public function processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast ) {
+	public function processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast ) {
 		$isArray = ( $schema['type'] === 'array' );
 		$isRoot = ( $path === '' );
 
@@ -514,7 +532,7 @@ class ResultPrinter {
 		if ( $this->hasTemplate( $path ) ) {
 			$properties_ = array_merge( $properties, $recPaths );
 			$ret = $this->processTemplate( $this->templates[$path],
-				$this->getTemplateParams( $title, $path, $properties_, $isFirst, $isLast ) );
+				$this->getTemplateParams( $title, $path, $properties_, $categories, $isFirst, $isLast ) );
 
 		} else {
 			// *** the cleaning here has no effect
@@ -547,13 +565,14 @@ class ResultPrinter {
 	 * @param array|null $schema
 	 * @param string $key
 	 * @param array $properties
+	 * @param array $categories
 	 * @param string $path
 	 * @param bool $isArray
 	 * @param bool $isFirst
 	 * @param bool $isLast
 	 * @return string
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
+	public function processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast ) {
 		$value = $properties[$key];
 
 		// apply template
@@ -564,19 +583,27 @@ class ResultPrinter {
 				$properties = [ array_pop( $arr_ ) => $value ];
 			}
 			$value = $this->processTemplate( $this->templates[$path],
-				$this->getTemplateParams( $title, $path, $properties, $isFirst, $isLast ), false );
+				$this->getTemplateParams( $title, $path, $properties, $categories, $isFirst, $isLast ), false );
 		}
 
 		$value = (string)$value;
 
-		// disable pagetitle and render in different column
-		// ?pagetitle
-		// pagetitle=page title
-		if ( !$isArray && empty( $value ) && !in_array( $key, $this->getValidPrintouts() )
-			&& in_array( $key, self::$titleAliases )
-		) {
-			$value = $title->getFullText();
-		}
+		// @ATTENTION in tree mode $key will be an integer and $path/$properties
+		// are unrelated from categories, however doesn't seem to be a reason
+		// to handle this in processParent outside the processTemplate method
+		$thisClass = $this;
+		$replaceAlias = static function ( $arr, $str ) use( $thisClass, $isArray, $key, &$value ) {
+			if ( !$isArray
+				&& empty( $value )
+				&& !in_array( $key, $thisClass->getValidPrintouts() )
+				&& in_array( $key, $arr )
+			) {
+				$value = $str;
+			}
+		};
+
+		$replaceAlias( self::$titleAliases, $title->getFullText() );
+		$replaceAlias( self::$categoriesAliases, implode( ', ', $categories ) );
 
 		return $value;
 	}

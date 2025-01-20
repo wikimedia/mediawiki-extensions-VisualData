@@ -359,10 +359,10 @@ class CarouselResultPrinter extends ResultPrinter {
 
 		$ret = [];
 		foreach ( $results as $value ) {
-			[ $title_, $row ] = $value;
+			[ $title_, $row, $categories ] = $value;
 
 			// @TODO implement file value from mainlabel
-			$ret[] = $this->processRowTree( $title_, $row );
+			$ret[] = $this->processRowTree( $title_, $row, $categories );
 		}
 
 		return $this->processRoot( $ret );
@@ -371,14 +371,14 @@ class CarouselResultPrinter extends ResultPrinter {
 	/**
 	 * @inheritDoc
 	 */
-	public function processParent( $title, $schema, $properties, $path, $recPaths, $isFirst, $isLast ) {
+	public function processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast ) {
 		return '';
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function processChild( $title, $schema, $key, $properties, $path, $isArray, $isFirst, $isLast ) {
+	public function processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast ) {
 		if ( array_key_exists( $key, $this->mapProperties ) ) {
 			if ( $this->mapProperties[$key] === 'file' ) {
 				$this->obj[$this->mapProperties[$key]][] = [ $title, (string)$properties[$key] ];

@@ -45,7 +45,7 @@ class PagetitleResultPrinter extends TemplateResultPrinter {
 
 		$ret = [];
 		foreach ( $results as $value ) {
-			[ $title_, $row ] = $value;
+			[ $title_, $row, $categories ] = $value;
 			$ret[] = $title_->getFullText();
 		}
 		return implode( ', ', $ret );

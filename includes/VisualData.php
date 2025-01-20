@@ -425,6 +425,14 @@ class VisualData {
 			'default' => '0',
 			'example' => 'visualdata-parserfunction-query-offset-example'
 		],
+		'categories' => [
+			'label' => 'visualdata-parserfunction-query-categories-label',
+			'description' => 'visualdata-parserfunction-query-categories-description',
+			'type' => 'bool',
+			'required' => false,
+			'default' => false,
+			'example' => 'visualdata-parserfunction-query-categories-example'
+		],
 		'order' => [
 			'label' => 'visualdata-parserfunction-query-order-label',
 			'description' => 'visualdata-parserfunction-query-order-description',
