@@ -1066,7 +1066,8 @@ class VisualData {
 		} );
 
 		$returnError = static function ( $error ) {
-			return [ $error,
+			return [
+				$error,
 				'isHTML' => false
 			];
 		};
@@ -1078,7 +1079,7 @@ class VisualData {
 		self::adjustSchemaName( $params['schema'] );
 
 		if ( !array_key_exists( $params['format'], $GLOBALS['wgVisualDataResultPrinterClasses'] ) ) {
-			return 'format not supported';
+			return $returnError( 'format not supported' );
 		}
 
 		// parse format-related parameters
@@ -1111,6 +1112,8 @@ class VisualData {
 		}
 
 		$context = RequestContext::getMain();
+
+		$errors_ = [];
 		$resultPrinter = self::getResults(
 			$parser,
 			$context,
@@ -1118,11 +1121,12 @@ class VisualData {
 			$templates,
 			$printouts,
 			$params,
-			$printoutsOptions
+			$printoutsOptions,
+			$errors_
 		);
 
 		if ( !$resultPrinter ) {
-			return [ '', 'isHTML' => false ];
+			return $returnError( $errors_[0] );
 		}
 
 		$results = $resultPrinter->getResults();
@@ -1212,7 +1216,8 @@ class VisualData {
 	 * @param array $templates
 	 * @param array $printouts
 	 * @param array $params
-	 * @param array $printoutsOptions []
+	 * @param array $printoutsOptions
+	 * @param array &$errors = []
 	 * @return bool|ResultPrinter
 	 */
 	public static function getResults(
@@ -1222,20 +1227,32 @@ class VisualData {
 		$templates,
 		$printouts,
 		$params,
-		$printoutsOptions = []
+		$printoutsOptions,
+		&$errors = []
 	) {
-		if ( empty( $params['schema'] ) || empty( $params['format'] ) ) {
+		if ( empty( $params['schema'] ) ) {
+			$errors[] = 'no schema';
 			return false;
 		}
+
+		if ( empty( $params['format'] ) ) {
+			$errors[] = 'no format';
+			return false;
+		}
+
 		self::adjustSchemaName( $params['schema'] );
 
 		$schema = self::getSchema( $context, $params['schema'] );
 		if ( !$schema ) {
+			$errors[] = 'no valid schema';
 			return false;
 		}
+
 		if ( !array_key_exists( $params['format'], $GLOBALS['wgVisualDataResultPrinterClasses'] ) ) {
+			$errors[] = 'no valid format';
 			return false;
 		}
+
 		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
 
@@ -1258,7 +1275,7 @@ class VisualData {
 	 * @param string $query
 	 * @param array $printouts []
 	 * @param array $params []
-	 * @return null|array
+	 * @return array
 	 */
 	public static function getQueryResults( $schema, $query, $printouts = [], $params = [] ) {
 		$context = RequestContext::getMain();
@@ -1273,24 +1290,69 @@ class VisualData {
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		$templates = [];
 
+		if ( empty( $printouts ) ) {
+			$printouts = [];
+		}
+
 		if ( self::isList( $printouts ) ) {
 			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
 		}
 
+		$printoutsOptions = [];
+		$errors_ = [];
 		$resultPrinter = self::getResults(
 			$parser,
 			$context,
 			$query,
 			$templates,
 			$printouts,
-			$params
+			$params,
+			$printoutsOptions,
+			$errors_
 		);
 
 		if ( !$resultPrinter ) {
-			return null;
+			return [ 'errors' => $errors_ ];
 		}
 
 		return $resultPrinter->getResults();
+	}
+
+	/**
+	 * @param User $user
+	 * @param array $schema
+	 * @param string $query
+	 * @param string $printouts
+	 * @param string $params
+	 * @param function $callback
+	 * @return array
+	 */
+	public static function editDataCallback( $user, $schema, $query, $printouts, $params, $callback ) {
+		$context = RequestContext::getMain();
+		$context->setTitle( SpecialPage::getTitleFor( 'Badtitle' ) );
+
+		$results = self::getQueryResults( $schema, $query, $printouts, $params );
+
+		if ( array_key_exists( 'errors', $results ) ) {
+			return $results['errors'];
+		}
+
+		$updated = [];
+		foreach ( $results as $value ) {
+			$retData = $callback( $value['title'], $value['data'], $value['categories'] );
+			$title_ = Title::newFromID( $value['pageid'] );
+			$context->setTitle( $title_ );
+
+			if ( $retData !== $value['data'] ) {
+				$updated[] = $title_->getFullText();
+				$schemas = [
+					$schema => $retData
+				];
+				self::updateCreateSchemas( $user, $title_, $schemas );
+			}
+		}
+
+		return $updated;
 	}
 
 	/**
@@ -1537,6 +1599,9 @@ class VisualData {
 			$jsonData['schemas'] = [];
 		}
 
+		// @ATTENTION, $schemas must contain valid schemas
+		// otherwise a new schema will be created from each key
+		// from its values
 		$jsonData['schemas'] = self::array_merge_recursive( $jsonData['schemas'], $schemas );
 
 		$targetSlot = self::getTargetSlot( $title, $defaultSlot );
@@ -1832,6 +1897,10 @@ class VisualData {
 		foreach ( $data['schemas'] as $schemaName => $value ) {
 			if ( !array_key_exists( $schemaName, $schemas ) ) {
 				$schema = $schemaProcessor->generateFromData( $value, $schemaName );
+
+				if ( empty( $schema ) ) {
+					continue;
+				}
 
 				$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
 				$statusOK = self::saveRevision( $user, $title_, json_encode( $schema ) );

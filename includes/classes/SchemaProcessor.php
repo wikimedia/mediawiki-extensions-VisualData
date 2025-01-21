@@ -223,10 +223,20 @@ class SchemaProcessor {
 			return [];
 		}
 		$value = $data;
+
+		// take the first value of data
 		if ( \VisualData::isList( $data ) ) {
 			$value = $data[0];
 		}
-		return $this->parseSchemaRec( $value, $parentKey );
+
+		$ret = $this->parseSchemaRec( $value, $parentKey );
+		if ( !array_key_exists( 'type', $ret )
+			|| $ret['type'] !== 'object'
+		) {
+			return [];
+		}
+
+		return $ret;
 	}
 
 	/**
@@ -791,7 +801,8 @@ class SchemaProcessor {
 		$ret['wiki']['multiple-items'] = $parent['type'] === 'array';
 
 		if ( array_key_exists( 'required', $parent )
-			&& in_array( $ret['wiki']['name'], $parent['required'] ) ) {
+			&& in_array( $ret['wiki']['name'], $parent['required'] )
+		) {
 			$ret['wiki']['required'] = true;
 		}
 
@@ -825,8 +836,8 @@ class SchemaProcessor {
 						&& empty( $properties['wiki']['options-values'] )
 						&& empty( $properties['wiki']['options-query'] )
 						&& empty( $properties['wiki']['options-smwquery'] )
-						&& is_array( $value ) && count( $value ) ) {
-
+						&& is_array( $value ) && count( $value )
+					) {
 						// @FIXME we are not distinguishing between "" and NULL
 						if ( empty( $value[0] ) ) {
 							array_shift( $value );
@@ -881,7 +892,8 @@ class SchemaProcessor {
 		// @TODO handle with $this->mapInputConfig if json-schema supports that
 		if ( !empty( $properties['wiki']['preferred-input'] )
 			&& $properties['wiki']['preferred-input'] === 'OO.ui.SelectFileWidget'
-			&& empty( $properties['wiki']['input-config']['accept'] ) ) {
+			&& empty( $properties['wiki']['input-config']['accept'] )
+		) {
 			$ret['wiki']['input-config']['accept'] = $this->allowedMimeTypes;
 		}
 
@@ -1322,13 +1334,17 @@ class SchemaProcessor {
 				'format' => 'query'
 			];
 			$templates = [];
+			$printoutsOptions = [];
+			$errors_ = [];
 			$resultPrinter = \VisualData::getResults(
 				$parser,
 				$this->context,
 				$query,
 				$templates,
 				$printouts,
-				$params
+				$params,
+				$printoutsOptions,
+				$errors_
 			);
 
 			if ( !$resultPrinter ) {

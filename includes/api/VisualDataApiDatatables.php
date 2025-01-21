@@ -144,13 +144,17 @@ class VisualDataApiDatatables extends ApiBase {
 		$titleObj = Title::newFromText( $sourcePage );
 		$parser->startExternalParse( $titleObj, $parserOptions, Parser::OT_PREPROCESS );
 
+		$printoutsOptions = [];
+		$errors_ = [];
 		$resultPrinter = \VisualData::getResults(
 			$parser,
 			$context,
 			$query,
 			$templates,
 			$printouts,
-			$params
+			$params,
+			$printoutsOptions,
+			$errors_
 		);
 
 		if ( !$resultPrinter ) {

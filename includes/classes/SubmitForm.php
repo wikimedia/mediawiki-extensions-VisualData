@@ -228,6 +228,11 @@ class SubmitForm {
 			return false;
 		}
 
+		// "" will trigger an error by ContentHandler::makeContent
+		if ( empty( $contentModel ) ) {
+			$contentModel = null;
+		}
+
 		// @see https://github.com/wikimedia/mediawiki/blob/master/includes/page/WikiPage.php
 		$flags = EDIT_SUPPRESS_RC | EDIT_AUTOSUMMARY | EDIT_INTERNAL;
 		$summary = 'VisualData initial revision';
@@ -522,6 +527,8 @@ class SubmitForm {
 		} else {
 			$contentModel = $data['config']['contentModel'];
 		}
+
+		// @ATTENTION, $contentModel can be an empty string
 
 		// determine freetext
 		$freetext = ( array_key_exists( 'freetext', $data['form'] ) ? $data['form']['freetext']
