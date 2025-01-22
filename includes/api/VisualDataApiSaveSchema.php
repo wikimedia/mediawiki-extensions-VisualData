@@ -65,8 +65,6 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$context->setTitle( $sourcePage );
 		}
 
-		\VisualData::adjustSchemaName( $params['schema'] );
-
 		$schema = json_decode( $params['schema'], true );
 		$dialogAction = $params['dialog-action'];
 		$previousLabel = $params['previous-label'];
@@ -120,6 +118,10 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$result->addValue( [ $this->getModuleName() ], 'error', 'invalid title' );
 			return true;
 		}
+
+		// set ucfirst if missing, this also avoids to use
+		// \VisualData::adjustSchemaName( $schema['wiki']['name'] );
+		$schema['wiki']['name'] = $label;
 
 		$resultAction = ( !empty( $previousLabel ) ? 'update' : 'create' );
 
