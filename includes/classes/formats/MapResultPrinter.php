@@ -621,12 +621,6 @@ class MapResultPrinter extends ResultPrinter {
 	public function processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast ) {
 		$value = parent::processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast );
 
-		// skip printouts like "a="
-		if ( empty( $this->printouts[$path] ) ) {
-			// *** important, return for use by the parent
-			return $value;
-		}
-
 		if ( array_key_exists( $key, $this->mapProperties ) ) {
 			$this->json[count( $this->json ) - 1][$this->mapProperties[$key]] = (string)$properties[$key];
 		}
@@ -636,11 +630,32 @@ class MapResultPrinter extends ResultPrinter {
 	}
 
 	/**
+	 * @return bool
+	 */
+	public function hasValidData() {
+		if ( !count( $this->json ) ) {
+			return false;
+		}
+
+		foreach ( $this->json as $value ) {
+			if ( !empty( $value['latitude'] ) && !empty( $value['longitude'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * @inheritDoc
 	 */
 	public function processRoot( $rows ) {
 		$this->modules[] = 'ext.VisualData.Leaflet';
 		$this->conf = $this->formatOptions( $this->params );
+
+		if ( !$this->hasValidData() ) {
+			return 'No coordinates found';
+		}
 
 		return Html::rawElement(
 			'div',

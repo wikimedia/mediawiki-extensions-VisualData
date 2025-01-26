@@ -84,6 +84,11 @@ $( function () {
 		if ( markersArr.length > 1 ) {
 			var featureGroup = L.featureGroup( markersArr );
 			map.fitBounds( featureGroup.getBounds() );
+
+		} else if ( markersArr.length === 1 ) {
+			map.setView( L.latLng( json[ 0 ].latitude, json[ 0 ].longitude ),
+				params.map.zoom
+			);
 		}
 	}
 
