@@ -81,8 +81,10 @@ $( function () {
 
 		map.addLayer( markers );
 
-		var featureGroup = L.featureGroup( markersArr );
-		map.fitBounds( featureGroup.getBounds() );
+		if ( markersArr.length ) {
+			var featureGroup = L.featureGroup( markersArr );
+			map.fitBounds( featureGroup.getBounds() );
+                }
 	}
 
 	$( '.visualdata-map' ).each( function () {

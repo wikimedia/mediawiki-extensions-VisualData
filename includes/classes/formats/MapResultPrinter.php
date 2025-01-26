@@ -31,7 +31,7 @@ use MediaWiki\Extension\VisualData\ResultPrinter;
 class MapResultPrinter extends ResultPrinter {
 
 	/** @var array */
-	private $json;
+	private $json = [];
 
 	/** @var array */
 	private $mapProperties;
