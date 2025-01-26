@@ -164,7 +164,7 @@ class TableResultPrinter extends ResultPrinter {
 	public function processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast ) {
 		$value = parent::processChild( $title, $schema, $key, $properties, $categories, $path, $isArray, $isFirst, $isLast );
 
-		// skip printouts as "a="
+		// skip printouts like "a="
 		if ( empty( $this->printouts[$path] ) ) {
 			// *** important, return for use by the parent
 			return $value;
@@ -199,6 +199,7 @@ class TableResultPrinter extends ResultPrinter {
 				( is_string( $value ) ? trim( $value ) : $value );
 		}
 
+		// *** important, return for use by the parent
 		return $value;
 	}
 

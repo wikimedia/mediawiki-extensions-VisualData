@@ -65,7 +65,8 @@ class VisualDataHooks {
 			'carousel' => 'CarouselResultPrinter',
 			'count' => 'CountResultPrinter',
 			'pageid' => 'PageidResultPrinter',
-			'pagetitle' => 'PagetitleResultPrinter'
+			'pagetitle' => 'PagetitleResultPrinter',
+			'map' => 'MapResultPrinter'
 		];
 	}
 
@@ -413,7 +414,7 @@ class VisualDataHooks {
 			$data = json_decode( $text, true );
 			if ( $data ) {
 				$databaseManager = new DatabaseManager();
-				$databaseManager->createSchemaIdAndPrintouts( $data );
+				$databaseManager->createSchemaIdAndPrintouts( $title, $data );
 			}
 		}
 	}
@@ -438,7 +439,7 @@ class VisualDataHooks {
 			$data = json_decode( $text, true );
 			if ( $data ) {
 				$databaseManager = new DatabaseManager();
-				$databaseManager->createSchemaIdAndPrintouts( $data );
+				$databaseManager->createSchemaIdAndPrintouts( $title, $data );
 			}
 		}
 	}

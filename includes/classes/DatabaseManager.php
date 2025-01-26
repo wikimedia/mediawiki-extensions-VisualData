@@ -978,6 +978,9 @@ class DatabaseManager {
 			case 'date':
 				$propType = 'date';
 				break;
+			case 'time':
+				$propType = 'time';
+				break;
 			case 'datetime':
 			case 'datetime-local':
 				$propType = 'datetime';
@@ -1175,13 +1178,14 @@ class DatabaseManager {
 	}
 
 	/**
+	 * @param Title $title
 	 * @param array $schema
 	 */
-	public function createSchemaIdAndPrintouts( $schema ) {
+	public function createSchemaIdAndPrintouts( $title, $schema ) {
 		$rows = [];
 		// @FIXME use only if used in all similar cases
 		// $this->escapeJsonPointerPart( )
-		$schemaId = $this->recordSchema( $schema['wiki']['name'] );
+		$schemaId = $this->recordSchema( $title->getText() );
 		$thisClass = $this;
 
 		$callback = static function ( $schema, $path, $printout, $property ) use ( &$rows, $schemaId, $thisClass ) {

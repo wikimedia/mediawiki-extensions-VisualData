@@ -23,7 +23,8 @@ module.exports = function ( grunt ) {
 				'!resources/ajv-validator/**',
 				'!resources/Maptiler/**',
 				'!resources/tinymce/**',
-				'!resources/slick/lib/**'
+				'!resources/slick/lib/**',
+				'!resources/Leaflet/**'
 			]
 		},
 		stylelint: {
@@ -39,7 +40,8 @@ module.exports = function ( grunt ) {
 				'!resources/ajv-validator/**',
 				'!resources/Maptiler/**',
 				'!resources/tinymce/**',
-				'!resources/slick/lib/**'
+				'!resources/slick/lib/**',
+				'!resources/Leaflet/**'
 			]
 		},
 		banana: conf.MessagesDirs

@@ -307,6 +307,41 @@ class QueryProcessor {
 			'offset' => 'OFFSET',
 		];
 
+		$thisClass = $this;
+		$castField = static function ( $printout, $index ) use ( $thisClass ) {
+			$tablename = $thisClass->mapPathNoIndexTable[$printout];
+			$cast = null;
+			switch ( $tablename ) {
+				case 'text':
+				case 'textarea':
+					break;
+				case 'date':
+					$cast = 'DATE';
+					break;
+				case 'datetime':
+					$cast = 'DATETIME';
+					break;
+				case 'time':
+					$cast = 'TIME';
+					break;
+				case 'integer':
+					$cast = 'SIGNED';
+					break;
+				case 'numeric':
+					$cast = 'DOUBLE';
+					break;
+				case 'boolean':
+					$cast = 'UNSIGNED';
+					break;
+			}
+
+			if ( !$cast ) {
+				return "v$index";
+			}
+
+			return "CAST(v$index as $cast)";
+		};
+
 		// $options = ['GROUP BY' => 'page_id'];
 		foreach ( $optionsMap as $key => $value ) {
 			if ( !empty( $this->params[$key] ) ) {
@@ -317,13 +352,16 @@ class QueryProcessor {
 						$values = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
 						foreach ( $values as $v ) {
 							preg_match( '/^\s*(.+?)\s*(ASC|DESC)?\s*$/i', $v, $match_ );
-							$propName = $match_[1];
+							$printout = $match_[1];
 							$sort = $match_[2] ?? 'ASC';
-							$index = array_search( $propName, $this->mapKeyToPrintout );
+							$index = array_search( $printout, $this->mapKeyToPrintout );
 
 							if ( $index !== false ) {
+								// *** this is may be superflous
+								// $arr[] = $castField( $printout, $index ) . " $sort";
 								$arr[] = "v$index $sort";
-							} elseif ( in_array( $propName, ResultPrinter::$titleAliases ) ) {
+
+							} elseif ( in_array( $printout, ResultPrinter::$titleAliases ) ) {
 								$arr[] = "page_title $sort";
 							}
 						}
@@ -575,18 +613,17 @@ class QueryProcessor {
 			$orConds = [];
 			$categories = [];
 			foreach ( $value as $printout => $values ) {
-				if ( !array_key_exists( $printout, $mapConds ) && $printout === 'page_title' ) {
-					foreach ( $values as $v ) {
-						$this->processTitle( $v, $orConds, $tables, $joins, $fields, $categories );
-					}
-
-				} elseif ( array_key_exists( $printout, $mapConds ) ) {
+				if ( array_key_exists( $printout, $mapConds ) ) {
 					$field = "t{$mapConds[$printout]['key']}.value";
 					$tablename = $mapConds[$printout]['tablename'];
 
 					// OR conditions same property e.g. [[prop a::a||b]]
 					foreach ( $values as $v ) {
 						$orConds[] = $this->parseCondition( $v, $field, $tablename );
+					}
+				} elseif ( $printout === 'page_title' ) {
+					foreach ( $values as $v ) {
+						$this->processTitle( $v, $orConds, $tables, $joins, $fields, $categories );
 					}
 				}
 			}
@@ -921,40 +958,15 @@ class QueryProcessor {
 			if ( $isPrintout ) {
 				if ( !$this->treeFormat ) {
 					$fields["v$key"] = "t$key.value";
+
 				} else {
 					$fields["p$key"] = "GROUP_CONCAT(t$key.path SEPARATOR 0x1E)";
-					// @see https://www.w3schools.com/sql/func_mysql_cast.asp
-					$cast_ = null;
-					switch ( $tablename ) {
-						case 'text':
-						case 'textarea':
-							break;
-						case 'date':
-							$cast_ = 'DATE';
-							break;
-						case 'datetime':
-							$cast_ = 'DATETIME';
-							break;
-						case 'time':
-							$cast_ = 'TIME';
-							break;
-						case 'integer':
-							$cast_ = '+ 0';
-							break;
-						case 'numeric':
-							$cast_ = '+ 0.0';
-							break;
-						case 'boolean':
-							$cast_ = 'UNSIGNED';
-							break;
-					}
-					if ( !$cast_ ) {
-						$fields["v$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
-					} elseif ( $tablename === 'integer' || $tablename === 'numeric' ) {
-						$fields["v$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E) $cast_";
-					} else {
-						$fields["v$key"] = "CAST(GROUP_CONCAT(t$key.value SEPARATOR 0x1E) as $cast_)";
-					}
+
+					// *** this used only for sorting, assuming the key used
+					// for sorting is not concatenated
+					$fields["v$key"] = "t$key.value";
+
+					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
 				}
 			}
 		}
@@ -1084,6 +1096,45 @@ class QueryProcessor {
 			return;
 		}
 
+		$thisClass = $this;
+		$castType = static function ( $value, $printout ) use ( $thisClass ) {
+			$tablename = $thisClass->mapPathNoIndexTable[$printout];
+			$format = null;
+			switch ( $tablename ) {
+				case 'text':
+				case 'textarea':
+					$type = 'string';
+					break;
+				case 'date':
+					$type = 'string';
+					$format = 'date';
+					break;
+				case 'datetime':
+					$type = 'string';
+					$format = 'datetime';
+					break;
+				case 'time':
+					$type = 'string';
+					$format = 'time';
+					break;
+				case 'integer':
+					$type = 'integer';
+					break;
+				case 'numeric':
+					$type = 'number';
+					break;
+				case 'boolean':
+					$type = 'boolean';
+					break;
+			}
+			$schema = [
+				'type' => $type,
+				'format' => $format
+			];
+			SchemaProcessor::castType( $value, $schema, true );
+			return $value;
+		};
+
 		$separator = chr( hexdec( '0x1E' ) );
 		$titles = [];
 		foreach ( $res as $row ) {
@@ -1122,10 +1173,10 @@ class QueryProcessor {
 						continue;
 					}
 					$paths = explode( $separator, $row["p$key"] );
-					$values = array_slice( explode( $separator, (string)$row["v$key"] ), 0, count( $paths ) );
+					$values = array_slice( explode( $separator, (string)$row["c$key"] ), 0, count( $paths ) );
 					$paths = array_slice( $paths, 0, count( $values ) );
 					foreach ( $paths as $key => $path ) {
-						$row_[$path] = $values[$key];
+						$row_[$path] = $castType( $values[$key], $printout );
 					}
 				}
 			}

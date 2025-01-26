@@ -58,12 +58,17 @@ class JsonResultPrinter extends ResultPrinter {
 		$ret = [];
 		foreach ( $results as $value ) {
 			[ $title_, $row, $categories ] = $value;
-			$ret[] = [
+			$ret_ = [
 				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),
 				'data' => $row,
-				'categories' => $categories
 			];
+
+			if ( !empty( $this->params['categories'] ) ) {
+				$ret_['categories'] = $categories;
+			}
+
+			$ret[] = $ret_;
 		}
 
 		$content = new \JsonContent( '' );

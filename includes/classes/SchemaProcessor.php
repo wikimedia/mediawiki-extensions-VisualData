@@ -1476,9 +1476,10 @@ e.g.
 
 	/**
 	 * @param string &$value
-	 * @param array|null $schema
+	 * @param array $schema
+	 * @param bool $display false
 	 */
-	public static function castType( &$value, $schema = null ) {
+	public static function castType( &$value, $schema, $display = false ) {
 		// use validate filters
 		// @see https://www.php.net/manual/en/filter.filters.validate.php
 		switch ( $schema['type'] ) {
@@ -1505,10 +1506,13 @@ e.g.
 					case 'date':
 						$value = self::parseDateTime( $value, 'Y-m-d' );
 						break;
+					case 'time':
+						$value = self::parseDateTime( $value, 'H:i:s' );
+						break;
 					case 'datetime':
-						// 'Y-m-d H:i:s' \DATE_ISO8601
+						// \DATE_ISO8601
 						// *** this ensures consistency with mw.widgets.datetime.DateTimeInputWidget
-						$value = self::parseDateTime( $value, 'Y-m-d\TH:i:s.v\Z' );
+						$value = self::parseDateTime( $value, ( !$display ? 'Y-m-d\TH:i:s.v\Z' : 'Y-m-d H:i:s' ) );
 						break;
 					case 'url':
 						$value = filter_var( $value, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );

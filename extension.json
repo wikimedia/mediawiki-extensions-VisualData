@@ -533,6 +533,21 @@
 			"dependencies": [
 				"ext.VisualData.PrintResults"
 			]
+		},
+		"ext.VisualData.Leaflet": {
+			"position": "top",
+			"scripts": [
+				"Leaflet/leaflet.js",
+				"Leaflet/leaflet.markercluster.js",
+				"VisualDataMaps.js"
+			],
+			"styles": [
+				"Leaflet/leaflet.css",
+				"Leaflet/MarkerCluster.css",
+				"Leaflet/MarkerCluster.Default.css"
+			],
+			"dependencies": [
+			]
 		}
 	},
 	"config": {
