@@ -331,37 +331,42 @@ class MapResultPrinter extends ResultPrinter {
 		'icon.iconUrl' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '',
+			'default' => 'marker-icon.png',
+		],
+		'icon.iconRetinaUrl' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'marker-icon-2x.png',
 		],
 		'icon.iconSize' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '32, 48',
+			'default' => '25, 41',
 		],
 		'icon.iconAnchor' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '16, 48',
+			'default' => '12, 41',
 		],
 		'icon.popupAnchor' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '0, -48',
+			'default' => '1, -34',
 		],
 		'icon.shadowUrl' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '',
+			'default' => 'marker-shadow.png',
 		],
 		'icon.shadowSize' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '40, 60',
+			'default' => '41, 41',
 		],
 		'icon.shadowAnchor' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '13, 60',
+			'default' => '',
 		],
 
 		// @see https://leafletjs.com/reference.html#popup

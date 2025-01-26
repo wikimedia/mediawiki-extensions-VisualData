@@ -43,11 +43,20 @@ $( function () {
 			L.layerGroup() :
 			L.markerClusterGroup( params.markerClusterGroup ) );
 
-		// var customIcon = L.icon(params.icon);
+		// for some reason the images aren't loaded
+		// relatively from leaflet.js
+		var mw_extensionAssetsPath = mw.config.get( 'wgExtensionAssetsPath' );
+		var basePath = mw_extensionAssetsPath + '/VisualData/resources/Leaflet/images/';
+
+		for ( var key of [ 'iconUrl', 'iconRetinaUrl', 'shadowUrl' ] ) {
+			params.icon[ key ] = basePath + params.icon[ key ];
+		}
 
 		var markersArr = [ ];
 		for ( var value of json ) {
 			var markerOptions = params.marker;
+
+			markerOptions.icon = L.icon( params.icon );
 
 			if ( params.markerTooltip && value.name ) {
 				markerOptions.title = value.name;
