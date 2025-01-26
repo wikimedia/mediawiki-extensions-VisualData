@@ -1480,6 +1480,9 @@ e.g.
 	 * @param bool $display false
 	 */
 	public static function castType( &$value, $schema, $display = false ) {
+		if ( !is_array( $schema ) || !array_key_exists( 'type', $schema ) ) {
+			return;
+		}
 		// use validate filters
 		// @see https://www.php.net/manual/en/filter.filters.validate.php
 		switch ( $schema['type'] ) {

@@ -1015,6 +1015,8 @@ class DatabaseManager {
 	 * @param function $callbackValue
 	 */
 	public static function traverseData( $schema, &$data, $path, $printout, $callback, $callbackValue ) {
+		// *** this assumes that the schema is in a canonical
+		// form, leave as it is, since it shows errors on data
 		switch ( $schema['type'] ) {
 			case 'object':
 				if ( isset( $schema['properties'] ) ) {
