@@ -630,11 +630,11 @@ class QueryProcessor {
 			if ( count( $categories ) ) {
 				$categoryConds = [];
 				foreach ( $categories as $title_ ) {
-					$categoryConds[] = "categorylinks_$i.cl_to = " . $this->dbr->addQuotes( $title_->getDbKey() )
-						. " AND categorylinks_$i.cl_from = t0.page_id";
+					$categoryConds[] = "categorylinks_$i.cl_to = " . $this->dbr->addQuotes( $title_->getDbKey() );
 				}
 				$tables["categorylinks_$i"] = 'categorylinks';
-				$joins["categorylinks_$i"] = [ 'JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
+				$joins["categorylinks_$i"] = [ 'LEFT JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
+				$orConds[] = "t0.page_id = categorylinks_$i.cl_from";
 			}
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );

@@ -84,7 +84,7 @@ $( function () {
 		if ( markersArr.length ) {
 			var featureGroup = L.featureGroup( markersArr );
 			map.fitBounds( featureGroup.getBounds() );
-                }
+		}
 	}
 
 	$( '.visualdata-map' ).each( function () {

@@ -366,7 +366,7 @@ class MapResultPrinter extends ResultPrinter {
 		'icon.shadowAnchor' => [
 			'type' => 'string',
 			'required' => false,
-			'default' => '',
+			'default' => '12, 41',
 		],
 
 		// @see https://leafletjs.com/reference.html#popup
