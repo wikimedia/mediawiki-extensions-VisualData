@@ -1059,7 +1059,6 @@ class QueryProcessor {
 
 		if ( $this->debug ) {
 			$this->result = (string)$res;
-			echo $this->result;
 			return;
 		}
 
