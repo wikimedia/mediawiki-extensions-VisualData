@@ -132,6 +132,7 @@ class TableResultPrinter extends ResultPrinter {
 							$this->json[count( $this->json ) - 1][$key_] = $this->formatCategories( $categories );
 							if ( !in_array( $key_, $this->categoryFields ) ) {
 								$this->categoryFields[] = $key_;
+								$this->headersRaw[$key_] = true;
 							}
 						}
 					}
@@ -194,6 +195,8 @@ class TableResultPrinter extends ResultPrinter {
 			if ( !in_array( $key, $this->categoryFields ) ) {
 				$this->categoryFields[] = $key;
 			}
+			$this->headersRaw[$path] = true;
+
 		} else {
 			$this->json[count( $this->json ) - 1][$path][] =
 				( is_string( $value ) ? trim( $value ) : $value );
