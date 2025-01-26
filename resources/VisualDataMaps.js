@@ -81,7 +81,7 @@ $( function () {
 
 		map.addLayer( markers );
 
-		if ( markersArr.length ) {
+		if ( markersArr.length > 1 ) {
 			var featureGroup = L.featureGroup( markersArr );
 			map.fitBounds( featureGroup.getBounds() );
 		}
