@@ -192,7 +192,7 @@ class MapResultPrinter extends ResultPrinter {
 		'map.minZoom' => [
 			'type' => 'int',
 			'required' => false,
-			'default' => 5,
+			'default' => 0,
 		],
 		'map.maxZoom' => [
 			'type' => 'int',
@@ -489,6 +489,52 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => 20,
 		],
 
+		// @see https://leafletjs.com/reference.html#fitbounds-options
+		// 'map.fitBounds.maxZoom' => [
+		// 	'type' => 'int',
+		// 	'required' => false,
+
+			// @Attention, default is null
+		// 	'default' => '',
+		// ],
+		'map.fitBounds.animate' => [
+			'type' => 'bool',
+			'required' => false,
+
+			// @Attention, default is null
+			'default' => '',
+		],
+		'map.fitBounds.duration' => [
+			'type' => 'number',
+			'required' => false,
+			'default' => 0.25,
+		],
+		'map.fitBounds.easeLinearity' => [
+			'type' => 'number',
+			'required' => false,
+			'default' => 0.25,
+		],
+		'map.fitBounds.noMoveStart' => [
+			'type' => 'bool',
+			'required' => false,
+			'default' => false,
+		],
+		'map.fitBounds.paddingTopLeft' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => '0,0',
+		],
+		'map.fitBounds.paddingBottomRight' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => '0,0',
+		],
+		'map.fitBounds.padding' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => '0,0',
+		],
+
 		// custom parameters
 		'lat-property' => [
 			'type' => 'string',
@@ -525,7 +571,11 @@ class MapResultPrinter extends ResultPrinter {
 			'required' => false,
 			'default' => true,
 		],
-
+		'ignoreEmptyCoordinates' => [
+			'type' => 'bool',
+			'required' => false,
+			'default' => true,
+		],
 	];
 
 	public function isHtml() {
@@ -633,6 +683,18 @@ class MapResultPrinter extends ResultPrinter {
 	 * @return bool
 	 */
 	public function hasValidData() {
+		// empty coordinates are located in the Atlantic Ocean
+		// near the coast of West Africa, which is often not relevant
+		if ( !empty( $this->params['ignoreEmptyCoordinates'] ) ) {
+			$arr = [];
+			foreach ( $this->json as $value ) {
+				if ( !empty( $value['latitude'] ) || !empty( $value['longitude'] ) ) {
+					$arr[] = $value;
+				}
+			}
+			$this->json = $arr;
+		}
+
 		if ( !count( $this->json ) ) {
 			return false;
 		}
@@ -687,6 +749,9 @@ class MapResultPrinter extends ResultPrinter {
 			'popup.autoPanPadding' => 'number',
 			'popup.offset' => 'number',
 			'marker.autoPanPadding' => 'number',
+			'map.fitBounds.paddingTopLeft' => 'number',
+			'map.fitBounds.paddingBottomRight' => 'number',
+			'map.fitBounds.padding' => 'number',
 			// ...
 		];
 

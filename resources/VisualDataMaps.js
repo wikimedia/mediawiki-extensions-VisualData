@@ -21,13 +21,36 @@
 
 /* eslint-disable no-unused-vars */
 
-const VisualDataMaps = function ( el ) {};
+const VisualDataMaps = function ( el ) {
+
+	var getFilteredMarkers = function ( markersArr ) {
+		var latLngs = markersArr.map( ( marker ) => marker.getLatLng() );
+
+		var center = L.latLng(
+			latLngs.reduce( ( sum, latLng ) => sum + latLng.lat, 0 ) / latLngs.length,
+			latLngs.reduce( ( sum, latLng ) => sum + latLng.lng, 0 ) / latLngs.length
+		);
+
+		var distances = latLngs.map( ( latLng ) => center.distanceTo( latLng ) );
+		var averageDistance = distances.reduce( ( sum, distance ) => sum + distance, 0 ) / distances.length;
+
+		return markersArr.filter( ( marker ) =>
+			center.distanceTo( marker.getLatLng() ) <= averageDistance
+		);
+	};
+
+	return {
+		getFilteredMarkers
+	};
+};
 
 $( function () {
 	// @see https://leafletjs.com/reference.html#popup-option
 	// @see view-source:https://leaflet.github.io/Leaflet.markercluster/example/marker-clustering-realworld.10000.html
 
 	function init( $el ) {
+		var visualDataMaps = new VisualDataMaps( $el );
+
 		var data = $el.data();
 		var params = data.params;
 		var json = data.json;
@@ -81,9 +104,10 @@ $( function () {
 
 		map.addLayer( markers );
 
-		if ( markersArr.length > 1 ) {
-			var featureGroup = L.featureGroup( markersArr );
-			map.fitBounds( featureGroup.getBounds() );
+		var filteredMarkers = visualDataMaps.getFilteredMarkers( markersArr );
+		if ( filteredMarkers.length > 1 ) {
+			var featureGroup = L.featureGroup( filteredMarkers );
+			map.fitBounds( featureGroup.getBounds(), params.map.fitBounds );
 
 		} else if ( markersArr.length === 1 ) {
 			map.setView( L.latLng( json[ 0 ].latitude, json[ 0 ].longitude ),
