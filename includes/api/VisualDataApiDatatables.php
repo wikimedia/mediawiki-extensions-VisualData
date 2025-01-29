@@ -102,6 +102,10 @@ class VisualDataApiDatatables extends ApiBase {
 		}
 
 		if ( !empty( $datatableData['searchPanes'] ) ) {
+			// filter empty panes, that seem to appear only when
+			// $datatableData['search']['value'] is not empty
+			$datatableData['searchPanes'] = array_filter( $datatableData['searchPanes'] );
+
 			foreach ( $datatableData['searchPanes'] as $key => $values ) {
 				$printout = $datatableData['columns'][$key]['name'];
 				// @TODO consider combiner
