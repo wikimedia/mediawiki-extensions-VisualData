@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023-2024, https://wikisphere.org
+ * @copyright Copyright ©2023-2025, https://wikisphere.org
  */
 
 use MediaWiki\Extension\VisualData\ResultPrinter;
@@ -125,6 +125,7 @@ class VisualDataApiDatatables extends ApiBase {
 			$order[] = $value['name'] . " " . $value['dir'];
 		}
 
+		// @TODO limit taking into account PreloaData
 		$params['limit'] = max( $datatableData['length'], $params['limit'] );
 		$params['offset'] = $datatableData['start'];
 		$params['order'] = implode( ' ', $order );
@@ -186,6 +187,7 @@ class VisualDataApiDatatables extends ApiBase {
 			'recordsFiltered' => $count,
 			'cacheKey' => $cacheKey,
 			'datalength' => $datatableData['length'],
+			'start' => $datatableData['start']
 		];
 
 		$result->addValue( [ $this->getModuleName() ], 'result', $ret );

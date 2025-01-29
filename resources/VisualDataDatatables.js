@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright © 2024, https://wikisphere.org
+ * @copyright Copyright © 2024-2025, https://wikisphere.org
  */
 
 /* eslint-disable no-unused-vars */
@@ -29,6 +29,8 @@ const VisualDataDatatables = function ( el ) {
 	var SynchInterval;
 	var FaviconHref;
 	var DatatableLibrary = $.fn.dataTable.ext;
+	var PreloadData = {};
+	var Count;
 
 	var getCacheLimit = function ( obj ) {
 		return CacheLimit;
@@ -58,6 +60,40 @@ const VisualDataDatatables = function ( el ) {
 					{},
 			searchBuilder: 'searchBuilder' in obj ? obj.searchBuilder : {}
 		} );
+	};
+
+	var getCacheData = function ( cacheKey, datatableData ) {
+		if ( !( cacheKey in PreloadData ) ) {
+			return false;
+		}
+
+		var data = [];
+		for ( var i = datatableData.start; i < datatableData.start + datatableData.length; i++ ) {
+			if ( i >= Count ) {
+				break;
+			}
+			if ( !( i in PreloadData[ cacheKey ].data ) ) {
+				return false;
+			}
+			data.push( PreloadData[ cacheKey ].data[ i ] );
+		}
+
+		return { count: PreloadData[ cacheKey ].count, data };
+	};
+
+	var setCacheData = function ( json ) {
+		var cacheKey = json.cacheKey;
+		if ( !( cacheKey in PreloadData ) ) {
+			PreloadData[ cacheKey ] = { data: {} };
+		}
+
+		var n = json.start;
+		for ( var row of json.data ) {
+			PreloadData[ cacheKey ].data[ n ] = row;
+			n++;
+		}
+
+		PreloadData[ cacheKey ].count = json.recordsFiltered;
 	};
 
 	// @credits https://stackoverflow.com/questions/32692618/how-to-export-all-rows-from-datatables-using-ajax
@@ -120,7 +156,6 @@ const VisualDataDatatables = function ( el ) {
 	var callApi = function (
 		data,
 		callback,
-		preloadData,
 		searchPanesOptions,
 		displayLog
 	) {
@@ -150,21 +185,14 @@ const VisualDataDatatables = function ( el ) {
 				// cache all retrieved rows for each sorting
 				// dimension (column/dir), up to a fixed
 				// threshold (CacheLimit)
-				if ( 'search' in data.datatableData &&
-					data.datatableData.search.value === ''
-				) {
-					preloadData[ json.cacheKey ] = {
-						data: preloadData[ json.cacheKey ].data
-							.slice( 0, data.datatableData.start )
-							.concat( json.data ),
-						count: json.recordsFiltered
-					};
+				if ( json.cacheKey ) {
+					setCacheData( json );
 				}
 
 				// we retrieve more than "length"
 				// expected by datatables, so return the
 				// sliced result
-				json.data = json.data.slice( 0, data.datatableData.datalength );
+				json.data = json.data.slice( 0, json.datalength );
 				json.searchPanes = {
 					options: searchPanesOptions
 				};
@@ -512,7 +540,7 @@ const VisualDataDatatables = function ( el ) {
 
 	var renderCards = function ( headers ) {
 		if ( Table.hasClass( 'cards' ) ) {
-			var labels = VisualDataFunctions.objectValues( headers );
+			var labels = objectValues( headers );
 
 			// Add data-label attribute to each cell
 			// (will be used by .visualdata.datatable.cards td:before)
@@ -531,8 +559,7 @@ const VisualDataDatatables = function ( el ) {
 	};
 
 	var render = function () {
-		var preloadData = {};
-		var count = TableData.count;
+		Count = TableData.count;
 		var conf = TableData.conf;
 		var query = TableData.query;
 		var data = TableData.json;
@@ -543,10 +570,10 @@ const VisualDataDatatables = function ( el ) {
 		var categoryFields = TableData.categoryFields;
 		var headers = TableData.headers;
 		// var headersRaw = TableData.headersRaw;
-		var headersRaw = VisualDataFunctions.objectValues( TableData.headersRaw );
+		var headersRaw = objectValues( TableData.headersRaw );
 		var printoutsOptions = TableData.printoutsOptions;
 		var searchPanesOptions = TableData.searchPanesOptions;
-		var useAjax = ( count > data.length );
+		var useAjax = ( Count > data.length );
 
 		var displayLog = params.displayLog;
 		if ( displayLog ) {
@@ -911,8 +938,6 @@ html-num-fmt
 
 			extendButtons( { action: exportAction } );
 
-			var preloadData = {};
-
 			// cache using the column index and sorting
 			// method, as pseudo-multidimensional array
 			// column index + dir (asc/desc) + searchPanes (empty selection)
@@ -922,10 +947,7 @@ html-num-fmt
 				} )
 			} );
 
-			preloadData[ cacheKey ] = {
-				data,
-				count: count
-			};
+			setCacheData( { cacheKey, data, recordsFiltered: Count, start: params.offset } );
 
 			var payloadData = {
 				query,
@@ -935,7 +957,7 @@ html-num-fmt
 				templates,
 				categoryFields,
 				sourcePage: mw.config.get( 'wgPageName' ),
-				settings: { count, displayLog }
+				settings: { count: Count, displayLog }
 			};
 
 			conf = $.extend( conf, {
@@ -950,44 +972,39 @@ html-num-fmt
 				processing: true,
 				serverSide: true,
 				ajax: function ( datatableData, thisCallback, settings ) {
-					// must match initial cacheKey
-					var thisCacheKey = getCacheKey( datatableData );
 
-					if ( !( thisCacheKey in preloadData ) ) {
-						preloadData[ thisCacheKey ] = { data: [] };
-					}
+					// must match initial cacheKey
+					var thisCacheKey = ( !VisualDataFunctions.getNestedProp( [ 'search', 'value' ], datatableData ) ?
+						getCacheKey( datatableData ) :
+						null );
 
 					// returned cached data for the required
 					// dimension (order column/dir)
-					if (
-						datatableData.search.value === '' &&
-						datatableData.start + datatableData.length <=
-							preloadData[ thisCacheKey ].data.length
-					) {
-						return thisCallback( {
-							draw: datatableData.draw,
-							data: preloadData[ thisCacheKey ].data.slice(
-								datatableData.start,
-								datatableData.start + datatableData.length
-							),
-							recordsTotal: count,
-							recordsFiltered: preloadData[ thisCacheKey ].count,
-							searchPanes: {
-								options: searchPanesOptions
-							}
-						} );
+					if ( thisCacheKey ) {
+						var cacheData = getCacheData( thisCacheKey, datatableData );
+						if ( cacheData ) {
+							return thisCallback( {
+								draw: datatableData.draw,
+								data: cacheData.data,
+								recordsTotal: Count,
+								recordsFiltered: cacheData.count,
+								searchPanes: {
+									options: searchPanesOptions
+								}
+							} );
+						}
 					}
 					// flush cache each 40,000 rows
 					// *** another method is to compute the actual
 					// size in bytes of each row, but it takes more
 					// resources
-					for ( var ii in preloadData ) {
-						var totalSize = preloadData[ ii ].data.length;
+					for ( var ii in PreloadData ) {
+						var totalSize = objectValues( PreloadData[ ii ].data ).length;
 
 						if ( totalSize > getCacheLimit() ) {
 							// eslint-disable-next-line no-console
 							console.log( 'flushing datatables cache!' );
-							preloadData[ ii ] = {};
+							PreloadData[ ii ] = {};
 						}
 					}
 					callApi(
@@ -998,7 +1015,6 @@ html-num-fmt
 							api: true
 						} ),
 						thisCallback,
-						preloadData,
 						searchPanesOptions,
 						displayLog
 					);
