@@ -3025,6 +3025,27 @@ class VisualData {
 	}
 
 	/**
+	 * @param OutputPage $outputPage
+	 * @param array $items
+	 * @return array
+	 */
+	public static function addHeadItems( $outputPage, $items ) {
+		foreach ( $items as $key => $val ) {
+			[ $type, $url ] = $val;
+			switch ( $type ) {
+				case 'stylesheet':
+					$item = '<link rel="stylesheet" href="' . $url . '" />';
+					break;
+				case 'script':
+					$item = '<script src="' . $url . '"></script>';
+					break;
+			}
+			// @phan-suppress-next-line PhanTypeMismatchArgumentNullable
+			$outputPage->addHeadItem( 'visualdata_head_item' . $key, $item );
+		}
+	}
+
+	/**
 	 * @param array $arr
 	 * @see https://stackoverflow.com/questions/173400/how-to-check-if-php-array-is-associative-or-sequential
 	 * @return bool
