@@ -2721,7 +2721,7 @@ class VisualData {
 		$dbr = self::getDB( DB_REPLICA );
 
 		$conds = [
-			'page_title REGEXP ' . $dbr->addQuotes( "$titleStr\d+" ),
+			'page_title REGEXP ' . $dbr->addQuotes( $title->getDbKey() . '\d+' ),
 			'page_namespace' => $nsIndex
 		];
 
@@ -2733,7 +2733,7 @@ class VisualData {
 
 		$row = $dbr->selectRow(
 			'page',
-			[ 'page_title', 'SUBSTRING(page_title, ' . ( strlen( $titleStr ) + 1 ) . ') + 0 as substr_count' ],
+			[ 'page_title', 'SUBSTRING(page_title, ' . ( strlen( $title->getDbKey() ) + 1 ) . ') + 0 as substr_count' ],
 			$conds,
 			__METHOD__,
 			$options
