@@ -87,7 +87,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		);
 	}
 
-	// @TODO move in VisualDataInputConfig ?
+	// @TODO move to VisualDataInputConfig ?
 	function handleOptionsInputs( availableInputsInput, parentItems ) {
 		var items = [];
 		var layout = new OO.ui.PanelLayout( {
@@ -96,9 +96,11 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			framed: true,
 			classes: []
 		} );
+
 		var fieldset = new OO.ui.FieldsetLayout( {
 			label: 'Options'
 		} );
+
 		layout.$element.append( fieldset.$element );
 
 		parentItems.push( layout );
@@ -237,8 +239,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		// ///////////////////////////
 
-		function hasVisibleItems( thisFieldset ) {
-			for ( var item of thisFieldset.items ) {
+		function hasVisibleItems() {
+			for ( var item of fieldset.items ) {
 				if ( item.isVisible() ) {
 					return true;
 				}
@@ -317,14 +319,14 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 				!inArray( availableInputsValue, VisualDataFunctions.lookupInputs )
 			);
 
-			var thisVisibleItems = hasVisibleItems( fieldset );
+			var thisVisibleItems = hasVisibleItems();
 			updateModel( thisVisibleItems );
 			layout.toggle( thisVisibleItems );
 		}
 
 		fieldset.addItems( items );
 
-		var visibleItems = hasVisibleItems( fieldset );
+		var visibleItems = hasVisibleItems();
 		updateModel( visibleItems );
 		layout.toggle( visibleItems );
 
@@ -335,10 +337,10 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		onSelectAvailableInputs();
 
-		return selectOptionsFrom;
+		return { selectOptionsFrom, hasVisibleItems, modelMap };
 	}
 
-	function handleQueryOptions( availableInputsInput, selectOptionsFrom, parentItems ) {
+	function handleQueryOptions( availableInputsInput, parentItems, handleOptionsInputsInt ) {
 		var items = [];
 		var layout = new OO.ui.PanelLayout( {
 			expanded: false,
@@ -346,9 +348,11 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			framed: true,
 			classes: []
 		} );
+
 		var fieldset = new OO.ui.FieldsetLayout( {
 			label: 'Options'
 		} );
+
 		layout.$element.append( fieldset.$element );
 
 		parentItems.push( layout );
@@ -470,6 +474,14 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		function updateModel( thisVisibleItems ) {
 			for ( var i in modelMap ) {
+
+				// shared with OptionsInputs
+				if ( Object.keys( handleOptionsInputsInt.modelMap ).indexOf( i ) !== -1 &&
+					handleOptionsInputsInt.hasVisibleItems()
+				) {
+					continue;
+				}
+
 				if ( thisVisibleItems ) {
 					Model[ i ] = modelMap[ i ];
 				} else {
@@ -478,8 +490,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			}
 		}
 
-		function hasVisibleItems( thisFieldset ) {
-			for ( var item of thisFieldset.items ) {
+		function hasVisibleItems() {
+			for ( var item of fieldset.items ) {
 				if ( item.isVisible() ) {
 					return true;
 				}
@@ -489,7 +501,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		function onSelectAvailableInputs() {
 			var availableInputsValue = availableInputsInput.getValue();
-			var selectOptionsFromValue = selectOptionsFrom.getValue();
+			var selectOptionsFromValue = handleOptionsInputsInt.selectOptionsFrom.getValue();
 
 			var optionInput = ( ( selectOptionsFromValue === 'options-query' || selectOptionsFromValue === 'options-smwquery' ) &&
 				inArray( availableInputsValue, VisualDataFunctions.optionsInputs ) );
@@ -504,14 +516,14 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			fieldOptionFormula.toggle( lookupInput || optionInput );
 			fieldOptionsLabelFormula.toggle( labelFormulaInput );
 
-			var thisVisibleItems = hasVisibleItems( fieldset );
+			var thisVisibleItems = hasVisibleItems();
 			updateModel( thisVisibleItems );
 			layout.toggle( thisVisibleItems );
 		}
 
 		fieldset.addItems( items );
 
-		var visibleItems = hasVisibleItems( fieldset );
+		var visibleItems = hasVisibleItems();
 		updateModel( visibleItems );
 		layout.toggle( visibleItems );
 
@@ -521,7 +533,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		} );
 
 		// eslint-disable-next-line no-unused-vars
-		selectOptionsFrom.on( 'change', function ( value ) {
+		handleOptionsInputsInt.selectOptionsFrom.on( 'change', function ( value ) {
 			onSelectAvailableInputs();
 		} );
 
@@ -923,8 +935,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			} )
 		);
 
-		var selectOptionsFrom = handleOptionsInputs( availableInputsInput, items );
-		handleQueryOptions( availableInputsInput, selectOptionsFrom, items );
+		var handleOptionsInputsInt = handleOptionsInputs( availableInputsInput, items );
+		handleQueryOptions( availableInputsInput, items, handleOptionsInputsInt );
 
 		var requiredInput = new OO.ui.ToggleSwitchWidget( {
 			value: !!getPropertyValue( 'required' )
