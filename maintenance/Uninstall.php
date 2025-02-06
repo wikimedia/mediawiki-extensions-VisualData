@@ -68,7 +68,6 @@ class Uninstall extends Maintenance {
 
 		// @see https://www.mediawiki.org/wiki/Extension_talk:VisualData#c-Thomas-topway-it-20250205192800-TaylanKammer-20241222154800
 		//	$this->addOption( 'remove-json-slot', 'remove json slot', false, false );
-		$this->addOption( 'output', 'output file', true, true );
 		$this->addOption( 'limit', 'limit', false, true );
 		$this->addOption( 'uninstall', 'uninstall', false, false );
 		$this->addOption( 'remove-main-slot-jsondata', 'remove main slot jsondata', false, false );
@@ -79,7 +78,7 @@ class Uninstall extends Maintenance {
 	 */
 	public function execute() {
 		// $this->removeJsonSlot = $this->hasOption( 'remove-json-slot' ) ?? false;
-		$this->limit = (int)$this->getOption( 'limit' ) ?? -1;
+		$this->limit = (int)$this->getOption( 'limit' );
 		$this->uninstall = $this->hasOption( 'uninstall' ) ?? false;
 		$this->removeMainSlotJsondata = $this->hasOption( 'remove-main-slot-jsondata' ) ?? false;
 
@@ -116,7 +115,7 @@ class Uninstall extends Maintenance {
 
 		$n = 0;
 		for ( $i = 1; $i < $maxByPageId; $i++ ) {
-			if ( $this->limit !== -1 && $n > $this->limit ) {
+			if ( $this->limit > 0 && $n > $this->limit ) {
 				break;
 			}
 			$title_ = Title::newFromID( $i );

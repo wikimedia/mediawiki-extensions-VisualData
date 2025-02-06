@@ -216,7 +216,10 @@ class VisualDataHooks {
 
 		// this does not include jsonData's categories
 		// but it includes tracking categories
-		$categoryNames = $parserOutput->getCategoryNames();
+		$getCategoriesMethod = ( version_compare( MW_VERSION, '1.38', '>=' ) ?
+			'getCategoryNames' : 'getCategoryLinks' );
+
+		$categoryNames = $parserOutput->$getCategoriesMethod();
 
 		foreach ( $categoryNames as $category ) {
 			$parserOutput->addCategory( $category );
