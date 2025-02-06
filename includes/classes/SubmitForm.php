@@ -624,13 +624,17 @@ class SubmitForm {
 			$jsonData['schemas-data']['untransformed'] = $untransformedValues;
 		}
 
+		$wikiPage = null;
+		if ( $targetTitle && !$isNewPage ) {
+			$wikiPage = \VisualData::getWikiPage( $targetTitle );
+		}
+
 		// update content model if necessary
 		if ( $targetTitle
 			&& !$isNewPage
 			&& $contentModel
 			&& $contentModel !== $targetTitle->getContentModel()
 		) {
-			$wikiPage = \VisualData::getWikiPage( $targetTitle );
 			$this->updateContentModel( $targetTitle, $wikiPage, $contentModel, $errors );
 		}
 

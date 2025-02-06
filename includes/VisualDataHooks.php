@@ -78,9 +78,9 @@ class VisualDataHooks {
 		$services->addServiceManipulator( 'SlotRoleRegistry', static function ( \MediaWiki\Revision\SlotRoleRegistry $registry ) {
 			if ( !$registry->isDefinedRole( SLOT_ROLE_VISUALDATA_JSONDATA ) ) {
 				$registry->defineRoleWithModel( SLOT_ROLE_VISUALDATA_JSONDATA, CONTENT_MODEL_VISUALDATA_JSONDATA, [
-					"display" => "none",
-					"region" => "center",
-					"placement" => "append"
+					'display' => 'none',
+					'region' => 'center',
+					'placement' => 'append'
 				] );
 			}
 		} );
@@ -151,7 +151,7 @@ class VisualDataHooks {
 			$slot = $_GET['slot'];
 			$slots = \VisualData::getSlots( $title );
 
-			if ( array_key_exists( $slot, $slots ) ) {
+			if ( is_array( $slots ) && array_key_exists( $slot, $slots ) ) {
 				$slot_content = $slots[ $slot ]->getContent();
 				$contentHandler = $slot_content->getContentHandler();
 

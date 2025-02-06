@@ -449,8 +449,9 @@ class ResultPrinter {
 	 */
 	protected function processSchemaRec( $title, $schema, $arr, $categories, $path, $isFirst = true, $isLast = true ) {
 		$isArray = ( $schema['type'] === 'array' );
-		$ret = [];
 
+		$ret = [];
+		$recPaths = [];
 		$n = 0;
 		foreach ( $arr as $key => $value ) {
 			$currentPath = $path ? "$path/$key" : $key;

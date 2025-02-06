@@ -685,7 +685,11 @@ class QueryProcessor {
 
 			} else {
 				unset( $thisClass->$varName[$key] );
-				$pattern = str_replace( '~', '~0', $value );
+
+				// use another delimiter than / otherwise
+				// str_replace( '/' below will replace the match
+				// after the escape character
+				$pattern = str_replace( '~', '~0', preg_quote( $value, '#' ) );
 
 				// match both slash and escaped slash
 				$pattern = str_replace( '/', '(?:~1|\\/)', $pattern );
@@ -694,10 +698,17 @@ class QueryProcessor {
 				foreach ( $thisClass->mapPathNoIndexTable as $k => $v ) {
 					// @FIXME why this is necessary ? shouldn't be one to one match ?
 					//  || preg_match( "/^$pattern\//", $k )
-					if ( preg_match( '/^' . preg_quote( $pattern, '/' ) . '$/', $k ) ) {
+
+					if ( preg_match( "#^$pattern$#", $k ) ) {
 						// $thisClass->$varName[] = $k;
 						$thisClass->$varName[$key] = $k;
 						$replacements[$value] = $k;
+
+						// remove from printoutsOriginal
+						// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
+						if ( ( $k_ = array_search( $value, $thisClass->printoutsOriginal ) ) !== false ) {
+							unset( $thisClass->printoutsOriginal[$k_] );
+						}
 						break;
 					}
 				}

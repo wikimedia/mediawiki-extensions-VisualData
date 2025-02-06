@@ -356,7 +356,7 @@ class RebuildData extends Maintenance {
 		$slotContent = ContentHandler::makeContent( $contents, $title, $modelId );
 		$pageUpdater->setContent( 'jsondata', $slotContent );
 
-		$summary = "VisualData update";
+		$summary = 'VisualData update';
 		$flags = EDIT_INTERNAL;
 		$comment = CommentStoreComment::newUnsavedComment( $summary );
 		$RevisionRecord = $pageUpdater->saveRevision( $comment, $flags );

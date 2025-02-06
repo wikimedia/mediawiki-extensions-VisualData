@@ -1418,7 +1418,7 @@ class VisualData {
 		$revision = self::revisionRecordFromTitle( $title );
 
 		if ( !$revision ) {
-			return;
+			return null;
 		}
 
 		self::$slotsCache[$key] = $revision->getSlots()->getSlots();
@@ -1469,31 +1469,28 @@ class VisualData {
 			return false;
 		}
 
-		$wikiPage = self::getWikiPage( $title );
-
-		if ( !$wikiPage ) {
-			return false;
-		}
-
 		$slots = self::getSlots( $title );
 
 		if ( !$slots ) {
 			return false;
 		}
 
-		$content = null;
-		foreach ( $slots as $role => $slot ) {
-			$content_ = $slots[$role]->getContent();
-			$modelId = $content_->getContentHandler()->getModelID();
+		$getContentAndRole = static function ( $slots ) {
+			foreach ( $slots as $role => $slot ) {
+				$content = $slots[$role]->getContent();
+				$modelId = $content->getContentHandler()->getModelID();
 
-			if ( $role === SLOT_ROLE_VISUALDATA_JSONDATA
-				|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA
-				|| $modelId === 'json'
-			) {
-				$content = $content_;
-				break;
+				if ( $role === SLOT_ROLE_VISUALDATA_JSONDATA
+					|| $modelId === CONTENT_MODEL_VISUALDATA_JSONDATA
+					|| $modelId === 'json'
+				) {
+					return [ $content, $role ];
+				}
 			}
-		}
+			return [ null, null ];
+		};
+
+		[ $content, $role ] = $getContentAndRole( $slots );
 
 		if ( empty( $content ) ) {
 			return false;
@@ -3017,11 +3014,10 @@ class VisualData {
 	 */
 	public static function revisionRecordFromTitle( $title ) {
 		$wikiPage = self::getWikiPage( $title );
-
-		if ( $wikiPage ) {
-			return $wikiPage->getRevisionRecord();
+		if ( !$wikiPage ) {
+			return null;
 		}
-		return null;
+		return $wikiPage->getRevisionRecord();
 	}
 
 	/**
