@@ -54,8 +54,8 @@ $( function () {
 							$( messageWidget.$element ).parent().remove();
 						};
 						messageWidget.on( 'close', closeFunction );
-						var selector = $( '#visualdata-form' ).length ?
-							'#visualdata-form' :
+						var selector = $( '#schemas-wrapper' ).length ?
+							'#schemas-wrapper' :
 							'.VisualDataFormWrapper';
 						$( selector )
 							.first()
