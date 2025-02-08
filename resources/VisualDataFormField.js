@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2023-2024, https://wikisphere.org
+ * @copyright Copyright ©2023-2025, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */
@@ -37,6 +37,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 	var panelLayout;
 	var CurrentKey;
 	var Callback;
+	var HandleOptionsInputsInt;
+	var HandleQueryOptionsInt;
 
 	function inArray( val, arr ) {
 		return arr.indexOf( val ) !== -1;
@@ -85,6 +87,27 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 					VisualDataFunctions.optionsInputs.indexOf( x ) === -1 ) ||
 				VisualDataFunctions.isMultiselect( x )
 		);
+	}
+
+	function UpdateModel( modelMap, visibleItems ) {
+		var optionsHasVisibleItems = HandleOptionsInputsInt.hasVisibleItems();
+		var queryHasVisibleItems = HandleQueryOptionsInt.hasVisibleItems();
+
+		for ( var i in modelMap ) {
+			if ( visibleItems ) {
+				Model[ i ] = modelMap[ i ];
+
+			} else {
+				var visibleSharedOptions =
+					Object.keys( HandleOptionsInputsInt.modelMap ).indexOf( i ) !== -1 &&
+					Object.keys( HandleQueryOptionsInt.modelMap ).indexOf( i ) !== -1 &&
+					( optionsHasVisibleItems || queryHasVisibleItems );
+
+				if ( !visibleSharedOptions ) {
+					delete Model[ i ];
+				}
+			}
+		}
 	}
 
 	// @TODO move to VisualDataInputConfig ?
@@ -265,16 +288,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			'options-label-formula': optionsLabelFormulaInput
 		};
 
-		function updateModel( thisVisibleItems ) {
-			for ( var i in modelMap ) {
-				if ( thisVisibleItems ) {
-					Model[ i ] = modelMap[ i ];
-				} else {
-					delete Model[ i ];
-				}
-			}
-		}
-
 		function onSelectAvailableInputs() {
 			var availableInputsValue = availableInputsInput.getValue();
 
@@ -320,14 +333,13 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			);
 
 			var thisVisibleItems = hasVisibleItems();
-			updateModel( thisVisibleItems );
+			UpdateModel( modelMap, thisVisibleItems );
 			layout.toggle( thisVisibleItems );
 		}
 
 		fieldset.addItems( items );
 
 		var visibleItems = hasVisibleItems();
-		updateModel( visibleItems );
 		layout.toggle( visibleItems );
 
 		// eslint-disable-next-line no-unused-vars
@@ -335,12 +347,10 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			onSelectAvailableInputs();
 		} );
 
-		onSelectAvailableInputs();
-
-		return { selectOptionsFrom, hasVisibleItems, modelMap };
+		return { selectOptionsFrom, hasVisibleItems, modelMap, onSelectAvailableInputs };
 	}
 
-	function handleQueryOptions( availableInputsInput, parentItems, handleOptionsInputsInt ) {
+	function handleQueryOptions( availableInputsInput, parentItems ) {
 		var items = [];
 		var layout = new OO.ui.PanelLayout( {
 			expanded: false,
@@ -472,24 +482,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			'options-label-formula': optionsLabelFormulaInput
 		};
 
-		function updateModel( thisVisibleItems ) {
-			for ( var i in modelMap ) {
-
-				// shared with OptionsInputs
-				if ( Object.keys( handleOptionsInputsInt.modelMap ).indexOf( i ) !== -1 &&
-					handleOptionsInputsInt.hasVisibleItems()
-				) {
-					continue;
-				}
-
-				if ( thisVisibleItems ) {
-					Model[ i ] = modelMap[ i ];
-				} else {
-					delete Model[ i ];
-				}
-			}
-		}
-
 		function hasVisibleItems() {
 			for ( var item of fieldset.items ) {
 				if ( item.isVisible() ) {
@@ -501,7 +493,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		function onSelectAvailableInputs() {
 			var availableInputsValue = availableInputsInput.getValue();
-			var selectOptionsFromValue = handleOptionsInputsInt.selectOptionsFrom.getValue();
+			var selectOptionsFromValue = HandleOptionsInputsInt.selectOptionsFrom.getValue();
 
 			var optionInput = ( ( selectOptionsFromValue === 'options-query' || selectOptionsFromValue === 'options-smwquery' ) &&
 				inArray( availableInputsValue, VisualDataFunctions.optionsInputs ) );
@@ -517,14 +509,13 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			fieldOptionsLabelFormula.toggle( labelFormulaInput );
 
 			var thisVisibleItems = hasVisibleItems();
-			updateModel( thisVisibleItems );
+			UpdateModel( modelMap, thisVisibleItems );
 			layout.toggle( thisVisibleItems );
 		}
 
 		fieldset.addItems( items );
 
 		var visibleItems = hasVisibleItems();
-		updateModel( visibleItems );
 		layout.toggle( visibleItems );
 
 		// eslint-disable-next-line no-unused-vars
@@ -533,11 +524,11 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		} );
 
 		// eslint-disable-next-line no-unused-vars
-		handleOptionsInputsInt.selectOptionsFrom.on( 'change', function ( value ) {
+		HandleOptionsInputsInt.selectOptionsFrom.on( 'change', function ( value ) {
 			onSelectAvailableInputs();
 		} );
 
-		onSelectAvailableInputs();
+		return { modelMap, hasVisibleItems, onSelectAvailableInputs };
 	}
 
 	function PanelLayout( config ) {
@@ -935,8 +926,12 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			} )
 		);
 
-		var handleOptionsInputsInt = handleOptionsInputs( availableInputsInput, items );
-		handleQueryOptions( availableInputsInput, items, handleOptionsInputsInt );
+		HandleOptionsInputsInt = handleOptionsInputs( availableInputsInput, items );
+		HandleQueryOptionsInt = handleQueryOptions( availableInputsInput, items );
+
+		// this will also call UpdateModel
+		HandleOptionsInputsInt.onSelectAvailableInputs();
+		HandleQueryOptionsInt.onSelectAvailableInputs();
 
 		var requiredInput = new OO.ui.ToggleSwitchWidget( {
 			value: !!getPropertyValue( 'required' )
