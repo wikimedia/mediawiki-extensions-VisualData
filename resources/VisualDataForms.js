@@ -364,40 +364,45 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			var refValue = VisualDataFunctions.castType( thisField[ 'showif-value' ], sourceModel.schema.type );
 
 			var res;
-			switch ( thisField[ 'showif-condition' ] ) {
-				case '=':
-					res = ( refValue === value );
-					break;
-				case '!=':
-					res = ( refValue !== value );
-					break;
-				case 'starts':
-					res = ( value.indexOf( refValue ) === 0 );
-					break;
-				case '!starts':
-					res = ( value.indexOf( refValue ) !== 0 );
-					break;
-				case 'contains':
-					res = ( value.indexOf( refValue ) !== -1 );
-					break;
-				case '!contains':
-					res = ( value.indexOf( refValue ) === -1 );
-					break;
-				case 'ends':
-					var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
-					res = regExp.test( value );
-					break;
-				case '!ends':
-					var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
-					res = !regExp.test( value );
-					break;
-				case '!null':
-					res = ( !!value );
-					break;
-				case 'regex':
-					var regExp = new RegExp( refValue );
-					res = regExp.test( value );
-					break;
+			if ( sourceModel.removed ) {
+				res = false;
+
+			} else {
+				switch ( thisField[ 'showif-condition' ] ) {
+					case '=':
+						res = ( refValue === value );
+						break;
+					case '!=':
+						res = ( refValue !== value );
+						break;
+					case 'starts':
+						res = ( value.indexOf( refValue ) === 0 );
+						break;
+					case '!starts':
+						res = ( value.indexOf( refValue ) !== 0 );
+						break;
+					case 'contains':
+						res = ( value.indexOf( refValue ) !== -1 );
+						break;
+					case '!contains':
+						res = ( value.indexOf( refValue ) === -1 );
+						break;
+					case 'ends':
+						var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
+						res = regExp.test( value );
+						break;
+					case '!ends':
+						var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
+						res = !regExp.test( value );
+						break;
+					case '!null':
+						res = ( !!value );
+						break;
+					case 'regex':
+						var regExp = new RegExp( refValue );
+						res = regExp.test( value );
+						break;
+				}
 			}
 
 			thisModel.removed = !res;
