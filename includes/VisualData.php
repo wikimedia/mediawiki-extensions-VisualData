@@ -85,6 +85,14 @@ class VisualData {
 			'default' => 'class',
 			'example' => 'visualdata-parserfunction-querylink-class-attr-name-example'
 		],
+		'target-attr-name' => [
+			'label' => 'visualdata-parserfunction-querylink-target-attr-name-label',
+			'description' => 'visualdata-parserfunction-querylink-target-attr-name-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => 'target',
+			'example' => 'visualdata-parserfunction-querylink-target-attr-name-example'
+		],
 	];
 
 	/** @var array */
@@ -594,6 +602,8 @@ class VisualData {
 |label
 |class=
 |class-attr-name=class
+|target=
+|target-attr-name=target
 |a=b
 |c=d
 |...
@@ -615,12 +625,13 @@ class VisualData {
 			return 'no page name';
 		}
 
-		// assign the indicated name for the "class" attribute
-		// to the known options (from the unknown named parameters)
-		if ( isset( $query[$options['class-attr-name']] ) ) {
-			$options[$options['class-attr-name']] = $query[$options['class-attr-name']];
+		// assign the known attributes to the options array
+		foreach ( [ 'class-attr-name', 'target-attr-name' ] as $value_ ) {
+			if ( isset( $query[$options[$value_]] ) ) {
+				$options[$options[$value_]] = $query[$options[$value_]];
+			}
+			unset( $query[$options[$value_]] );
 		}
-		unset( $query[$options['class-attr-name']] );
 
 		if ( !count( $query ) ) {
 			return 'no query';
@@ -633,6 +644,10 @@ class VisualData {
 		$attr = [];
 		if ( !empty( $options[$options['class-attr-name']] ) ) {
 			$attr['class'] = $options[$options['class-attr-name']];
+		}
+
+		if ( !empty( $options[$options['target-attr-name']] ) ) {
+			$attr['target'] = $options[$options['target-attr-name']];
 		}
 
 		// *** alternatively use $linkRenderer->makePreloadedLink
