@@ -1151,7 +1151,8 @@ class SchemaProcessor {
 	 * @return string
 	 */
 	private function replaceFormula( $properties, $formula ) {
-		preg_match_all( '/<\s*([^<>]+)\s*>/', $formula, $matches, PREG_PATTERN_ORDER );
+		// @see https://phabricator.wikimedia.org/T385935
+		preg_match_all( '/<\s*+([^<>]++)\s*+>/', $formula, $matches, PREG_PATTERN_ORDER );
 
 		foreach ( $properties as $property => $value ) {
 			if ( in_array( $property, $matches[1] ) ) {

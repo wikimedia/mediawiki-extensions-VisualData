@@ -229,6 +229,14 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-form-preload-data-example'
 		],
+		'preload-data-separator' => [
+			'label' => 'visualdata-parserfunction-form-preload-data-separator-label',
+			'description' => 'visualdata-parserfunction-form-preload-data-separator-description',
+			'type' => 'string',
+			'required' => false,
+			'default' => ',',
+			'example' => 'visualdata-parserfunction-form-preload-data-separator-example'
+		],
 		'return-page' => [
 			'label' => 'visualdata-parserfunction-form-return-page-label',
 			'description' => 'visualdata-parserfunction-form-return-page-description',
@@ -2011,12 +2019,13 @@ class VisualData {
 	}
 
 	/**
+	 * @param Context $context
 	 * @param Title $title
 	 * @param array $pageForms
 	 * @param array $config
 	 * @return array
 	 */
-	private static function processPageForms( $title, $pageForms, $config ) {
+	private static function processPageForms( $context, $title, $pageForms, $config ) {
 		$services = MediaWikiServices::getInstance();
 		$slotRoleRegistry = $services->getSlotRoleRegistry();
 
@@ -2091,7 +2100,8 @@ class VisualData {
 			}
 
 			if ( $emptyData && !empty( $value['options']['preload-data-override'] )
-				&& class_exists( 'Swaggest\JsonDiff\JsonPointer' ) ) {
+				&& class_exists( 'Swaggest\JsonDiff\JsonPointer' )
+			) {
 
 				foreach ( $value['options']['preload-data-override'] as $k => $v ) {
 					// @TODO also try unescaped array keys as in
@@ -2106,6 +2116,25 @@ class VisualData {
 						// self::$Logger->error( 'schema must be specified' );
 						continue;
 					}
+
+					// convert to array if needed
+					$schema_ = self::getSchema( $context, $pathItems[0] );
+					if ( $schema_ ) {
+						$printout_ = implode( '/', array_slice( $pathItems, 1 ) );
+						$callback = static function ( $schema, $path, $printout, $property ) use ( $value, $printout_, &$v ) {
+							if ( $printout === $printout_
+								&& $schema['type'] === 'array'
+								&& !is_array( $v )
+							) {
+								// @see https://visualdata.idea-sketch.com/wiki/Preload_data_with_nested_and_multiple_values
+								$v = preg_split( "/\s*{$value['options']['preload-data-separator']}\s*/", $v, -1, PREG_SPLIT_NO_EMPTY );
+							}
+						};
+						$path = '';
+						$printout = '';
+						DatabaseManager::traverseSchema( $schema_, $path, $printout, $callback );
+					}
+
 					array_unshift( $pathItems, 'schemas' );
 					JsonPointer::add( $jsonData, $pathItems, $v,
 						JsonPointer::TOLERATE_ASSOCIATIVE_ARRAYS | JsonPointer::RECURSIVE_KEY_CREATION );
@@ -2199,7 +2228,7 @@ class VisualData {
 			// *** attention! switch to array_merge in case of
 			// non-numerical keys
 			$obj['pageForms'] = $obj['pageForms'] + self::$pageForms;
-			$obj['pageForms'] = self::processPageForms( $title, $obj['pageForms'], $obj['config'] );
+			$obj['pageForms'] = self::processPageForms( $context, $title, $obj['pageForms'], $obj['config'] );
 		}
 
 		// *** this is necessary to preserve the json data

@@ -134,8 +134,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		// var optionsSMWQueryValue = getPropertyValue( 'options-smwquery' ) || '';
 		var optionsValues = getPropertyValue( 'options-values' ) || [];
 
-		var selectOptionsFromValue = null;
-		var optionsValue = null;
+		var selectOptionsFromValue = getPropertyValue( 'selectOptionsFrom' );
 
 		// @TODO add more data sources
 		var methods = [ 'values', 'wikilist', 'query' ];
@@ -150,11 +149,21 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			methodsReduced.push( 'smwquery' );
 		}
 
-		for ( var method of methods ) {
-			// eslint-disable-next-line no-cond-assign, no-unused-vars
-			if ( optionsValue = getPropertyValue( 'options-' + method ) ) {
-				selectOptionsFromValue = 'options-' + method;
-				break;
+		var inputIsEmpty = function ( thisMethod, value ) {
+			switch ( thisMethod ) {
+				case 'values':
+					return !value.length;
+				default:
+					return value === '';
+			}
+		};
+
+		if ( selectOptionsFromValue === '' ) {
+			for ( var method of methods ) {
+				if ( !inputIsEmpty( method, getPropertyValue( 'options-' + method ) ) ) {
+					selectOptionsFromValue = 'options-' + method;
+					break;
+				}
 			}
 		}
 
@@ -187,9 +196,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		} );
 
 		items.push( fieldNullValue );
-
-		// used to clear "options-values", "options-wikilist", "options-query"
-		// Model.selectOptionsFrom = selectOptionsFrom;
 
 		var fieldSelectOptionsFrom = new OO.ui.FieldLayout( selectOptionsFrom, {
 			label: new OO.ui.HtmlSnippet(

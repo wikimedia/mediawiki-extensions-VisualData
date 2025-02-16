@@ -291,9 +291,28 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param string $prefix
+	 * @return string
+	 */
+	private function getSpecialPrefixOrderFunc( $prefix ) {
+		switch ( $prefix ) {
+			case 'ModificationDate':
+			case 'Modification date':
+				return 'max';
+			case 'CreationDate':
+			case 'Creation date':
+				return 'min';
+		}
+		return 'min';
+	}
+
+	/**
+	 * @param array &$fields
+	 * @param array &$tables
+	 * @param array &$joins
 	 * @return array
 	 */
-	private function getOptions() {
+	private function getOptions( &$fields, &$tables, &$joins ) {
 		if ( $this->count || $this->params['count-printout']
 			|| $this->params['count-categories']
 		) {
@@ -342,6 +361,7 @@ class QueryProcessor {
 			return "CAST(v$index as $cast)";
 		};
 
+		$specialPrefix = false;
 		// $options = ['GROUP BY' => 'page_id'];
 		foreach ( $optionsMap as $key => $value ) {
 			if ( !empty( $this->params[$key] ) ) {
@@ -363,6 +383,10 @@ class QueryProcessor {
 
 							} elseif ( in_array( $printout, ResultPrinter::$titleAliases ) ) {
 								$arr[] = "page_title $sort";
+
+							} elseif ( in_array( $printout, $this->specialPrefixes ) ) {
+								$arr[] = "rev_sort.timestamp $sort";
+								$specialPrefix = $printout;
 							}
 						}
 						if ( count( $arr ) ) {
@@ -379,6 +403,29 @@ class QueryProcessor {
 				}
 			}
 		}
+
+		if ( $specialPrefix ) {
+			$orderFunc = $this->getSpecialPrefixOrderFunc( $specialPrefix );
+
+			$tables_ = [ 'revision' ];
+			$fields_  = [ 'rev_page', 'timestamp' => "$orderFunc(rev_timestamp)" ];
+			$conds_ = [];
+			$options_ = [ 'GROUP BY' => 'rev_page' ];
+			$subquery = $this->dbr->buildSelectSubquery(
+				$tables_,
+				$fields_,
+				$conds_,
+				__METHOD__,
+				$options_,
+			);
+
+			// $fields[] = 'rev_sort.timestamp';
+			$tables['rev_sort'] = $subquery;
+			$joins['rev_sort'] = [ 'JOIN', [
+				'rev_sort.rev_page = t0.page_id',
+			] ];
+		}
+
 		return $options;
 	}
 
@@ -446,12 +493,16 @@ class QueryProcessor {
 			}
 		}
 
+		$thisClass = $this;
+		$getCastValueAndQuote = static function ( $value ) use ( $thisClass, $dataType ) {
+			$thisClass->castValAndQuote( $dataType, $value );
+			return $value;
+		};
+
 		if ( !$likeBefore && !$likeAfter ) {
 			if ( $value === '+' ) {
 				return "$field IS NOT NULL";
 			}
-			$quotedVal = $value;
-			$this->castValAndQuote( $dataType, $quotedVal );
 
 			if ( in_array( $dataType, [ 'integer', 'numeric', 'date', 'datetime', 'time' ] ) ) {
 				// https://www.semantic-mediawiki.org/wiki/Help:Search_operators#User_manual
@@ -476,10 +527,11 @@ class QueryProcessor {
 					if ( $callbackValue ) {
 						$match_[2] = $callbackValue( $match_[2] );
 					}
-					return "$field {$sql} " . $this->dbr->addQuotes( $match_[2] );
+					return "$field {$sql} " . $getCastValueAndQuote( $match_[2] );
 				}
 			}
-			return "$field = $quotedVal";
+
+			return "$field = " . $getCastValueAndQuote( $value );
 		}
 
 		$any = $this->dbr->anyString();
@@ -489,6 +541,8 @@ class QueryProcessor {
 			$quotedVal = $this->dbr->buildLike( $value, $any );
 		} elseif ( $likeBefore && $likeAfter ) {
 			$quotedVal = $this->dbr->buildLike( $any, $value, $any );
+		} else {
+			$quotedVal = $getCastValueAndQuote( $value );
 		}
 		$not = ( empty( $match[1] ) ) ? '' : ' NOT';
 
@@ -497,7 +551,7 @@ class QueryProcessor {
 
 	/**
 	 * @param string $str
-	 * @return bool|string
+	 * @return bool|array
 	 */
 	private function parseSpecialPrefix( $str ) {
 		// only escape the following https://www.php.net/manual/en/regexp.reference.meta.php
@@ -509,47 +563,18 @@ class QueryProcessor {
 			'/^\s*(.+?)\s*<=\s*(.+?)\s*$/' => '<=',
 			'/^\s*(.+?)\s*!\s*(.+?)\s*$/' => '!=',
 		];
-		foreach ( $patterns as $regex => $sql ) {
+		foreach ( $patterns as $regex => $operator ) {
 			preg_match( $regex, $str, $match_ );
 			if ( !empty( $match_ ) ) {
 				if ( !in_array( $match_[1], $this->specialPrefixes ) ) {
 					continue;
 				}
-				$prefix = $match_[1];
-				$value = $match_[2];
-				switch ( $prefix ) {
-					case 'ModificationDate':
-					case 'Modification date':
-						$fields_ = [
-							'rev_timestamp' => 'MAX(rev_timestamp)',
-						];
-						break;
-					case 'CreationDate':
-					case 'Creation date':
-						$fields_ = [
-							'rev_timestamp' => 'MIN(rev_timestamp)',
-						];
-						break;
-				}
-				$time = strtotime( $value );
-				// MW_TS
-				// $value = date( 'YmdHis', $time );
-				$value = $this->dbr->timestamp( $time );
-
-				$tables_ = [ 'revision' ];
-				$conds_ = [ 'rev_page = rev_alias.rev_page' ];
-				$options_ = [ 'LIMIT 1' ];
-				$field = $this->dbr->buildSelectSubquery(
-					$tables_,
-					$fields_,
-					$conds_,
-					__METHOD__,
-					$options_,
-				);
-				return "$field $sql $value";
+				// prefix, value, operator
+				return [ $match_[1], $match_[2], $operator ];
 			}
 		}
-		return false;
+
+		return [ null, null, null ];
 	}
 
 	/**
@@ -562,12 +587,30 @@ class QueryProcessor {
 	 */
 	private function processTitle( $value, &$orConds, &$tables, &$joins, &$fields, &$categories ) {
 		// match "Creation date"
-		$specialPrefix = $this->parseSpecialPrefix( $value );
-		if ( $specialPrefix !== false ) {
-			$tables['rev_alias'] = 'revision';
+		[ $specialPrefix, $prefixValue, $prefixOperator ] = $this->parseSpecialPrefix( $value );
+		if ( $specialPrefix !== null ) {
+			$orderFunc = $this->getSpecialPrefixOrderFunc( $specialPrefix );
+			$time_ = strtotime( $prefixValue );
+			// MW_TS
+			// $value = date( 'YmdHis', $time );
+			$timestamp_ = $this->dbr->timestamp( $time_ );
+
+			$tables_ = [ 'revision' ];
+			$fields_  = [ 'rev_page', 'timestamp' => "$orderFunc(rev_timestamp)" ];
+			$conds_ = [ "rev_timestamp $prefixOperator $timestamp_" ];
+			$options_ = [ 'GROUP BY' => 'rev_page' ];
+			$subquery = $this->dbr->buildSelectSubquery(
+				$tables_,
+				$fields_,
+				$conds_,
+				__METHOD__,
+				$options_,
+			);
+
+			$tables['rev_alias'] = $subquery;
 			$joins['rev_alias'] = [ 'JOIN', [
 				'rev_alias.rev_page = t0.page_id',
-				$specialPrefix
+				"rev_alias.timestamp $prefixOperator $timestamp_",
 			] ];
 			return;
 		}
@@ -987,7 +1030,7 @@ class QueryProcessor {
 		$method = ( !$this->debug ? ( !$this->count ? 'select' : 'selectField' )
 			: 'selectSQLText' );
 
-		$options = $this->getOptions();
+		$options = $this->getOptions( $fields, $tables, $joins );
 
 		// *** join always, it ensures that the related article exists
 		// join page table also when sorting by mainlabel

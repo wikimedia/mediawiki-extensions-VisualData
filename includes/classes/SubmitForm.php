@@ -75,7 +75,8 @@ class SubmitForm {
 	 * @return string
 	 */
 	public function replacePageNameFormula( $flatten, $formula, &$properties ) {
-		return preg_replace_callback( '/<\s*([^<>]+)\s*>/', static function ( $matches ) use ( $flatten, &$properties ) {
+		// @see https://phabricator.wikimedia.org/T385935
+		return preg_replace_callback( '/<\s*+([^<>]++)\s*+>/', static function ( $matches ) use ( $flatten, &$properties ) {
 			$fullPath = $matches[1];
 			// if ( $fullPath[0] !== '/' ) {
 			// 	$fullPath = "/$fullPath";
