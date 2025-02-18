@@ -492,7 +492,10 @@ class CarouselResultPrinter extends ResultPrinter {
 		if ( empty( $this->params['width'] ) ) {
 			$this->params['width'] = '100%';
 		}
-		$img = [ 'object-fit' => 'object-fit: cover' ];
+
+		// set to hidden and show onload to prevent layout disarray
+		// @TODO show spinner
+		$img = [ 'display' => 'display:none', 'object-fit' => 'object-fit: cover' ];
 		$container = [];
 		$slide = [];
 

@@ -33,6 +33,9 @@
 	} );
 
 	function init( $slide ) {
+		// show pictures again
+		$( $slide ).find( '.slick-slide-content' ).show();
+
 		$slide.slick( $slide.data().slick );
 
 		if ( $slide.data().slick.adaptiveHeight ) {
