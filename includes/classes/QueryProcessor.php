@@ -381,6 +381,12 @@ class QueryProcessor {
 								// $arr[] = $castField( $printout, $index ) . " $sort";
 								$arr[] = "v$index $sort";
 
+								// used only for sorting, not concatenated
+								// to preserve type
+								if ( $this->treeFormat ) {
+									$fields["v$index"] = "t$index.value";
+								}
+
 							} elseif ( in_array( $printout, ResultPrinter::$titleAliases ) ) {
 								$arr[] = "page_title $sort";
 
@@ -1015,11 +1021,6 @@ class QueryProcessor {
 
 				} else {
 					$fields["p$key"] = "GROUP_CONCAT(t$key.path SEPARATOR 0x1E)";
-
-					// *** this used only for sorting, assuming the key used
-					// for sorting is not concatenated
-					$fields["v$key"] = "t$key.value";
-
 					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
 				}
 			}
