@@ -75,8 +75,9 @@ class SubmitForm {
 	 * @return string
 	 */
 	public function replacePageNameFormula( $flatten, $formula, &$properties ) {
-		// @see https://phabricator.wikimedia.org/T385935
-		return preg_replace_callback( '/<\s*+([^<>]++)\s*+>/', static function ( $matches ) use ( $flatten, &$properties ) {
+		// @FIXME match the properties actually defined in the schema
+		// which could also contain angular brackets
+		return preg_replace_callback( SchemaProcessor::MATCH_PROPERTY_PATTERN, static function ( $matches ) use ( $flatten, &$properties ) {
 			$fullPath = $matches[1];
 			// if ( $fullPath[0] !== '/' ) {
 			// 	$fullPath = "/$fullPath";
@@ -101,7 +102,9 @@ class SubmitForm {
 		// e.g. $path = Book/authors/0/first_name
 		$parent = substr( (string)$path, 0, strrpos( (string)$path, '/' ) );
 
-		return preg_replace_callback( '/<\s*([^<>]+)\s*>/', static function ( $matches ) use ( $parent, $value, $flatten ) {
+		// @FIXME match the properties actually defined in the schema
+		// which could also contain angular brackets
+		return preg_replace_callback( SchemaProcessor::MATCH_PROPERTY_PATTERN, static function ( $matches ) use ( $parent, $value, $flatten ) {
 			if ( $matches[1] === 'value' ) {
 				return $value;
 			}

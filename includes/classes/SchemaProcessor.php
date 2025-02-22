@@ -30,6 +30,8 @@ use MWException;
 use Parser;
 
 class SchemaProcessor {
+	// @see https://phabricator.wikimedia.org/T385935
+	public const MATCH_PROPERTY_PATTERN = '/<\s*+([^<>]++)\s*+>/';
 
 	/** @var Context */
 	private $context;
@@ -1080,7 +1082,7 @@ class SchemaProcessor {
 	 * @param array|null &$parent
 	 */
 	private function handleRootFrom( &$ret, $schema, &$parent = null ) {
-		// FIXME this is correct as long as
+		// @FIXME this is correct as long as
 		// type is required by json-schema specification
 		if ( empty( $schema['type'] ) ) {
 			$schema['type'] = ( !empty( $schema['default'] ) ? 'string' : 'object' );
@@ -1151,8 +1153,9 @@ class SchemaProcessor {
 	 * @return string
 	 */
 	private function replaceFormula( $properties, $formula ) {
-		// @see https://phabricator.wikimedia.org/T385935
-		preg_match_all( '/<\s*+([^<>]++)\s*+>/', $formula, $matches, PREG_PATTERN_ORDER );
+		// @FIXME match the properties actually defined in the schema
+		// which could also contain angular brackets
+		preg_match_all( self::MATCH_PROPERTY_PATTERN, $formula, $matches, PREG_PATTERN_ORDER );
 
 		foreach ( $properties as $property => $value ) {
 			if ( in_array( $property, $matches[1] ) ) {
