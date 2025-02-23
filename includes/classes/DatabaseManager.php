@@ -109,11 +109,7 @@ class DatabaseManager {
 		$transclusionTargets = \VisualData::getTransclusionTargets( $title );
 
 		foreach ( $transclusionTargets as $title_ ) {
-			// $title_->invalidateCache();
-			$wikiPage_ = \VisualData::getWikiPage( $title_ );
-			if ( $wikiPage_ ) {
-				$wikiPage_->doPurge();
-			}
+			\VisualData::purgeArticle( $title_ );
 		}
 	}
 
@@ -137,10 +133,7 @@ class DatabaseManager {
 		foreach ( $res as $row ) {
 			$title_ = Title::newFromID( $row->parent_page_id );
 			if ( $title_ && $title_->isKnown() ) {
-				$wikiPage_ = \VisualData::getWikiPage( $title_ );
-				if ( $wikiPage_ ) {
-					$wikiPage_->doPurge();
-				}
+				\VisualData::purgeArticle( $title_ );
 				$this->invalidateTransclusionTargets( $title_ );
 			}
 		}
@@ -369,10 +362,7 @@ class DatabaseManager {
 			foreach ( $res as $row ) {
 				$title_ = Title::newFromID( $row->page_id );
 				if ( $title_ && $title_->isKnown() ) {
-					$wikiPage_ = \VisualData::getWikiPage( $title_ );
-					if ( $wikiPage_ ) {
-						$wikiPage_->doPurge();
-					}
+					\VisualData::purgeArticle( $title_ );
 
 					// *** this is not necessary, since visualdata_links
 					// already contain transclusion targets
@@ -1061,6 +1051,12 @@ class DatabaseManager {
 	 */
 	public static function castDataRec( $schema, $data ) {
 		$callback = static function ( $schema, &$data, $newPath, $printout, $newKey ) {
+			if ( array_key_exists( 'type', $schema )
+				&& $schema['type'] === 'array'
+				&& empty( $data )
+			) {
+				$data = [];
+			}
 		};
 		$callbackValue = static function ( $schema, &$value, $newPath, $printout, $newKey ) {
 			$value = self::castValue( $schema, $value );

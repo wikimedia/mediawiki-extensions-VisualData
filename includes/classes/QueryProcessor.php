@@ -28,6 +28,7 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
+use MediaWiki\Extension\VisualData\Utils\DateParser;
 use Title;
 
 class QueryProcessor {
@@ -450,15 +451,22 @@ class QueryProcessor {
 				settype( $val, 'float' );
 				break;
 			case 'date':
-				$val = date( 'Y-m-d', strtotime( $val ) );
-				$val = $this->dbr->addQuotes( $val );
-				break;
 			case 'datetime':
-				$val = date( 'Y-m-d H:i:s', strtotime( $val ) );
-				$val = $this->dbr->addQuotes( $val );
-				break;
 			case 'time':
-				$val = date( 'H:i:s', strtotime( $val ) );
+				switch ( $dataType ) {
+					case 'date':
+						$format = 'Y-m-d';
+						break;
+					case 'datetime':
+						$format = 'Y-m-d H:i:s';
+						break;
+					case 'time':
+						$format = 'H:i:s';
+						break;
+				}
+				$dateParser = new DateParser( $val );
+				$timestamp = $dateParser->parse();
+				$val = date( $format, $timestamp );
 				$val = $this->dbr->addQuotes( $val );
 				break;
 			case 'boolean':
@@ -658,6 +666,10 @@ class QueryProcessor {
 	 * @param array &$fields
 	 */
 	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields ) {
+		// @ATTENTION !! if the same printout is group concatenated
+		// and appears in more than 1 AND condition
+		// we shall use HAVING, instead, since WHERE is applied
+		// before the concatenation and will fail
 		foreach ( $this->AndConditions as $i => $value ) {
 			$orConds = [];
 			$categories = [];

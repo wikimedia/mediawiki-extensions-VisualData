@@ -25,6 +25,7 @@
 namespace MediaWiki\Extension\VisualData;
 
 use Context;
+use MediaWiki\Extension\VisualData\Utils\DateParser;
 use MediaWiki\MediaWikiServices;
 use MWException;
 use Parser;
@@ -559,8 +560,10 @@ class SchemaProcessor {
 		$this->handleOptionsValues( $ret_ );
 
 		if ( array_key_exists( 'uniqueItems', $ret )
-			&& empty( $ret['uniqueItems'] ) ) {
+			&& empty( $ret['uniqueItems'] )
+		) {
 			// unset( $ret['enum'] );
+
 		} elseif ( isset( $ret_['enum'] ) ) {
 			$ret['enum'] = array_map( static function ( $value ) use ( $ret ) {
 				self::castType( $value, $ret );
@@ -930,8 +933,10 @@ class SchemaProcessor {
 		$this->handleOptionsValues( $ret );
 
 		if ( array_key_exists( 'uniqueItems', $properties )
-			&& empty( $properties['uniqueItems'] ) ) {
+			&& empty( $properties['uniqueItems'] )
+		) {
 			unset( $ret['enum'] );
+
 		} elseif ( isset( $ret['enum'] ) ) {
 			$ret['enum'] = array_map( static function ( $value ) use ( $properties ) {
 				self::castType( $value, $properties );
@@ -1490,6 +1495,9 @@ e.g.
 		// use validate filters
 		// @see https://www.php.net/manual/en/filter.filters.validate.php
 		switch ( $schema['type'] ) {
+			// case 'array':
+			// 	$value = (array)$value;
+			// 	break;
 			case 'number':
 				$value = filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
 				settype( $value, 'float' );
@@ -1517,9 +1525,9 @@ e.g.
 						$value = self::parseDateTime( $value, 'H:i:s' );
 						break;
 					case 'datetime':
-						// \DATE_ISO8601
 						// *** this ensures consistency with mw.widgets.datetime.DateTimeInputWidget
-						$value = self::parseDateTime( $value, ( !$display ? 'Y-m-d\TH:i:s.v\Z' : 'Y-m-d H:i:s' ) );
+						// +0100 (ISO 8601 vO)
+						$value = self::parseDateTime( $value, ( !$display ? 'Y-m-d\TH:i:s.vO' : 'Y-m-d H:i:s' ) );
 						break;
 					case 'url':
 						$value = filter_var( $value, FILTER_VALIDATE_URL, FILTER_NULL_ON_FAILURE );
@@ -1550,7 +1558,8 @@ e.g.
 			return '';
 		}
 
-		$dateHeaderUnixtimestamp = \strtotime( $dateHeader );
+		$dateParser = new DateParser( $dateHeader );
+		$dateHeaderUnixtimestamp = $dateParser->parse();
 
 		if ( !$dateHeaderUnixtimestamp ) {
 			return $dateHeader;

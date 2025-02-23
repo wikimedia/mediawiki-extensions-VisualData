@@ -1286,6 +1286,11 @@ class VisualData {
 			case 'title':
 				$params['printouts-from-conditions'] = true;
 				break;
+			case 'count':
+				if ( !count( $printouts ) ) {
+					$params['printouts-from-conditions'] = true;
+				}
+				break;
 		}
 
 		$queryProcessor = new QueryProcessor( $schema, $query, $printoutsQuery, $params );
@@ -1305,10 +1310,10 @@ class VisualData {
 		self::adjustSchemaName( $schema );
 
 		// limit, offset, order
-		$params = array_merge( $params, [
+		$params = array_merge( [
 			'schema' => $schema,
 			'format' => 'json-raw'
-		] );
+		], $params );
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		$templates = [];
@@ -2998,7 +3003,6 @@ class VisualData {
 	 * @param WikiPage $wikiPage
 	 * @param User $user
 	 * @param string $reason
-	 * @return void
 	 */
 	public static function deletePage( $wikiPage, $user, $reason ) {
 		if ( !( $wikiPage instanceof WikiPage ) ) {
@@ -3009,6 +3013,17 @@ class VisualData {
 			$wikiPage->doDeleteArticle( $reason, false, null, null, $error, $user );
 		} else {
 			$wikiPage->doDeleteArticleReal( $reason, $user );
+		}
+	}
+
+	/**
+	 * @param Title $title
+	 */
+	public static function purgeArticle( $title ) {
+		// $title_->invalidateCache();
+		$wikiPage = self::getWikiPage( $title );
+		if ( $wikiPage ) {
+			$wikiPage->doPurge();
 		}
 	}
 
@@ -3101,6 +3116,27 @@ class VisualData {
 	}
 
 	/**
+	 * @param array $arr
+	 * @param function|null $callback null
+	 * @return array
+	 */
+	public static function array_filter_recursive( $arr, $callback = null ) {
+		$deepLevel = true;
+		foreach ( $arr as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$arr[$key] = self::array_filter_recursive( $value, $callback );
+				if ( empty( $arr[$key] ) ) {
+					unset( $arr[$key] );
+				}
+				$deepLevel = false;
+			} elseif ( empty( $value ) ) {
+				unset( $arr[$key] );
+			}
+		}
+		return ( !$callback || !$deepLevel ? $arr : $callback( $arr ) );
+	}
+
+	/**
 	 * @see https://www.php.net/manual/en/function.array-merge-recursive.php
 	 * @param array &$arr1
 	 * @param array &$arr2
@@ -3110,7 +3146,8 @@ class VisualData {
 		$ret = $arr1;
 		foreach ( $arr2 as $key => &$value ) {
 			if ( is_array( $value ) && isset( $ret[$key] )
-				&& is_array( $ret[$key] ) ) {
+				&& is_array( $ret[$key] )
+			) {
 				$ret[$key] = self::array_merge_recursive( $ret[$key], $value );
 			} else {
 				$ret[$key] = $value;

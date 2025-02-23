@@ -88,10 +88,14 @@ class DeleteRegex extends Maintenance {
 		];
 
 		if ( !empty( $namespace ) ) {
-			$formattedNamespaces = MediaWikiServices::getInstance()
-				->getContentLanguage()->getFormattedNamespaces();
+			if ( !is_numeric( $namespace ) ) {
+				$formattedNamespaces = MediaWikiServices::getInstance()
+					->getContentLanguage()->getFormattedNamespaces();
 
-			$ns = array_search( $namespace, $formattedNamespaces );
+				$ns = array_search( $namespace, $formattedNamespaces );
+			} else {
+				$ns = $namespace;
+			}
 			if ( !empty( $ns ) ) {
 				$conds['page_namespace'] = $ns;
 			}

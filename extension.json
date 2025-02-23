@@ -263,6 +263,7 @@
 				"Widgets/VisualDataMenuTagSearchMultiselect.js",
 				"Widgets/VisualDataRatingWidget.js",
 				"Widgets/VisualDataDropdownWidget.js",
+				"Widgets/VisualDataDateTimeInputWidget.js",
 				"Widgets/VisualDataVisualEditor.js",
 				"Widgets/VisualDataTinyMCE.js",
 				"Widgets/VisualDataMaptiler.js",

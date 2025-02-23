@@ -346,7 +346,8 @@ VisualDataFunctions = ( function () {
 				}
 				break;
 			case 'mw.widgets.datetime.DateTimeInputWidget':
-				constructor = mw.widgets.datetime.DateTimeInputWidget;
+				// this is a wrapper to parse non-UTC dates
+				constructor = VisualDataDateTimeInputWidget;
 				break;
 			case 'intl-tel-input':
 				constructor = VisualDataIntlTelInput;

@@ -275,10 +275,7 @@ class VisualDataApiDatatables extends ApiBase {
 
 			// purge page, clear cache
 			if ( $count ) {
-				$wikiPage = \VisualData::getWikiPage( $titleObj );
-				if ( $wikiPage ) {
-					$wikiPage->doPurge();
-				}
+				\VisualData::purgeArticle( $titleObj );
 			}
 
 		} else {
