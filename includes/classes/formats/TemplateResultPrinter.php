@@ -28,12 +28,6 @@ use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class TemplateResultPrinter extends ResultPrinter {
 
-	/** @var separator */
-	public $separator = '';
-
-	/** @var valuesSeparator */
-	public $valuesSeparator = '';
-
 	/**
 	 * @inheritDoc
 	 */
@@ -65,6 +59,15 @@ class TemplateResultPrinter extends ResultPrinter {
 			$ret[] = $this->processRowTree( $title_, $row, $categories );
 		}
 		return $this->processRoot( $ret );
+	}
+
+	/**
+	 * @param array $rows
+	 * @return string
+	 */
+	public function processRoot( $rows ) {
+		return implode( !$this->hasTemplate( '' ) ?
+			$this->separator : '', $rows );
 	}
 
 }

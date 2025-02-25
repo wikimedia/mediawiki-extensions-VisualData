@@ -53,7 +53,6 @@ class VisualDataHooks {
 			'table' => 'TableResultPrinter',
 			'datatable' => 'DatatableResultPrinter',
 			'datatables' => 'DatatableResultPrinter',
-			// 'list' => 'ListResultPrinter',
 			'json' => 'JsonResultPrinter',
 			'template' => 'TemplateResultPrinter',
 			'templates' => 'TemplateResultPrinter',
@@ -66,7 +65,8 @@ class VisualDataHooks {
 			'count' => 'CountResultPrinter',
 			'pageid' => 'PageidResultPrinter',
 			'pagetitle' => 'PagetitleResultPrinter',
-			'map' => 'MapResultPrinter'
+			'map' => 'MapResultPrinter',
+			// 'list' => 'ListResultPrinter',
 		];
 	}
 
@@ -98,6 +98,7 @@ class VisualDataHooks {
 		$parser->setFunctionHook( 'visualdataqueryurl', [ \VisualData::class, 'parserFunctionQueryUrl' ] );
 		$parser->setFunctionHook( 'visualdatabase64encode', [ \VisualData::class, 'parserFunctionBase64Encode' ] );
 		$parser->setFunctionHook( 'visualdatabase64decode', [ \VisualData::class, 'parserFunctionBase64Decode' ] );
+		$parser->setFunctionHook( 'buttonlink', [ \VisualData::class, 'parserFunctionButtonlink' ] );
 
 		// @credits https://www.mediawiki.org/wiki/Extension:Page_Forms
 		$parser->setFunctionHook( 'arraymap', [ PFArrayMap::class, 'run' ], Parser::SFH_OBJECT_ARGS );
@@ -398,11 +399,11 @@ class VisualDataHooks {
 	 */
 	public static function onPageSaveComplete(
 		WikiPage $wikiPage,
-		MediaWiki\User\UserIdentity $user,
+		/* User|MediaWiki\User\UserIdentity */ $user,
 		string $summary,
 		int $flags,
-		RevisionRecord $revisionRecord,
-		MediaWiki\Storage\EditResult $editResult
+		/* RevisionRecord|MediaWiki\Revision\RevisionStoreRecord */ $revisionRecord,
+		/* MediaWiki\Storage\EditResult */ $editResult
 	) {
 		$title = $wikiPage->getTitle();
 		$revertMethod = $editResult->getRevertMethod();

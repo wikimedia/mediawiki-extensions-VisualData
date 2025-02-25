@@ -21,7 +21,7 @@
 
 /* eslint-disable no-unused-vars */
 
-const VisualDataDatatables = function ( el ) {
+const VisualDataDatatables = function ( el, elIndex ) {
 	var Datatable;
 	var CacheLimit = 40000;
 	var Table = $( el );
@@ -31,6 +31,7 @@ const VisualDataDatatables = function ( el ) {
 	var DatatableLibrary = $.fn.dataTable.ext;
 	var PreloadData = {};
 	var Count;
+	var ElIndex = elIndex;
 
 	var getCacheLimit = function ( obj ) {
 		return CacheLimit;
@@ -329,6 +330,15 @@ const VisualDataDatatables = function ( el ) {
 	};
 
 	var initSearchPanesColumns = function ( columnDefs, conf ) {
+		// remove non existing columns (starts from 0)
+		if ( 'columns' in conf.searchPanes ) {
+			for ( var i in conf.searchPanes.columns ) {
+				if ( conf.searchPanes.columns[ i ] >= Object.keys( columnDefs ).length ) {
+					delete conf.searchPanes.columns[ i ];
+				}
+			}
+		}
+
 		for ( var i in columnDefs ) {
 			if ( !( 'searchPanes' in columnDefs[ i ] ) ) {
 				columnDefs[ i ].searchPanes = {};
@@ -783,7 +793,7 @@ html-num-fmt
 			conf.buttons.unshift( {
 				text: mw.msg( 'visualdata-jsmodule-datatables-buttons-reload-label' ),
 				attr: {
-					id: 'visualdata-datatables-buttons-reload',
+					id: 'visualdata-datatables-buttons-reload-' + ElIndex,
 					style: 'display: none'
 				},
 				action: function ( e, dt, node, config ) {
@@ -806,7 +816,7 @@ html-num-fmt
 						clearInterval( SynchInterval );
 						addBadge();
 
-						// $( '#visualdata-datatables-buttons-reload' ).show();
+						// $( '#visualdata-datatables-buttons-reload-' + ElIndex ).show();
 						var reloadButton = new OO.ui.ButtonWidget( {
 							label: mw.msg( 'visualdata-jsmodule-datatables-buttons-reload-table-label' ),
 							// or bell
@@ -835,7 +845,7 @@ html-num-fmt
 							);
 						} );
 
-						$( '#visualdata-datatables-buttons-reload' ).replaceWith( reloadButton.$element );
+						$( '#visualdata-datatables-buttons-reload-' + ElIndex ).replaceWith( reloadButton.$element );
 					}
 				};
 				callApiSynch( $.extend( payloadDataSync, {
@@ -1059,9 +1069,9 @@ $( function () {
 	}
 
 	function initialize() {
-		$( '.visualdata.datatable' ).each( function () {
+		$( '.visualdata.datatable' ).each( function ( index ) {
 			// eslint-disable-next-line no-new
-			new VisualDataDatatables( this );
+			new VisualDataDatatables( this, index );
 		} );
 	}
 

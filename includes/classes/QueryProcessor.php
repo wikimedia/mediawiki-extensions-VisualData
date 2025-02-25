@@ -916,6 +916,11 @@ class QueryProcessor {
 			}
 		}
 
+		if ( !count( $arr ) ) {
+			$this->errors[] = 'no valid printouts';
+			return;
+		}
+
 		$combined = [];
 		foreach ( $arr as $pathNoIndex => $isPrintout ) {
 			$printoutParent = substr( $pathNoIndex, 0, strrpos( $pathNoIndex, '/' ) );

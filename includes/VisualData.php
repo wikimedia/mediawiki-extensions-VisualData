@@ -578,6 +578,27 @@ class VisualData {
 	 * @param mixed ...$argv
 	 * @return array
 	 */
+	public static function parserFunctionButtonlink( Parser $parser, ...$argv ) {
+/*
+{{#buttonlink: pagename
+|label
+|class=
+|class-attr-name=class
+|target=
+|target-attr-name=target
+}}
+*/
+		// @FIXME use a separate function instead
+		$argv[] = '_function=buttonlink';
+
+		return self::parserFunctionQueryLink( $parser, ...$argv );
+	}
+
+	/**
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
 	public static function parserFunctionButton( Parser $parser, ...$argv ) {
 /*
 {{#visualdatabutton: Get folders
@@ -609,6 +630,11 @@ class VisualData {
 |...
 }}
 */
+		$isButtonLink = in_array( '_function=buttonlink', $argv );
+		if ( $isButtonLink ) {
+			unset( $argv[array_search( '_function=buttonlink', $argv )] );
+		}
+
 		// unnamed parameters, recognized options,
 		// named parameters
 		[ $values, $options, $query ] = self::parseParameters( $argv, array_keys( self::$QueryLinkDefaultParameters ) );
@@ -633,21 +659,38 @@ class VisualData {
 			unset( $query[$options[$value_]] );
 		}
 
-		if ( !count( $query ) ) {
+		if ( !count( $query ) && !$isButtonLink ) {
 			return 'no query';
 		}
 
 		$title_ = Title::newFromText( $values[0] );
-		$text = ( !empty( $values[1] ) ? $values[1]
-			: $title_->getText() );
+
+		if ( !empty( $values[1] ) ) {
+			$text = $values[1];
+		} elseif ( $title_ ) {
+			$text = $title_->getText();
+		} else {
+			$text = $values[0];
+		}
 
 		$attr = [];
 		if ( !empty( $options[$options['class-attr-name']] ) ) {
 			$attr['class'] = $options[$options['class-attr-name']];
 		}
 
+		// @TODO handle more styles
+		if ( $isButtonLink && empty( $attr['class'] ) ) {
+			$attr['class'] = 'mw-ui-button mw-ui-progressive mw-ui-small';
+		}
+
 		if ( !empty( $options[$options['target-attr-name']] ) ) {
 			$attr['target'] = $options[$options['target-attr-name']];
+		}
+
+		// @TODO display white external link icon for buttons
+		if ( !$isButtonLink && !empty( $attr['target'] ) && $attr['target'] === '_blank' ) {
+			$attr['class'] = ( empty( $attr['class'] ) ? 'external text'
+				: $attr['class'] . ' external text' );
 		}
 
 		// *** alternatively use $linkRenderer->makePreloadedLink
@@ -1794,7 +1837,7 @@ class VisualData {
 		}
 
 		// The 'main' content slot MUST be set when creating a new page
-		if ( $oldRevisionRecord === null && !array_key_exists( MediaWiki\Revision\SlotRecord::MAIN, $slotsData ) ) {
+		if ( $oldRevisionRecord === null && !array_key_exists( SlotRecord::MAIN, $slotsData ) ) {
 			$newMainSlot = true;
 			$main_content = ContentHandler::makeContent( '', $title );
 			$pageUpdater->setContent( SlotRecord::MAIN, $main_content );

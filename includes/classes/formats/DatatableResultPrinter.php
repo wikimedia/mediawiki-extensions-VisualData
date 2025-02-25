@@ -426,6 +426,8 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$tableAttrs['class'] = 'visualdata datatable dataTable';
 		$tableAttrs['class'] .= ( empty( $this->params['datatables-cards'] ) ?
 			' display' : ' cards' );
+		$tableAttrs['class'] .= ( !empty( $this->params['class'] ) ?
+			' ' . $this->params['class'] : '' );
 
 		return $this->htmlTable->table(
 			$tableAttrs

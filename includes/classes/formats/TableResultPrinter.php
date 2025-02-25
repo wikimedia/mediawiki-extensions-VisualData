@@ -53,6 +53,11 @@ class TableResultPrinter extends ResultPrinter {
 
 	/** @var array */
 	public static $parameters = [
+		'class' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => '',
+		],
 		'mode' => [
 			'type' => 'string',
 			'required' => false,
@@ -437,7 +442,8 @@ class TableResultPrinter extends ResultPrinter {
 
 		$tableAttrs = [];
 		$tableAttrs['width'] = '100%';
-		$tableAttrs['class'] = 'wikitable display dataTable';
+		$tableAttrs['class'] = 'wikitable display dataTable'
+			. ( !empty( $this->params['class'] ) ? ' ' . $this->params['class'] : '' );
 
 		return $this->htmlTable->table(
 			$tableAttrs
