@@ -326,6 +326,13 @@ class CarouselResultPrinter extends ResultPrinter {
 			'required' => false,
 			'default' => 1000,
 		],
+
+		// custom parameter
+		'slick-enable-lazyLoad-after' => [
+			'type' => 'integer',
+			'required' => false,
+			'default' => 10,
+		],
 	];
 
 	public function isHtml() {
@@ -401,7 +408,7 @@ class CarouselResultPrinter extends ResultPrinter {
 			$arr[] = [
 				'title' => $title,
 				'file' => $file,
-				'fileTitle' => ( isset( $this->obj['title'] ) ? $this->obj['title'][$key] : '' ),
+				'titleValue' => ( isset( $this->obj['title'] ) ? $this->obj['title'][$key] : '' ),
 				'caption' => ( isset( $this->obj['caption'] ) ? $this->obj['caption'][$key] : '' ),
 				'link' => ( isset( $this->obj['link'] ) ? $this->obj['link'][$key] : '' ),
 			];
@@ -415,9 +422,10 @@ class CarouselResultPrinter extends ResultPrinter {
 		$inlineStyles = $this->getInlineStyles();
 		$items = [];
 
+		$n = 0;
 		foreach ( $arr as $value ) {
-			$imageValue = $this->getImageUrl( $value['file'] );
-			$titleValue = $value['fileTitle'];
+			[ $fileTitleStr, $imageUrl ] = $this->getImageTitleAndUrl( $value['file'] );
+			$titleValue = $value['titleValue'];
 			$captionValue = $value['caption'];
 			$linkValue = $value['link'];
 
@@ -434,13 +442,21 @@ class CarouselResultPrinter extends ResultPrinter {
 			}
 
 			$imgAttr = [
-				'src' => $imageValue,
-				'alt' => ( $titleValue ?? $captionValue ? strip_tags( $captionValue ) : $value['title']->getText() ),
+				'alt' => ( $titleValue ?? $captionValue ? strip_tags( $captionValue ) : $fileTitleStr ),
 				'class' => 'slick-slide-content img'
 			];
 
 			if ( !empty( $inlineStyles['img'] ) ) {
 				$imgAttr['style'] = $inlineStyles['img'];
+			}
+
+			// @see https://kenwheeler.github.io/slick/
+			if ( $n < $this->params['slick-enable-lazyLoad-after'] ) {
+				$imgAttr['src'] = $imageUrl;
+
+			} else {
+				$imgAttr['src'] = $GLOBALS['wgExtensionAssetsPath'] . '/VisualData/resources/1x1.png';
+				$imgAttr['data-lazy'] = $imageUrl;
 			}
 
 			$innerContent = Html::rawElement( 'img', $imgAttr );
@@ -461,6 +477,8 @@ class CarouselResultPrinter extends ResultPrinter {
 				],
 				$innerContent
 			);
+
+			$n++;
 		}
 
 		$attr = [ 'class' => 'slick-slider' . ( empty( $this->params['class'] ) ? '' : ' ' . $this->params['class'] ) ];
@@ -533,18 +551,23 @@ class CarouselResultPrinter extends ResultPrinter {
 
 	/**
 	 * @param array $value
-	 * @return string|null
+	 * @return array
 	 */
-	protected function getImageUrl( $value ) {
+	protected function getImageTitleAndUrl( $value ) {
 		$title = \Title::newFromText( $value, NS_FILE );
+
+		if ( !$title ) {
+			return [ '', '' ];
+		}
+
 		$wikiFilePage = new \WikiFilePage( $title );
 		$file = $wikiFilePage->getFile();
 
 		if ( !$file ) {
-			return null;
+			return [ $title->getText(), '' ];
 		}
 
-		return $file->getUrl();
+		return [ $title->getText(), $file->getUrl() ];
 	}
 
 }
