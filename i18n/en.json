@@ -329,6 +329,7 @@
 	"visualdata-jsmodule-geolocation-message": "To enable a beautiful interactive map with reverse geocoding and draggable markers register an ApiKey at <a target=\"blank\" href=\"https://www.maptiler.com/\">maptiler.com</a>",
 	"visualdata-jsmodule-geolocation-newlabel": "geolocation",
 	"visualdata-jsmodule-geolocation-map": "map",
+	"visualdata-jsmodule-geolocation-formfield-required": "required",
 	"visualdata-jsmodule-geolocation-reverse-geocoding": "reverse geocoding",
 	"visualdata-jsmodule-geolocation-maptiler-map-button": "maptiler map",
 	"visualdata-jsmodule-geolocation-maptiler-map": "maptiler map settings",
@@ -433,6 +434,7 @@
 
 	"visualdata-special-submit-article-exists": "[[$1|article]] exists",
 	"visualdata-special-submit-permission-error": "article cannot be edited, you may need to login or ask for permissions",
+	"visualdata-special-submit-return-url-error": "invalid url: $1",
 
 	"visualdata-jsmodule-forms-validate": "validate",
 	"visualdata-jsmodule-forms-goback": "go back",

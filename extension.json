@@ -55,6 +55,7 @@
 	},
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\VisualData\\": "includes/classes/",
+		"MediaWiki\\Extension\\VisualData\\Aliases\\": "includes/aliases/",
 		"MediaWiki\\Extension\\VisualData\\PageForms\\": "includes/classes/PageForms/",
 		"MediaWiki\\Extension\\VisualData\\ResultPrinters\\": "includes/classes/formats/",
 		"MediaWiki\\Extension\\VisualData\\Utils\\": "includes/utils/",
@@ -357,6 +358,7 @@
 				"visualdata-jsmodule-geolocation-name",
 				"visualdata-jsmodule-geolocation-newlabel",
 				"visualdata-jsmodule-geolocation-map",
+				"visualdata-jsmodule-geolocation-formfield-required",
 				"visualdata-jsmodule-geolocation-reverse-geocoding",
 				"visualdata-jsmodule-geolocation-maptiler-map-button",
 				"visualdata-jsmodule-geolocation-maptiler-map",

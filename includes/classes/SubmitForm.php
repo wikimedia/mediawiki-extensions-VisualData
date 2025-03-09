@@ -327,6 +327,8 @@ class SubmitForm {
 	 * @return array
 	 */
 	public function processData( $data ) {
+		$services = MediaWikiServices::getInstance();
+
 		// this should happen only if hacked
 		if ( !$this->user->isAllowed( 'visualdata-caneditdata' ) ) {
 			echo $this->context->msg( 'visualdata-jsmodule-forms-cannot-edit-form' )->text();
@@ -415,11 +417,11 @@ class SubmitForm {
 			$ret = \VisualData::setJsonData( $this->user, $editTitle, $slots, $errors );
 
 			if ( $data['config']['context'] === 'EditData' ) {
-				$targetUrl = $editTitle->getFullUrl();
+				$targetUrl = $editTitle->getLocalURL();
 
 			} else {
 				$title_ = Title::newFromText( $data['options']['origin-page'] );
-				$targetUrl = $title_->getFullUrl();
+				$targetUrl = $title_->getLocalURL();
 			}
 
 			return [
@@ -505,6 +507,12 @@ class SubmitForm {
 
 			$pagenameFormulaTitle = \VisualData::parseTitleCounter( $pagenameFormula );
 			// $pagenameFormulaTitle = Title::newFromText( $pagenameFormula );
+		}
+
+		// replace possible field values inside the return url
+		if ( !empty( $data['options']['return-url'] ) ) {
+			$data['options']['return-url'] = $this->replacePageNameFormula( $data['flatten'],
+				$data['options']['return-url'], $pagenameFormulaProperties );
 		}
 
 		// determine targetTitle
@@ -687,7 +695,7 @@ class SubmitForm {
 		}
 
 		if ( !count( $errors ) ) {
-			MediaWikiServices::getInstance()->getHookContainer()->run( 'VisualData::OnFormSubmit', [
+			$services->getHookContainer()->run( 'VisualData::OnFormSubmit', [
 				$this->user,
 				$targetTitle,
 				$jsonData,
@@ -695,6 +703,17 @@ class SubmitForm {
 				$isNewPage,
 				&$errors
 			] );
+		}
+
+		$targetUrl = ( !empty( $data['options']['return-url'] )
+			? $data['options']['return-url']
+			: $targetTitle->getLocalURL() );
+
+		// @see Title -> getFullURL
+		$fullUrl = (string)$services->getUrlUtils()->expand( $targetUrl, PROTO_FALLBACK );
+
+		if ( filter_var( $fullUrl, FILTER_VALIDATE_URL ) === false ) {
+			$errors[] = $this->context->msg( 'visualdata-special-submit-return-url-error', $targetUrl )->text();
 		}
 
 		if ( count( $errors ) ) {
@@ -717,8 +736,7 @@ class SubmitForm {
 		}
 
 		return [
-			'target-url' => !empty( $data['options']['return-url'] ) ? $data['options']['return-url']
-				: $targetTitle->getFullUrl(),
+			'target-url' => $targetUrl,
 			'errors' => [],
 		];
 	}

@@ -22,6 +22,7 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\PageForms\PFArrayMap;
 use MediaWiki\Extension\VisualData\PageForms\PFArrayMapTemplate;
@@ -41,11 +42,9 @@ class VisualDataHooks {
 	 * @return void
 	 */
 	public static function initExtension( $credits = [] ) {
-		if ( !is_array( $GLOBALS['wgVisualDataEditDataNamespaces'] ) ) {
-			$GLOBALS['wgVisualDataEditDataNamespaces'] = [ 0 ];
-		}
 		// if ( !array_key_exists( 'wgVisualDataDisableSlotsNavigation', $GLOBALS )
-		// 	&& self::$User->isAllowed( 'visualdata-canmanageschemas' ) ) {
+		// 	&& self::$User->isAllowed( 'visualdata-canmanageschemas' )
+		// 	) {
 		// 	$GLOBALS['wgVisualDataDisableSlotsNavigation'] = true;
 		// }
 
@@ -106,7 +105,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title &$title
+	 * @param Title|Mediawiki\Title\Title &$title
 	 * @param null $unused
 	 * @param OutputPage $output
 	 * @param User $user
@@ -114,7 +113,7 @@ class VisualDataHooks {
 	 * @param MediaWiki|MediaWiki\Actions\ActionEntryPoint $mediaWiki
 	 * @return void
 	 */
-	public static function onBeforeInitialize( \Title &$title, $unused, \OutputPage $output, \User $user, \WebRequest $request, $mediaWiki ) {
+	public static function onBeforeInitialize( &$title, $unused, \OutputPage $output, \User $user, \WebRequest $request, $mediaWiki ) {
 		\VisualData::initialize();
 
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] )
@@ -133,7 +132,7 @@ class VisualDataHooks {
 
 	/**
 	 * @param Content $content
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param int $revId
 	 * @param ParserOptions $options
 	 * @param bool $generateHtml
@@ -192,7 +191,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param WikiPage $page
+	 * @param WikiPage|MediaWiki\Page\PageStoreRecord $page
 	 * @param User $deleter
 	 * @param string $reason
 	 * @param int $pageID
@@ -203,16 +202,16 @@ class VisualDataHooks {
 	 */
 	public static function onPageDeleteComplete( $page, $deleter, $reason, $pageID, $deletedRev, $logEntry, $archivedRevisionCount ) {
 		$databaseManager = new DatabaseManager();
-		$databaseManager->deletePage( $page->getTitle() );
+		$databaseManager->deletePage( $deletedRev->getPage() );
 	}
 
 	/**
 	 * @param Content $content
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param ParserOutput &$parserOutput
 	 * @return void
 	 */
-	public static function onContentAlterParserOutput( Content $content, Title $title, ParserOutput &$parserOutput ) {
+	public static function onContentAlterParserOutput( Content $content, $title, ParserOutput &$parserOutput ) {
 		$jsonData = \VisualData::getJsonData( $title );
 
 		// this does not include jsonData's categories
@@ -358,14 +357,14 @@ class VisualDataHooks {
 	 * @see https://www.mediawiki.org/wiki/Manual:Hooks/MultiContentSave
 	 * @param RenderedRevision $renderedRevision
 	 * @param UserIdentity $user
-	 * @param CommentStoreComment $summary
+	 * @param CommentStoreComment|MediaWiki\CommentStore\CommentStoreComment $summary
 	 * @param int $flags
 	 * @param Status $hookStatus
 	 * @return void
 	 */
-	public static function onMultiContentSave( MediaWiki\Revision\RenderedRevision $renderedRevision, MediaWiki\User\UserIdentity $user, CommentStoreComment $summary, $flags, Status $hookStatus ) {
+	public static function onMultiContentSave( MediaWiki\Revision\RenderedRevision $renderedRevision, MediaWiki\User\UserIdentity $user, $summary, $flags, Status $hookStatus ) {
 		$revisionRecord = $renderedRevision->getRevision();
-		$title = Title::newFromLinkTarget( $revisionRecord->getPageAsLinkTarget() );
+		$title = TitleClass::newFromLinkTarget( $revisionRecord->getPageAsLinkTarget() );
 
 		// add a uuid if missing to each "wiki"
 		// object to be used to compare properties on schema edit
@@ -424,7 +423,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param ForeignTitle $foreignTitle
 	 * @param int $revCount
 	 * @param int $sRevCount
@@ -449,14 +448,14 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param bool $create
 	 * @param string $comment
 	 * @param int $oldPageId
 	 * @param array $restoredPages
 	 * @return bool|void
 	 */
-	public static function onArticleUndelete( Title $title, $create, $comment, $oldPageId, $restoredPages ) {
+	public static function onArticleUndelete( $title, $create, $comment, $oldPageId, $restoredPages ) {
 		// @TODO use https://www.mediawiki.org/wiki/Manual:Hooks/PageUndeleteComplete
 		$revisionRecord = \VisualData::revisionRecordFromTitle( $title );
 		$user = RequestContext::getMain()->getUser();

@@ -28,6 +28,15 @@ use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class JsonRawResultPrinter extends ResultPrinter {
 
+	/** @var array */
+	public static $parameters = [
+		'nested' => [
+			'type' => 'boolean',
+			'required' => false,
+			'default' => true,
+		],
+	];
+
 	public function isHtml() {
 		return true;
 	}
@@ -36,7 +45,9 @@ class JsonRawResultPrinter extends ResultPrinter {
 	 * @inheritDoc
 	 */
 	public function getResults() {
-		$results = $this->queryProcessor->getResultsTree();
+		$method = ( $this->params['nested'] ? 'getResultsTree'
+			: 'getResults' );
+		$results = $this->queryProcessor->$method();
 		if ( count( $this->queryProcessorErrors() ) ) {
 			return [ 'errors' => $this->queryProcessorErrors() ];
 		}
@@ -55,12 +66,17 @@ class JsonRawResultPrinter extends ResultPrinter {
 		$ret = [];
 		foreach ( $results as $value ) {
 			[ $title_, $row, $categories ] = $value;
-			$ret[] = [
+			$ret_ = [
 				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),
 				'data' => $row,
-				'categories' => $categories
 			];
+
+			if ( !empty( $this->params['categories'] ) ) {
+				$ret_['categories'] = $categories;
+			}
+
+			$ret[] = $ret_;
 		}
 
 		return $this->returnRawResult( $ret );

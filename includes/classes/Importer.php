@@ -97,7 +97,7 @@ class Importer {
 
 		$databaseManager = new DatabaseManager();
 		$submitForm = new SubmitForm( $this->user, $this->context );
-		$this->importer = \VisualData::getImporter();
+		$this->importer = \VisualData::getImporter( $this->user );
 
 		// @TODO MW 1.42
 		if ( !$this->importer ) {

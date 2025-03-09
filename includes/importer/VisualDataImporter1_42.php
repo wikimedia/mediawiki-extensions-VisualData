@@ -33,6 +33,7 @@ use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Permissions\Authority;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Revision\SlotRoleRegistry;
+use MediaWiki\Title\Title;
 
 // @see includes/import/WikiImporter.php
 // *** all the required private vars and method are copied from WikiImporter
@@ -494,9 +495,13 @@ class VisualDataImporter1_42 extends WikiImporter {
 	}
 
 	/**
-	 * @inheritDoc
+	 * @param Title|PageIdentity $title
+	 * @param int $revisionId
+	 * @param array $contentInfo
+	 *
+	 * @return Content
 	 */
-	private function makeContent( Title $title, $revisionId, $contentInfo ) {
+	private function makeContent( $title, $revisionId, $contentInfo ) {
 		$maxArticleSize = $this->config->get( MainConfigNames::MaxArticleSize );
 
 		if ( !isset( $contentInfo['text'] ) ) {

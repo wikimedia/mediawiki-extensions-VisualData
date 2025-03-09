@@ -349,6 +349,20 @@ const VisualDataGeolocation = function ( phpConfig, windowManager ) {
 			);
 		}
 
+		var requiredInput = new OO.ui.ToggleSwitchWidget( {
+			value: !!getPropertyValue( 'required' )
+		} );
+
+		Model.required = requiredInput;
+
+		var requiredInputLabelField = new OO.ui.FieldLayout( requiredInput, {
+			label: mw.msg( 'visualdata-jsmodule-geolocation-formfield-required' ),
+			helpInline: true,
+			align: 'top'
+		} );
+
+		items.push( requiredInputLabelField );
+
 		var latitudeInputLabel = new OO.ui.TextInputWidget( {
 			value: getPropertyValue( 'latitude-input-label' ) || 'latitude'
 		} );

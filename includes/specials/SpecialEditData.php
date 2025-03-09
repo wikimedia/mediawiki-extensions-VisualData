@@ -24,6 +24,8 @@
 
 // @TODO implement as form
 
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+
 class SpecialEditData extends SpecialPage {
 
 	/** @var title */
@@ -167,26 +169,26 @@ class SpecialEditData extends SpecialPage {
 		] );
 
 		// @see SpecialRecentChanges
-		$loadingContainer = Html::rawElement(
+		$loadingContainer = HtmlClass::rawElement(
 			'div',
 			[ 'class' => 'rcfilters-head mw-rcfilters-head', 'id' => 'mw-rcfilters-spinner-wrapper', 'style' => 'position: relative' ],
-			Html::rawElement(
+			HtmlClass::rawElement(
 				'div',
 				[ 'class' => 'initb mw-rcfilters-spinner', 'style' => 'margin-top: auto; top: 25%' ],
-				Html::element(
+				HtmlClass::element(
 					'div',
 					[ 'class' => 'inita mw-rcfilters-spinner-bounce' ],
 				)
 			)
 		);
 
-		$loadingPlaceholder = Html::rawElement(
+		$loadingPlaceholder = HtmlClass::rawElement(
 			'div',
 			[ 'class' => 'VisualDataFormWrapperPlaceholder' ],
 			$this->msg( 'visualdata-loading-placeholder' )->text()
 		);
 
-		$out->addHTML( Html::rawElement( 'div', [
+		$out->addHTML( HtmlClass::rawElement( 'div', [
 				'id' => 'visualdataform-wrapper-' . ( count( $pageForms ) - 1 ),
 				'class' => 'VisualDataFormWrapper'
 			], $loadingContainer . $loadingPlaceholder )

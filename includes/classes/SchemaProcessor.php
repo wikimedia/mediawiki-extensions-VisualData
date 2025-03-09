@@ -751,7 +751,7 @@ class SchemaProcessor {
 					'$schema' => 'https://json-schema.org/draft/2020-12/schema',
 					'title' => !empty( $schema['wiki']['label'] ) ? $this->parseWikitext( $schema['wiki']['label'] ) : '',
 					'description' => !empty( $schema['wiki']['help-message'] ) ? $this->parseWikitext( $schema['wiki']['help-message'] ) : '',
-					'required' => [ 'latitude', 'longitude' ],
+					'required' => [],
 					'type' => 'object',
 					'properties' => [
 						'latitude' => [
@@ -780,6 +780,9 @@ class SchemaProcessor {
 						]
 					]
 				];
+				if ( !empty( $schema['wiki']['required'] ) ) {
+					$ret['required'] = [ 'latitude', 'longitude' ];
+				}
 				if ( !empty( $schema['wiki']['uuid'] ) ) {
 					$ret['properties']['latitude']['wiki']['uuid'] = $schema['wiki']['uuid'];
 					$ret['properties']['longitude']['wiki']['uuid'] = $schema['wiki']['uuid'];

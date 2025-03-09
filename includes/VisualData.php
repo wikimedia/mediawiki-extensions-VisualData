@@ -25,6 +25,7 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\QueryProcessor;
 use MediaWiki\Extension\VisualData\SchemaProcessor;
@@ -659,11 +660,7 @@ class VisualData {
 			unset( $query[$options[$value_]] );
 		}
 
-		if ( !count( $query ) && !$isButtonLink ) {
-			return 'no query';
-		}
-
-		$title_ = Title::newFromText( $values[0] );
+		$title_ = TitleClass::newFromText( $values[0] );
 
 		if ( !empty( $values[1] ) ) {
 			$text = $values[1];
@@ -727,11 +724,7 @@ class VisualData {
 			return 'no page name';
 		}
 
-		if ( !count( $query ) ) {
-			return 'no query';
-		}
-
-		$title_ = Title::newFromText( $values[0] );
+		$title_ = TitleClass::newFromText( $values[0] );
 		$url = $title_->getLinkURL( $query );
 
 		return [
@@ -995,8 +988,8 @@ class VisualData {
 		// title or id
 		$text = array_shift( $argv );
 
-		$title_ = ( is_numeric( $text ) ? Title::newFromId( $text )
-			: Title::newFromText( $text ) );
+		$title_ = ( is_numeric( $text ) ? TitleClass::newFromId( $text )
+			: TitleClass::newFromText( $text ) );
 
 		// invalid title
 		if ( !$title_ ) {
@@ -1115,6 +1108,9 @@ class VisualData {
 			}
 		}
 
+		// may contain format-related parameters
+		$params = array_merge( $unknownNamed, $params );
+
 		// @FIXME double-check if this is correct
 		$printoutsOptions[''] = $parsePrintoutsOptions( $params['pagetitle'] );
 
@@ -1146,18 +1142,6 @@ class VisualData {
 
 		if ( !array_key_exists( $params['format'], $GLOBALS['wgVisualDataResultPrinterClasses'] ) ) {
 			return $returnError( 'format not supported' );
-		}
-
-		// parse format-related parameters
-		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
-		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
-		if ( property_exists( $class, 'parameters' ) ) {
-			$defaultParameters_ = $class::$parameters;
-			array_walk( $defaultParameters_, static function ( &$value, $key ) {
-				$value = [ $value['default'], $value['type'] ];
-			} );
-			$params_ = self::applyDefaultParams( $defaultParameters_, $unknownNamed );
-			$params = array_merge( $params, $params_ );
 		}
 
 		$databaseManager = new DatabaseManager();
@@ -1215,7 +1199,7 @@ class VisualData {
 	/**
 	 * @param User $user
 	 * @param ParserOutput $parserOutput
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param DatabaseManager $databaseManager
 	 */
 	public static function handleLinks( $user, $parserOutput, $title, $databaseManager ) {
@@ -1322,6 +1306,16 @@ class VisualData {
 		$className = $GLOBALS['wgVisualDataResultPrinterClasses'][$params['format']];
 		$class = "MediaWiki\Extension\VisualData\ResultPrinters\\{$className}";
 
+		// parse format-related parameters
+		if ( property_exists( $class, 'parameters' ) ) {
+			$defaultParameters_ = $class::$parameters;
+			array_walk( $defaultParameters_, static function ( &$value, $key ) {
+				$value = [ $value['default'], $value['type'] ];
+			} );
+			$params_ = self::applyDefaultParams( $defaultParameters_, $params );
+			$params = array_merge( $params, $params_ );
+		}
+
 		$printoutsQuery = array_keys( $printouts );
 
 		switch ( $params['format'] ) {
@@ -1352,11 +1346,18 @@ class VisualData {
 		$context = RequestContext::getMain();
 		self::adjustSchemaName( $schema );
 
+		// only allow a subset of formats
+		$allowedFormats = [ 'json-raw', 'count' ];
+
 		// limit, offset, order
 		$params = array_merge( [
 			'schema' => $schema,
 			'format' => 'json-raw'
 		], $params );
+
+		if ( !in_array( $params['format'], $allowedFormats ) ) {
+			return [ 'errors' => [ 'format not allowed' ] ];
+		}
 
 		$parser = MediaWikiServices::getInstance()->getParserFactory()->create();
 		$templates = [];
@@ -1369,8 +1370,8 @@ class VisualData {
 			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
 		}
 
-		$printoutsOptions = [];
 		$errors_ = [];
+		$printoutsOptions = [];
 		$resultPrinter = self::getResults(
 			$parser,
 			$context,
@@ -1411,7 +1412,7 @@ class VisualData {
 		$updated = [];
 		foreach ( $results as $value ) {
 			$retData = $callback( $value['title'], $value['data'], $value['categories'] );
-			$title_ = Title::newFromID( $value['pageid'] );
+			$title_ = TitleClass::newFromID( $value['pageid'] );
 			$context->setTitle( $title_ );
 
 			if ( $retData !== $value['data'] ) {
@@ -1476,7 +1477,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return null|array
 	 */
 	public static function getSlots( $title ) {
@@ -1498,7 +1499,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return void
 	 */
 	public static function emptySlotsCache( $title ) {
@@ -1507,7 +1508,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $slots
 	 * @return void
 	 */
@@ -1517,7 +1518,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return false|array
 	 */
 	public static function getJsonData( $title ) {
@@ -1609,7 +1610,7 @@ class VisualData {
 	/**
 	 * @see includes/api/ApiBase.php
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array &$errors
 	 * @return bool
 	 */
@@ -1644,7 +1645,7 @@ class VisualData {
 
 	/**
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $schemas
 	 * @param string $defaultSlot
 	 * @param array &$errors
@@ -1693,7 +1694,7 @@ class VisualData {
 
 	/**
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $slotsData
 	 * @param array &$errors
 	 * @return bool
@@ -1783,7 +1784,7 @@ class VisualData {
 	 * // phpcs:ignore MediaWiki.Commenting.FunctionAnnotations.UnrecognizedAnnotation
 	 * @credits WSSlots MediaWiki extension - Wikibase Solutions
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $slotsData
 	 * @param bool $doNullEdit false
 	 * @return bool
@@ -1897,7 +1898,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param string $targetSlot
 	 * @return string
 	 */
@@ -1925,7 +1926,7 @@ class VisualData {
 
 	/**
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param Content $content
 	 * @param array &$errors
 	 */
@@ -1942,7 +1943,7 @@ class VisualData {
 
 	/**
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $data
 	 * @param array &$errors
 	 */
@@ -1970,7 +1971,7 @@ class VisualData {
 					continue;
 				}
 
-				$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
+				$title_ = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
 				$statusOK = self::saveRevision( $user, $title_, json_encode( $schema ) );
 				if ( !$statusOK ) {
 					self::$Logger->error( 'rebuildArticleData cannot save schema' );
@@ -2055,7 +2056,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return WikiPage|null
 	 */
 	public static function getWikiPage( $title ) {
@@ -2074,7 +2075,7 @@ class VisualData {
 	 * @return Title|null
 	 */
 	public static function getTitleIfKnown( $titletText ) {
-		$title = Title::newFromText( $titletText );
+		$title = TitleClass::newFromText( $titletText );
 		if ( $title && $title->isKnown() ) {
 			return $title;
 		}
@@ -2083,7 +2084,7 @@ class VisualData {
 
 	/**
 	 * @param Context $context
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $pageForms
 	 * @param array $config
 	 * @return array
@@ -2122,7 +2123,7 @@ class VisualData {
 				if ( !empty( $value['options']['edit-page'] ) ) {
 					// $editTitle = self::getTitleIfKnown( $value['options']['edit-page'] );
 					// can be unknown
-					$editTitle = Title::newFromText( $value['options']['edit-page'] );
+					$editTitle = TitleClass::newFromText( $value['options']['edit-page'] );
 				}
 
 				if ( $editTitle ) {
@@ -2229,14 +2230,17 @@ class VisualData {
 			// otherwise return-url is the target title
 			// @see SubmitForm
 			if ( empty( $value['options']['return-url'] )
-				&& !empty( $value['options']['return-page'] ) ) {
-				$title_ = self::getTitleIfKnown( $value['options']['return-page'] );
+				&& !empty( $value['options']['return-page'] )
+			) {
+				// allow also unknown titles
+				$title_ = TitleClass::newFromText( $value['options']['return-page'] );
 				$query = '';
 
 				if ( !$title_ ) {
 					$pos_ = strpos( $value['options']['return-page'], '?' );
-					if ( $pos_ !== false ) {
-						$title_ = self::getTitleIfKnown( substr( $value['options']['return-page'], 0, $pos_ ) );
+					if ( $pos_ !== false && strlen( $value['options']['return-page'] ) > $pos_ ) {
+						// allow also unknown titles
+						$title_ = TitleClass::newFromText( substr( $value['options']['return-page'], 0, $pos_ ) );
 						$query = substr( $value['options']['return-page'], $pos_ + 1 );
 					}
 				}
@@ -2367,7 +2371,7 @@ class VisualData {
 		$out->addJsConfigVars( [
 			// @see VEForAll ext.veforall.target.js -> getPageName
 			'wgPageFormsTargetName' => ( $title && $title->canExist() ? $title
-				: Title::newMainPage() )->getFullText(),
+				: TitleClass::newMainPage() )->getFullText(),
 
 			'visualdata-schemas' => json_encode( $obj['schemas'], true ),
 			'visualdata-pageforms' => json_encode( $obj['pageForms'], true ),
@@ -2410,7 +2414,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return bool
 	 */
 	public static function isKnownArticle( $title ) {
@@ -2430,7 +2434,7 @@ class VisualData {
 	public static function setSchemas( $schemaProcessor, $schemas, $loadSchemas = true ) {
 		$ret = [];
 		foreach ( $schemas as $value ) {
-			$title = Title::newFromText( $value, NS_VISUALDATASCHEMA );
+			$title = TitleClass::newFromText( $value, NS_VISUALDATASCHEMA );
 
 			if ( !$title || !$title->isKnown() ) {
 				continue;
@@ -2592,7 +2596,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return array
 	 */
 	public static function getTrackingCategories( $title ) {
@@ -2621,7 +2625,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param int $mode 2
 	 * @return array
 	 */
@@ -2684,18 +2688,27 @@ class VisualData {
 	}
 
 	/**
+	 * @param User|null $user
 	 * @return Importer|Importer1_35|null
 	 */
-	public static function getImporter() {
+	public static function getImporter( $user = null ) {
 		$services = MediaWikiServices::getInstance();
 
 		if ( version_compare( MW_VERSION, '1.42', '>=' ) ) {
 			include_once __DIR__ . '/importer/VisualDataImporter1_42.php';
 
+			if ( !$user ) {
+				if ( defined( 'MW_ENTRY_POINT' ) && MW_ENTRY_POINT === 'cli' ) {
+					$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
+				} else {
+					$user = RequestContext::getMain()->getAuthority();
+				}
+			}
+
 			// @see WikiImporterFactory.php -> getWikiImporter
-			$performer = RequestContext::getMain()->getAuthority();
 			return new VisualDataImporter1_42(
-				$performer,
+				// performer
+				$user,
 				$services->getMainConfig(),
 				$services->getHookContainer(),
 				$services->getContentLanguage(),
@@ -2796,12 +2809,12 @@ class VisualData {
 	 */
 	public static function parseTitleCounter( &$titleStr ) {
 		if ( !preg_match( '/#count\s*$/', $titleStr ) ) {
-			return Title::newFromText( $titleStr );
+			return TitleClass::newFromText( $titleStr );
 		}
 
 		$titleStr = preg_replace( '/#count\s*$/', '', $titleStr );
 		$nsIndex = self::getRegisteredNamespace( $titleStr );
-		$title = Title::newFromText( $titleStr, $nsIndex );
+		$title = TitleClass::newFromText( $titleStr, $nsIndex );
 
 		if ( !$title || !$title->canExist() ) {
 			return null;
@@ -2834,11 +2847,11 @@ class VisualData {
 			$titleStr .= '1';
 		}
 
-		return Title::newFromText( $titleStr, $nsIndex );
+		return TitleClass::newFromText( $titleStr, $nsIndex );
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param bool $exclude_current
 	 * @return array
 	 */
@@ -2861,7 +2874,7 @@ class VisualData {
 				$output[] = $title;
 
 			} else {
-				$title_ = Title::newFromText( $title_text );
+				$title_ = TitleClass::newFromText( $title_text );
 				if ( $title_ && $title_->isKnown() ) {
 					$output[] = $title_;
 				}
@@ -2873,7 +2886,7 @@ class VisualData {
 
 	/**
 	 * @see https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/PageOwnership/+/refs/heads/master/includes/PageOwnership.php
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param null|int $limit null
 	 * @return array
 	 */
@@ -2891,18 +2904,14 @@ class VisualData {
 
 	/**
 	 * @see MediaWiki\Title -> getLinksTo
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $options
 	 * @param string $table
 	 * @param string $prefix
 	 * @return void
 	 */
 	public static function getLinksTo( $title, $options = [], $table = 'pagelinks', $prefix = 'pl' ) {
-		if ( count( $options ) > 0 ) {
-			$db = self::getDB( DB_PRIMARY );
-		} else {
-			$db = self::getDB( DB_REPLICA );
-		}
+		$db = self::getDB( count( $options ) > 0 ? DB_PRIMARY : DB_REPLICA );
 
 		$res = $db->select(
 			[ 'page', $table ],
@@ -2922,7 +2931,7 @@ class VisualData {
 			foreach ( $res as $row ) {
 				// ***edited
 				// $titleObj = self::makeTitle( $row->page_namespace, $row->page_title );
-				$titleObj = Title::newFromID( $row->page_id );
+				$titleObj = TitleClass::newFromID( $row->page_id );
 				if ( $titleObj ) {
 					// $linkCache->addGoodLinkObjFromRow( $titleObj, $row );
 					$retVal[] = $titleObj;
@@ -2969,7 +2978,7 @@ class VisualData {
 
 		$ret = [];
 		foreach ( $res as $row ) {
-			$title = Title::newFromRow( $row );
+			$title = TitleClass::newFromRow( $row );
 
 			if ( !$title->isKnown() ) {
 				continue;
@@ -2984,14 +2993,14 @@ class VisualData {
 	/**
 	 * @see api/ApiMove.php => MovePage
 	 * @param User $user
-	 * @param Title $from
-	 * @param Title $to
+	 * @param Title|MediaWiki\Title\Title $from
+	 * @param Title|MediaWiki\Title\Title $to
 	 * @param string|null $reason
 	 * @param bool $createRedirect
 	 * @param array $changeTags
 	 * @return Status
 	 */
-	public static function movePage( $user, Title $from, Title $to, $reason = null, $createRedirect = false, $changeTags = [] ) {
+	public static function movePage( $user, $from, $to, $reason = null, $createRedirect = false, $changeTags = [] ) {
 		$movePageFactory = MediaWikiServices::getInstance()->getMovePageFactory();
 		$mp = $movePageFactory->newMovePage( $from, $to );
 		$valid = $mp->isValidMove();
@@ -3032,7 +3041,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param User $user
 	 * @param string $reason
 	 * @return void
@@ -3060,7 +3069,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 */
 	public static function purgeArticle( $title ) {
 		// $title_->invalidateCache();
@@ -3072,7 +3081,7 @@ class VisualData {
 
 	/**
 	 * @param User $user
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param string $text
 	 * @return bool
 	 */
@@ -3095,7 +3104,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return string|null
 	 */
 	public static function getWikipageContent( $title ) {
@@ -3111,7 +3120,7 @@ class VisualData {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return MediaWiki\Revision\RevisionRecord|null
 	 */
 	public static function revisionRecordFromTitle( $title ) {

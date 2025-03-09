@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2024-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -888,7 +888,7 @@ class DatabaseManager {
 	 * @param string $pointer
 	 * @return string
 	 */
-	private function unescapeJsonPointer( $pointer ) {
+	private static function unescapeJsonPointer( $pointer ) {
 		$ret = [];
 		$arr = explode( '/', $pointer );
 		foreach ( $arr as $value ) {
@@ -1038,7 +1038,7 @@ class DatabaseManager {
 				}
 				break;
 			default:
-				$pathArr = explode( '/', $path );
+				$pathArr = self::unescapeJsonPointer( $path );
 				$key = array_pop( $pathArr );
 				$callbackValue( $schema, $data, $path, $printout, $key );
 		}
@@ -1083,7 +1083,6 @@ class DatabaseManager {
 						$currentPath = "$path/properties/$keyEscaped";
 						$printout_ = ( $printout ? "$printout/$keyEscaped" : $keyEscaped );
 						$subSchema = $value;
-						$callback( $subSchema, $currentPath, $printout_, $key );
 						self::traverseSchema( $subSchema, $currentPath, $printout_, $callback );
 					}
 				}
@@ -1092,7 +1091,7 @@ class DatabaseManager {
 				// @TODO support tuple
 
 				if ( isset( $schema['items'] ) ) {
-					$pathArr = explode( '/', $path );
+					$pathArr = self::unescapeJsonPointer( $path );
 					$key = array_pop( $pathArr );
 					$callback( $schema, $path, $printout, $key );
 					$subSchema = $schema['items'];
@@ -1100,9 +1099,9 @@ class DatabaseManager {
 				}
 				break;
 			default:
-				// $pathArr = explode( '/', $path );
-				// $key = array_pop( $pathArr );
-				// $callback( $schema, $path, $printout, $key );
+				$pathArr = self::unescapeJsonPointer( $path );
+				$key = array_pop( $pathArr );
+				$callback( $schema, $path, $printout, $key );
 		}
 	}
 
@@ -1267,7 +1266,7 @@ class DatabaseManager {
 		$ret = 0;
 		$props = [];
 		foreach ( $flattenData as $path => $value ) {
-			$pathArr = $this->unescapeJsonPointer( $path );
+			$pathArr = self::unescapeJsonPointer( $path );
 			$schemaName = array_shift( $pathArr );
 			$schemas[] = $schemaName;
 
