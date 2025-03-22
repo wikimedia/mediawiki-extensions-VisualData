@@ -22,6 +22,7 @@
  * @copyright Copyright ©2023-2025, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 use MediaWiki\MediaWikiServices;
 
@@ -146,7 +147,7 @@ class VisualDataApiDatatables extends ApiBase {
 
 		// @see ApiExpandTemplates
 		$parserOptions = ParserOptions::newFromContext( $context );
-		$titleObj = Title::newFromText( $sourcePage );
+		$titleObj = TitleClass::newFromText( $sourcePage );
 		$parser->startExternalParse( $titleObj, $parserOptions, Parser::OT_PREPROCESS );
 
 		$printoutsOptions = [];
@@ -241,7 +242,7 @@ class VisualDataApiDatatables extends ApiBase {
 
 		// @see ApiExpandTemplates
 		$parserOptions = ParserOptions::newFromContext( $context );
-		$titleObj = Title::newFromText( $sourcePage );
+		$titleObj = TitleClass::newFromText( $sourcePage );
 		$parser->startExternalParse( $titleObj, $parserOptions, Parser::OT_PREPROCESS );
 
 		$printoutsOptions = [];

@@ -23,6 +23,7 @@
  */
 
 // use MediaWiki\Extension\VisualData\SemanticMediawiki as SemanticMediawiki;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 
 class VisualDataApiLoadData extends ApiBase {
 
@@ -55,7 +56,7 @@ class VisualDataApiLoadData extends ApiBase {
 
 		$sourcePage = null;
 		if ( !empty( $params['source-page'] ) ) {
-			$sourcePage = Title::newFromText( $params['source-page'] );
+			$sourcePage = TitleClass::newFromText( $params['source-page'] );
 			$context->setTitle( $sourcePage );
 		}
 

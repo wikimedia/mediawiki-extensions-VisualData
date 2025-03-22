@@ -25,6 +25,7 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\QueryProcessor;
@@ -879,10 +880,10 @@ class VisualData {
 
 		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
 
-		$spinner = Html::rawElement(
+		$spinner = HtmlClass::rawElement(
 			'div',
 			[ 'class' => 'mw-rcfilters-spinner mw-rcfilters-spinner-inline', 'style' => 'display:none' ],
-			Html::element(
+			HtmlClass::element(
 				'div',
 				[ 'class' => 'mw-rcfilters-spinner-bounce' ]
 			)

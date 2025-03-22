@@ -25,10 +25,10 @@
 namespace MediaWiki\Extension\VisualData\Pagers;
 
 use Linker;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Linker\LinkRenderer;
 use ParserOutput;
 use TablePager;
-use Title;
 
 class SchemasPager extends TablePager {
 
@@ -113,7 +113,7 @@ class SchemasPager extends TablePager {
 				if ( !$row->page_id ) {
 					$formatted = '';
 				} else {
-					$title = Title::newFromID( $row->page_id );
+					$title = TitleClass::newFromID( $row->page_id );
 					$formatted = Linker::link( $title, $title->getFullText() );
 				}
 				break;

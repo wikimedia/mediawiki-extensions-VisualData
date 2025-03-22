@@ -28,8 +28,8 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../vendor/autoload.php';
 }
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\Utils\DateParser;
-use Title;
 
 class QueryProcessor {
 
@@ -257,7 +257,7 @@ class QueryProcessor {
 		// check if is a title as in VisualData -> parserFunctionPrint
 		// @FIXME check only if the origin function is parserFunctionQuery
 		if ( empty( $this->AndConditions ) ) {
-			$title_ = Title::newFromText( $this->query );
+			$title_ = TitleClass::newFromText( $this->query );
 			// allow also unknown titles, in case is used within a parser function
 			// && $title_->isKnown()
 			if ( $title_ ) {
@@ -629,7 +629,7 @@ class QueryProcessor {
 			return;
 		}
 
-		$title = Title::newFromText( $value );
+		$title = TitleClass::newFromText( $value );
 		if ( $title &&
 			( $title->isKnown() || $title->getNamespace() === NS_CATEGORY )
 		) {
@@ -1221,7 +1221,7 @@ class QueryProcessor {
 			unset( $row['categories'] );
 
 			if ( !array_key_exists( $pageId, $titles ) ) {
-				$title_ = Title::newFromID( $pageId );
+				$title_ = TitleClass::newFromID( $pageId );
 				$titles[$pageId] = $title_;
 			}
 

@@ -28,7 +28,6 @@ use ApiMain;
 use Job;
 use RequestContext;
 use Status;
-use Title;
 use UploadBase;
 use UploadFromStash;
 
@@ -39,7 +38,7 @@ use UploadFromStash;
  * @ingroup JobQueue
  */
 class PublishStashedFile extends Job {
-	public function __construct( Title $title, array $params ) {
+	public function __construct( $title, array $params ) {
 		parent::__construct( 'PublishStashedFile', $title, $params );
 		$this->removeDuplicates = true;
 	}

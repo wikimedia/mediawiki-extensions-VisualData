@@ -24,8 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\QueryProcessor;
-use Title;
 
 class DatatableResultPrinter extends TableResultPrinter {
 
@@ -710,7 +710,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 				$label_ = $k;
 				if ( !empty( $k ) ) {
-					$title_ = Title::newFromText( $k, NS_CATEGORY );
+					$title_ = TitleClass::newFromText( $k, NS_CATEGORY );
 
 					// this should be always true
 					$label_ = ( $title_ ? $title_->getText() : $k );

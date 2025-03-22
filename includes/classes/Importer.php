@@ -24,8 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData;
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Revision\SlotRecord;
-use Title;
 
 class Importer {
 
@@ -152,7 +152,7 @@ class Importer {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array $data
 	 * @return string
 	 */
@@ -218,7 +218,7 @@ class Importer {
 	private function createSchema( $name, $data ) {
 		$schemaProcessor = new SchemaProcessor( $this->context );
 		$schema = $schemaProcessor->generateFromData( $data, $name );
-		$title = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $name );
+		$title = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $name );
 		$statusOK = \VisualData::saveRevision( $this->user, $title, json_encode( $schema ) );
 		if ( !$statusOK ) {
 			return false;

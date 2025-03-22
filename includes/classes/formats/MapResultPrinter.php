@@ -24,8 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use Html;
 use Linker;
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class MapResultPrinter extends ResultPrinter {
@@ -719,7 +719,7 @@ class MapResultPrinter extends ResultPrinter {
 			return 'No coordinates found';
 		}
 
-		return Html::rawElement(
+		return HtmlClass::rawElement(
 			'div',
 			[
 				'style' => 'width:' . $this->params['width'] . ';height:' . $this->params['height'],

@@ -22,6 +22,7 @@
  * @copyright Copyright ©2021-2023, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\SchemaProcessor;
 
@@ -61,7 +62,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		$sourcePage = null;
 		if ( !empty( $params['source-page'] ) ) {
-			$sourcePage = Title::newFromText( $params['source-page'] );
+			$sourcePage = TitleClass::newFromText( $params['source-page'] );
 			$context->setTitle( $sourcePage );
 		}
 
@@ -94,7 +95,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 				}
 			}
 
-			$title_ = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
+			$title_ = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
 			$reason = 'deleted through ManageSchemas';
 			\VisualData::deleteArticle( $title_, $user, $reason );
 
@@ -107,7 +108,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 		}
 
 		$label_ = $schema['wiki']['name'];
-		$pageTitle = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $label_ );
+		$pageTitle = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $label_ );
 
 		$label = $pageTitle->getText();
 
@@ -143,7 +144,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 				}
 			}
 
-			$title_from = Title::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
+			$title_from = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $previousLabel );
 			$title_to = $pageTitle;
 
 			// @FIXME: or use SubmitForm -> movePageApi

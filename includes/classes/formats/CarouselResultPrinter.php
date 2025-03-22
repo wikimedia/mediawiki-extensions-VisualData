@@ -24,7 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use Html;
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 use Parser;
 
@@ -459,16 +460,16 @@ class CarouselResultPrinter extends ResultPrinter {
 				$imgAttr['data-lazy'] = $imageUrl;
 			}
 
-			$innerContent = Html::rawElement( 'img', $imgAttr );
+			$innerContent = HtmlClass::rawElement( 'img', $imgAttr );
 
 			if ( $titleValue || $captionValue ) {
-				$innerContent .= Html::rawElement( 'div', [ 'class' => 'slick-slide-content caption' ],
-					( $titleValue ? Html::rawElement( 'div', [ 'class' => 'slick-slide-content caption-title' ], $titleValue ) : '' )
-					. ( $captionValue ? Html::rawElement( 'div', [ 'class' => 'slick-slide-content caption-text' ], $captionValue ) : '' )
+				$innerContent .= HtmlClass::rawElement( 'div', [ 'class' => 'slick-slide-content caption' ],
+					( $titleValue ? HtmlClass::rawElement( 'div', [ 'class' => 'slick-slide-content caption-title' ], $titleValue ) : '' )
+					. ( $captionValue ? HtmlClass::rawElement( 'div', [ 'class' => 'slick-slide-content caption-text' ], $captionValue ) : '' )
 				);
 			}
 
-			$items[] = Html::rawElement(
+			$items[] = HtmlClass::rawElement(
 				'div',
 				[
 					'class' => 'slick-slide',
@@ -496,7 +497,7 @@ class CarouselResultPrinter extends ResultPrinter {
 
 		$attr['data-slick'] = json_encode( $slick_attr );
 
-		return Html::rawElement(
+		return HtmlClass::rawElement(
 			'div',
 			$attr,
 			implode( $items )
@@ -554,7 +555,7 @@ class CarouselResultPrinter extends ResultPrinter {
 	 * @return array
 	 */
 	protected function getImageTitleAndUrl( $value ) {
-		$title = \Title::newFromText( $value, NS_FILE );
+		$title = TitleClass::newFromText( $value, NS_FILE );
 
 		if ( !$title ) {
 			return [ '', '' ];

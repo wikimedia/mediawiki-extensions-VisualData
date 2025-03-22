@@ -25,11 +25,11 @@
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
 use Linker;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 use MediaWiki\Extension\VisualData\Utils\HtmlTable;
 use Parser;
-use Title;
 
 class TableResultPrinter extends ResultPrinter {
 
@@ -158,7 +158,7 @@ class TableResultPrinter extends ResultPrinter {
 			if ( empty( $value ) ) {
 				continue;
 			}
-			$title_ = Title::newFromText( $value, NS_CATEGORY );
+			$title_ = TitleClass::newFromText( $value, NS_CATEGORY );
 			$ret[] = Linker::link( $title_, ( $title_ ? $title_->getText() : $value ) );
 		}
 		return $ret;

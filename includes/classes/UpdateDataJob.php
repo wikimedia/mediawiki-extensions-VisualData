@@ -29,14 +29,13 @@ if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
 
 use Job;
 use RequestContext;
-use Title;
 use User;
 use Wikimedia\ScopedCallback;
 
 class UpdateDataJob extends Job {
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array|bool $params
 	 */
 	function __construct( $title, $params = [] ) {

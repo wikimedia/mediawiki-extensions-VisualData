@@ -28,9 +28,9 @@ if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
 	include_once __DIR__ . '/../../vendor/autoload.php';
 }
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use Swaggest\JsonDiff\JsonDiff;
 use Swaggest\JsonDiff\JsonPointer;
-use Title;
 
 class DatabaseManager {
 
@@ -103,7 +103,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 */
 	public function invalidateTransclusionTargets( $title ) {
 		$transclusionTargets = \VisualData::getTransclusionTargets( $title );
@@ -114,7 +114,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @return bool
 	 */
 	public function handleTemplateLinks( $title ) {
@@ -131,7 +131,7 @@ class DatabaseManager {
 		);
 
 		foreach ( $res as $row ) {
-			$title_ = Title::newFromID( $row->parent_page_id );
+			$title_ = TitleClass::newFromID( $row->parent_page_id );
 			if ( $title_ && $title_->isKnown() ) {
 				\VisualData::purgeArticle( $title_ );
 				$this->invalidateTransclusionTargets( $title_ );
@@ -140,7 +140,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param string $schema
 	 * @param array $templates
 	 * @return bool
@@ -161,8 +161,8 @@ class DatabaseManager {
 		];
 
 		foreach ( $templates as $titleStr ) {
-			$title_ = \Title::makeTitle( NS_TEMPLATE,
-				\Title::capitalize( $titleStr, NS_TEMPLATE ) );
+			$title_ = TitleClass::makeTitle( NS_TEMPLATE,
+				TitleClass::capitalize( $titleStr, NS_TEMPLATE ) );
 
 			if ( !$title_ || !$title_->isKnown() ) {
 				continue;
@@ -180,7 +180,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param string $type
 	 * @param string|array $schema
 	 * @return bool
@@ -300,7 +300,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 */
 	public function removeLinks( $title ) {
 		if ( !$title ) {
@@ -360,7 +360,7 @@ class DatabaseManager {
 			);
 
 			foreach ( $res as $row ) {
-				$title_ = Title::newFromID( $row->page_id );
+				$title_ = TitleClass::newFromID( $row->page_id );
 				if ( $title_ && $title_->isKnown() ) {
 					\VisualData::purgeArticle( $title_ );
 
@@ -643,7 +643,7 @@ class DatabaseManager {
 
 		$ret = [];
 		foreach ( $res as $row ) {
-			$title_ = Title::newFromID( $row->page_id );
+			$title_ = TitleClass::newFromID( $row->page_id );
 			if ( $title_ && $title_->isKnown() ) {
 				$ret[] = $title_;
 			}
@@ -653,7 +653,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 */
 	public function deletePage( $title ) {
 		$articleId = $title->getID();
@@ -756,7 +756,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array $deletedSchemas
 	 * @param array &$errors
 	 */
@@ -1175,7 +1175,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array $schema
 	 */
 	public function createSchemaIdAndPrintouts( $title, $schema ) {
@@ -1255,7 +1255,7 @@ class DatabaseManager {
 
 	/**
 	 * @param string $context
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array $flattenData
 	 * @param array &$errors
 	 * @return int

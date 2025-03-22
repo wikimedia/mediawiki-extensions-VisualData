@@ -1230,7 +1230,7 @@ class SchemaProcessor {
 			$values = $wiki['options-values'];
 
 		} elseif ( !empty( $wiki['options-wikilist'] ) ) {
-			$title_ = \Title::newFromText( $wiki['options-wikilist'] );
+			$title_ = TitleClass::newFromText( $wiki['options-wikilist'] );
 
 			if ( $title_ && $title_->isKnown() ) {
 				$text_ = \VisualData::getWikipageContent( $title_ );
@@ -1443,7 +1443,7 @@ e.g.
 				if ( $isEmpty( $properties['printouts'] ) ) {
 					continue;
 				}
-				$title_ = \Title::newFromText( $titleText );
+				$title_ = TitleClass::newFromText( $titleText );
 				$row = [];
 				uksort( $properties, $sortPrintouts );
 				$combinations = $getCombinations( $properties['printouts'], $title_ );

@@ -21,7 +21,7 @@
  * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
-use MediaWiki\Extension\VisualData\Aliases\Title;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\SubmitForm;
 
 class SpecialVisualDataSubmit extends SpecialPage {
@@ -61,7 +61,7 @@ class SpecialVisualDataSubmit extends SpecialPage {
 		}
 
 		// NS_MAIN is ignored if $par is prefixed
-		$title = Title::newFromText( $par, NS_MAIN );
+		$title = TitleClass::newFromText( $par, NS_MAIN );
 		$this->title = $title;
 
 		$request = $this->getRequest();
@@ -117,7 +117,7 @@ class SpecialVisualDataSubmit extends SpecialPage {
 		} else {
 			// *** the following reloads the origin page as script (with a query)
 			// thus ensuring that is associated with the submission data
-			$title_ = Title::newFromText( $data['options']['origin-page'] );
+			$title_ = TitleClass::newFromText( $data['options']['origin-page'] );
 			$url = $title_->getLinkURL( [ 'sid' => $sid ] );
 			header( 'Location: ' . $url );
 		}

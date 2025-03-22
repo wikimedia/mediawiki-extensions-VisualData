@@ -29,13 +29,13 @@ use CommentStoreComment;
 use ContentHandler;
 use ContentModelChange;
 use DerivativeRequest;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
 use Parser;
 use RawMessage;
 use RequestContext;
 use Status;
-use Title;
 
 class SubmitForm {
 
@@ -152,7 +152,7 @@ class SubmitForm {
 	 * @param array &$errors
 	 */
 	private	function publishStashedFile( $filename, $filekey, &$errors ) {
-		$job = new PublishStashedFile( Title::makeTitle( NS_FILE, $filename ), [
+		$job = new PublishStashedFile( TitleClass::makeTitle( NS_FILE, $filename ), [
 			'filename' => $filename,
 			'filekey' => $filekey,
 			'comment' => '',
@@ -175,9 +175,9 @@ class SubmitForm {
 	 * @return array|bool
 	 */
 	private function movePageApi( $textFrom, $textTo, &$errors ) {
-		// Title::makeTitleSafe( NS_FILE, $textTo );
-		$title_from = Title::newFromText( $textFrom );
-		$title_to = Title::newFromText( $textTo );
+		// TitleClass::makeTitleSafe( NS_FILE, $textTo );
+		$title_from = TitleClass::newFromText( $textFrom );
+		$title_to = TitleClass::newFromText( $textTo );
 
 		if ( !$title_from || !$title_from->isKnown() ) {
 			return [ 'file does not exist' ];
@@ -220,7 +220,7 @@ class SubmitForm {
 	}
 
 	/**
-	 * @param Title $title
+	 * @param Title|Mediawiki\Title\Title $title
 	 * @param string $content
 	 * @param string $contentModel
 	 * @param array &$errors
@@ -304,7 +304,7 @@ class SubmitForm {
 	}
 
 	/**
-	 * @param \Title $targetTitle
+	 * @param Title|Mediawiki\Title\Title $targetTitle
 	 * @param \WikiPage $wikiPage
 	 * @param string $contentModel
 	 * @param array &$errors
@@ -360,7 +360,7 @@ class SubmitForm {
 		];
 		$editTitle = null;
 		if ( !empty( $data['options']['edit-page'] ) ) {
-			$editTitle = Title::newFromText( $data['options']['edit-page'] );
+			$editTitle = TitleClass::newFromText( $data['options']['edit-page'] );
 
 			if ( $editTitle ) {
 				$jsonData_ = \VisualData::getJsonData( $editTitle );
@@ -420,7 +420,7 @@ class SubmitForm {
 				$targetUrl = $editTitle->getLocalURL();
 
 			} else {
-				$title_ = Title::newFromText( $data['options']['origin-page'] );
+				$title_ = TitleClass::newFromText( $data['options']['origin-page'] );
 				$targetUrl = $title_->getLocalURL();
 			}
 
@@ -437,7 +437,7 @@ class SubmitForm {
 			// && $data['options']['action'] === 'create'
 			!empty( $data['form']['target-title'] )
 		) {
-			$userDefinedTitle = Title::newFromText( $data['form']['target-title'] );
+			$userDefinedTitle = TitleClass::newFromText( $data['form']['target-title'] );
 		}
 
 		// first do replacements without parsing wikitext
@@ -506,7 +506,7 @@ class SubmitForm {
 			);
 
 			$pagenameFormulaTitle = \VisualData::parseTitleCounter( $pagenameFormula );
-			// $pagenameFormulaTitle = Title::newFromText( $pagenameFormula );
+			// $pagenameFormulaTitle = TitleClass::newFromText( $pagenameFormula );
 		}
 
 		// replace possible field values inside the return url

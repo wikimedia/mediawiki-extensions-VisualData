@@ -22,6 +22,8 @@
  * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+
 class SpecialManageSchemas extends SpecialPage {
 
 	/** @var user */
@@ -85,26 +87,26 @@ class SpecialManageSchemas extends SpecialPage {
 		] );
 
 		// @see SpecialRecentChanges
-		$loadingContainer = Html::rawElement(
+		$loadingContainer = HtmlClass::rawElement(
 			'div',
 			[ 'class' => 'rcfilters-head mw-rcfilters-head', 'id' => 'mw-rcfilters-spinner-wrapper', 'style' => 'position: relative' ],
-			Html::rawElement(
+			HtmlClass::rawElement(
 				'div',
 				[ 'class' => 'mw-rcfilters-spinner', 'style' => 'margin-top: auto; top: 25%' ],
-				Html::element(
+				HtmlClass::element(
 					'div',
 					[ 'class' => 'mw-rcfilters-spinner-bounce' ]
 				)
 			)
 		);
 
-		$loadingPlaceholder = Html::rawElement(
+		$loadingPlaceholder = HtmlClass::rawElement(
 			'div',
 			[ 'class' => 'VisualDataFormWrapperPlaceholder' ],
 			$this->msg( 'visualdata-loading-placeholder' )->text()
 		);
 
-		$out->addHTML( Html::rawElement( 'div', [
+		$out->addHTML( HtmlClass::rawElement( 'div', [
 				'id' => 'schemas-wrapper',
 			], $loadingContainer . $loadingPlaceholder )
 		);

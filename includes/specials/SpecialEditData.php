@@ -25,6 +25,7 @@
 // @TODO implement as form
 
 use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 
 class SpecialEditData extends SpecialPage {
 
@@ -80,7 +81,7 @@ class SpecialEditData extends SpecialPage {
 
 		if ( $par ) {
 			// NS_MAIN is ignored if $par is prefixed
-			$title = Title::newFromText( $par, NS_MAIN );
+			$title = TitleClass::newFromText( $par, NS_MAIN );
 			$this->title = $title;
 			$this->wikiPage = \VisualData::getWikiPage( $this->title );
 		}

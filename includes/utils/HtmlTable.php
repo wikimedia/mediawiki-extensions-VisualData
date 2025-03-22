@@ -24,7 +24,7 @@
 
 namespace MediaWiki\Extension\VisualData\Utils;
 
-use Html;
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
 
 /**
  * @credits mwjames
@@ -64,7 +64,7 @@ class HtmlTable {
 	 */
 	public function cell( $content = '', $attributes = [] ) {
 		if ( $content !== '' ) {
-			$this->cells[] = Html::Element( 'td', $attributes, $content );
+			$this->cells[] = HtmlClass::Element( 'td', $attributes, $content );
 		} else {
 			$this->cellRaw( $content, $attributes );
 		}
@@ -76,7 +76,7 @@ class HtmlTable {
 	 */
 	public function cellRaw( $content = '', $attributes = [] ) {
 		$this->formatContent( $content );
-		$this->cells[] = Html::rawElement( 'td', $attributes, $content );
+		$this->cells[] = HtmlClass::rawElement( 'td', $attributes, $content );
 	}
 
 	/**
@@ -101,7 +101,7 @@ class HtmlTable {
 		$this->cells = [];
 
 		if ( $table !== '' ) {
-			return Html::rawElement( 'table', $attributes, $table );
+			return HtmlClass::rawElement( 'table', $attributes, $table );
 		}
 
 		return '';
@@ -115,7 +115,7 @@ class HtmlTable {
 		$rows = [];
 
 		foreach ( $this->headers as $i => $header ) {
-			$headers[] = Html::rawElement( 'th', $header['attributes'], $header['content'] );
+			$headers[] = HtmlClass::rawElement( 'th', $header['attributes'], $header['content'] );
 		}
 
 		if ( count( $this->cells ) ) {
@@ -152,7 +152,7 @@ class HtmlTable {
 			$attributes['class'] = $alternate;
 		}
 
-		return Html::rawElement( 'tr', $attributes, $content );
+		return HtmlClass::rawElement( 'tr', $attributes, $content );
 	}
 
 	/**
@@ -160,7 +160,7 @@ class HtmlTable {
 	 * @return string
 	 */
 	private function concatenateHeaders( $headers ) {
-		return Html::rawElement( 'thead', [], implode( '', $headers ) );
+		return HtmlClass::rawElement( 'thead', [], implode( '', $headers ) );
 	}
 
 	/**
@@ -168,6 +168,6 @@ class HtmlTable {
 	 * @return string
 	 */
 	private function concatenateRows( $rows ) {
-		return Html::rawElement( 'tbody', [], implode( '', $rows ) );
+		return HtmlClass::rawElement( 'tbody', [], implode( '', $rows ) );
 	}
 }
