@@ -25,6 +25,7 @@
 namespace MediaWiki\Extension\VisualData;
 
 use Context;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\Utils\DateParser;
 use MediaWiki\MediaWikiServices;
 use MWException;
