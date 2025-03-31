@@ -416,17 +416,9 @@ class SubmitForm {
 
 			$ret = \VisualData::setJsonData( $this->user, $editTitle, $slots, $errors );
 
-			if ( $data['config']['context'] === 'EditData' ) {
-				$targetUrl = $editTitle->getLocalURL();
-
-			} else {
-				$title_ = TitleClass::newFromText( $data['options']['origin-page'] );
-				$targetUrl = $title_->getLocalURL();
-			}
-
 			return [
 				'errors' => [],
-				'target-url' => $targetUrl
+				'target-url' => $data['options']['origin-url']
 			];
 		}
 

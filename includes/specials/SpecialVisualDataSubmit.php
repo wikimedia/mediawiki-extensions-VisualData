@@ -110,13 +110,13 @@ class SpecialVisualDataSubmit extends SpecialPage {
 		$sid = time();
 		\VisualData::setSessionData( $sid, $obj );
 
-		// only for tab Edit data
+		// *** the following reloads the origin page as script (with a query)
+		// thus ensuring that is associated with the submission data
 		if ( !empty( $data['options']['origin-url'] ) ) {
 			header( 'Location: ' . wfAppendQuery( $data['options']['origin-url'], [ 'sid' => $sid ] ) );
 
+		// backward compatibility
 		} else {
-			// *** the following reloads the origin page as script (with a query)
-			// thus ensuring that is associated with the submission data
 			$title_ = TitleClass::newFromText( $data['options']['origin-page'] );
 			$url = $title_->getLinkURL( [ 'sid' => $sid ] );
 			header( 'Location: ' . $url );

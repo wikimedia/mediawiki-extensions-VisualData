@@ -142,12 +142,13 @@ class SpecialEditData extends SpecialPage {
 
 		[ $text_ ] = explode( '/', $out->getTitle()->getFullText(), 2 );
 
-		if ( $text_ !== 'Special:EditData' ) {
+		$special = SpecialPage::getTitleFor( 'EditData' );
+		if ( $text_ !== $special->getFullText() ) {
 			$params['origin-url'] = $this->title->getLinkURL( [ 'action' => 'editdata' ] );
 
 		} else {
-			$special = SpecialPage::getTitleFor( 'EditData', $this->title );
-			$params['origin-url'] = $special->getLinkURL();
+			$special_ = SpecialPage::getTitleFor( 'EditData', $this->title );
+			$params['origin-url'] = $special_->getLinkURL();
 		}
 
 		// if ( !$this->title && ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) ) {

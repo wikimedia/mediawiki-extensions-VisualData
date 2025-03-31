@@ -2226,7 +2226,12 @@ class VisualData {
 			$formData['errors'] = [];
 
 			// show errors (SubmitForm)
-			$pageForms[$formID]['options']['origin-page'] = $title->getFullText();
+			if ( empty( $pageForms[$formID]['options']['origin-url'] ) ) {
+				$request = $context->getRequest();
+				$query = $request->getQueryValues();
+				unset( $query['title'] );
+				$pageForms[$formID]['options']['origin-url'] = $title->getLocalURL( $query );
+			}
 
 			// otherwise return-url is the target title
 			// @see SubmitForm
