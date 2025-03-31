@@ -27,6 +27,7 @@ namespace MediaWiki\Extension\VisualData\Pagers;
 use Linker;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Linker\LinkRenderer;
+use MWException;
 use ParserOutput;
 use TablePager;
 

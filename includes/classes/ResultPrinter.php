@@ -27,6 +27,7 @@ namespace MediaWiki\Extension\VisualData;
 use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\MediaWikiServices;
+use MWException;
 use Parser;
 
 class ResultPrinter {
