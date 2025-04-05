@@ -30,8 +30,12 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\Utils\DateParser;
+use MediaWiki\MediaWikiServices;
 
 class QueryProcessor {
+
+	/** @var User */
+	private $user = [];
 
 	/** @var array */
 	private $schema = [];
@@ -102,12 +106,13 @@ class QueryProcessor {
 	];
 
 	/**
+	 * @param User $user
 	 * @param array $schema
 	 * @param string $query
 	 * @param array $printouts
 	 * @param array $params
 	 */
-	public function __construct( $schema, $query, $printouts, $params ) {
+	public function __construct( $user, $schema, $query, $printouts, $params ) {
 		$defaultParameters = [
 			'schema' => [ '', 'string' ],
 			'limit' => [ 100, 'integer' ],
@@ -125,6 +130,7 @@ class QueryProcessor {
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
 
 		$this->debug = $params['debug'];
+		$this->user = $user;
 		$this->databaseManager = new DatabaseManager();
 		$this->schema = $schema;
 		$this->query = $query;
@@ -1206,6 +1212,7 @@ class QueryProcessor {
 			return $value;
 		};
 
+		$permissionManager = MediaWikiServices::getInstance()->getPermissionManager();
 		$separator = chr( hexdec( '0x1E' ) );
 		$titles = [];
 		foreach ( $res as $row ) {
@@ -1215,15 +1222,28 @@ class QueryProcessor {
 			$pageId = $row['page_id'];
 			unset( $row['page_id'] );
 
+			if ( !array_key_exists( $pageId, $titles ) ) {
+				$title_ = TitleClass::newFromID( $pageId );
+				$titles[$pageId] = [
+					$title_,
+					$permissionManager->userCan( 'read', $this->user, $title_ )
+				];
+			}
+
+			[ $title_, $canRead_ ] = $titles[$pageId];
+			if ( !$canRead_ ) {
+				$this->result[] = [
+					$title_,
+					[],
+					[]
+				];
+				continue;
+			}
+
 			if ( !empty( $row['categories'] ) ) {
 				$categories = array_values( array_unique( explode( $separator, $row['categories'] ) ) );
 			}
 			unset( $row['categories'] );
-
-			if ( !array_key_exists( $pageId, $titles ) ) {
-				$title_ = TitleClass::newFromID( $pageId );
-				$titles[$pageId] = $title_;
-			}
 
 			if ( !$this->treeFormat ) {
 				// important, this ensures rows have same
@@ -1253,7 +1273,7 @@ class QueryProcessor {
 			}
 
 			$this->result[] = [
-				$titles[$pageId],
+				$title_,
 				\VisualData::plainToNested( $row_, true ),
 				$categories
 			];

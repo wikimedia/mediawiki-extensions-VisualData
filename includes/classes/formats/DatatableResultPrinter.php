@@ -599,7 +599,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 	 * @return array|string
 	 */
 	private function newQuery( $params, $printout ) {
-		$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [ $printout ], $params );
+		$queryProcessor = new QueryProcessor( $this->user, $this->schema, $this->query['query'], [ $printout ], $params );
 
 		if ( count( $queryProcessor->getValidPrintouts() ) !== 1 ) {
 			return [];

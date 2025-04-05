@@ -35,6 +35,9 @@ class ResultPrinter {
 	/** @var array */
 	protected $modules = [];
 
+	/** @var User */
+	protected $user;
+
 	/** @var Output */
 	protected $output;
 
@@ -115,6 +118,7 @@ class ResultPrinter {
 
 	/**
 	 * @param Parser $parser
+	 * @param User $user
 	 * @param Output $output
 	 * @param QueryProcessor $queryProcessor
 	 * @param array $schema
@@ -123,7 +127,7 @@ class ResultPrinter {
 	 * @param array $printouts
 	 * @param array $printoutsOptions []
 	 */
-	public function __construct( $parser, $output, $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions = [] ) {
+	public function __construct( $parser, $user, $output, $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions = [] ) {
 		$defaultParameters = [
 			'format' => [ 'json', 'string' ],
 			'schema' => [ '', 'string' ],
@@ -142,6 +146,7 @@ class ResultPrinter {
 			\VisualData::applyDefaultParams( $defaultParameters, $params ) );
 
 		$this->queryProcessor = $queryProcessor;
+		$this->user = $user;
 		$this->format = $params['format'];
 		$this->params = $params;
 		$this->schema = $schema;

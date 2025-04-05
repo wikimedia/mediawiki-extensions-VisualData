@@ -1331,9 +1331,10 @@ class VisualData {
 				break;
 		}
 
-		$queryProcessor = new QueryProcessor( $schema, $query, $printoutsQuery, $params );
+		$user = $context->getUser();
+		$queryProcessor = new QueryProcessor( $user, $schema, $query, $printoutsQuery, $params );
 
-		return new $class( $parser, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions );
+		return new $class( $parser, $user, $context->getOutput(), $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions );
 	}
 
 	/**
