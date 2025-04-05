@@ -332,7 +332,6 @@ const VisualDataGeolocation = function ( phpConfig, windowManager ) {
 					) +
 					'<img style="display:block;width: 240px;position: relative; left:-26px;padding: 12px;" src="https://media.maptiler.com/old/mediakit/logo/maptiler-logo.png" />'
 				),
-				invisibleLabel: false,
 				classes: [ 'VisualDataFormFieldMessage' ]
 			} );
 

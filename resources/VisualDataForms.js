@@ -673,7 +673,6 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		this.messageWidget = new OO.ui.MessageWidget( {
 			type: 'error',
 			label: '',
-			invisibleLabel: true,
 			classes: [ 'visualdata-upload-messagewidget' ]
 		} );
 
@@ -699,8 +698,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		this.errorMessage = function ( errorMessage ) {
 			self.textInputWidget.toggle( false );
 			self.progressBarWidget.toggle( false );
-
-			self.messageWidget.$element.append( errorMessage.getMessage() );
+			self.messageWidget.setLabel( errorMessage.getMessage() );
 			self.messageWidget.toggle( true );
 		};
 
@@ -819,6 +817,27 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					value: filename,
 					loaded: loaded,
 					parentWidget: self
+				} );
+
+				// @see oojs-ui-core.js -> OO.ui.SelectFileInputWidget.prototype.updateUI
+				inputWidget.loadAndGetImageUrl( inputWidget.getValue() ).done( ( thisUrl ) => {
+					var $thumbnail = $( '<div>' )
+						.addClass( 'oo-ui-selectFileInputWidget-dropTarget' )
+						.css( {
+							position: 'relative',
+							'max-width': '50em',
+							'border-top': 'none'
+						} ).append( $( '<div>' )
+							.addClass( 'oo-ui-selectFileInputWidget-thumbnail oo-ui-selectFileWidget-thumbnail' )
+							.css( 'background-image', 'url( ' + thisUrl + ' )'
+							)
+						);
+
+					thisFileItemWidget.$element
+						.addClass( 'oo-ui-selectFileInputWidget-withThumbnail oo-ui-selectFileWidget-withThumbnail' )
+						.append( $thumbnail );
+
+				} ).fail( () => {
 				} );
 
 				loadedFiles[ filename ] = thisFileItemWidget;

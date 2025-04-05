@@ -1056,8 +1056,6 @@ VisualDataSchemas = ( function () {
 					`${ Config.VisualDataSchemaUrl }${ getPropertyValue( 'name' ) }`
 				)
 			),
-
-			invisibleLabel: false,
 			classes: [ 'VisualDataFormFieldMessage' ]
 		} );
 
@@ -1204,8 +1202,6 @@ VisualDataSchemas = ( function () {
 					'visualdata-jsmodule-schemas-message-container-info'
 				)
 			),
-
-			invisibleLabel: false,
 			classes: [ 'VisualDataFormFieldMessage' ]
 		} );
 

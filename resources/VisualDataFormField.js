@@ -209,7 +209,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		var messageWidgetOptionsQuery = new OO.ui.MessageWidget( {
 			type: 'info',
 			label: mw.msg( 'visualdata-jsmodule-formfield-message-options-query' ),
-			invisibleLabel: false,
 			classes: [ 'VisualDataFormFieldMessage' ]
 		} );
 
@@ -854,7 +853,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		var messageWidget = new OO.ui.MessageWidget( {
 			type: 'info',
 			label: mw.msg( 'visualdata-jsmodule-formfield-message-more-inputs' ),
-			invisibleLabel: false,
 			classes: [ 'VisualDataFormFieldMessage' ]
 		} );
 
