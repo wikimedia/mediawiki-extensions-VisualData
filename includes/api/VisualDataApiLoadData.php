@@ -66,9 +66,7 @@ class VisualDataApiLoadData extends ApiBase {
 		foreach ( $dataSet as $value ) {
 			switch ( $value ) {
 				case 'schemas':
-					$schemasArr = \VisualData::getAllSchemas();
-					$schemas = \VisualData::getSchemas( $context, $schemasArr, false );
-					$ret['schemas'] = $schemas;
+					$ret['schemas'] = \VisualData::initializeAllSchemas( $context );
 					break;
 			}
 		}

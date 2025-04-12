@@ -492,7 +492,6 @@ class VisualData {
 		self::$Logger = LoggerFactory::getInstance( 'VisualData' );
 		self::$User = RequestContext::getMain()->getUser();
 		self::$userGroupManager = MediaWikiServices::getInstance()->getUserGroupManager();
-		// self::$schemaProcessor = new SchemaProcessor();
 	}
 
 	/**
@@ -776,7 +775,6 @@ class VisualData {
 		$function = ( $isButton ? 'button' : 'form' );
 
 		$parser->addTrackingCategory( "visualdata-trackingcategory-parserfunction-$function" );
-
 		$title = $parser->getTitle();
 
 /*
@@ -873,12 +871,31 @@ class VisualData {
 			return $databaseManager->schemaExists( $val );
 		} );
 
-		self::$pageForms[] = [
+		$context = RequestContext::getMain();
+		$user = $context->getUser();
+
+		if ( count( self::$pageForms ) === 0 &&
+			( $user->isAllowed( 'visualdata-caneditdata' )
+				|| $user->isAllowed( 'visualdata-canmanageschemas' )
+			)
+		) {
+			self::initializeAllSchemas( $context );
+		}
+
+		$formData = self::processPageForm( $context, $title, [
 			'schemas' => $schemas,
 			'options' => $params
-		];
+		] );
 
-		$parserOutput->setExtensionData( 'visualdataforms', self::$pageForms );
+		// *** this isn't anymore used to print forms data in the OutputPage
+		self::$pageForms[] = $formData;
+
+		$schemaProcessor = new SchemaProcessor( $context );
+
+		// this will also render nested forms, only once
+		self::setSchemas( $schemaProcessor, $schemas );
+
+		$parserOutput->setExtensionData( 'visualdataschemas', self::$schemas );
 
 		$spinner = HtmlClass::rawElement(
 			'div',
@@ -896,24 +913,38 @@ class VisualData {
 		}
 
 		if ( !empty( $errorMessage ) ) {
-			$errorMessage = '<div style="color:red;font-weight:bold">' . $errorMessage . '</div>';
+			$errorMessage = HtmlClass::rawElement(
+				'div',
+				[ 'style' => 'color:red;font-weight:bold' ],
+				$errorMessage
+			);
 		}
 
 		if ( !$isButton ) {
 			return [
 				// . $spinner
-				$errorMessage
-				. '<div class="VisualDataFormWrapper" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
-					. wfMessage( 'visualdata-parserfunction-form-placeholder' )->text() . '</div>',
+				$errorMessage . HtmlClass::rawElement(
+					'div',
+					[
+						'class' => 'VisualDataFormItem VisualDataFormWrapper',
+						'data-form-data' => json_encode( $formData )
+					],
+					wfMessage( 'visualdata-parserfunction-form-placeholder' )->text()
+				),
 				'noparse' => true,
 				'isHTML' => true
 			];
 		}
 
 		return [
-			$errorMessage
-			. '<div class="VisualDataButton" id="visualdataform-wrapper-' . ( count( self::$pageForms ) - 1 ) . '">'
-				. wfMessage( "visualdata-parserfunction-$function-placeholder" )->text() . '</div>',
+			$errorMessage . HtmlClass::rawElement(
+				'div',
+				[
+					'class' => 'VisualDataFormItem VisualDataButton',
+					'data-form-data' => json_encode( $formData )
+				],
+				wfMessage( "visualdata-parserfunction-$function-placeholder" )->text()
+			),
 			'noparse' => true,
 			'isHTML' => true
 		];
@@ -1220,24 +1251,22 @@ class VisualData {
 			return $wikiPage->getParserOutput( $parserOptions );
 		};
 
-		$formsData = null;
+		$schemas = null;
 		$queriesData = null;
 		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
-			$formsData = $parserOutput->getExtensionData( 'visualdataforms' );
+			$schemas = $parserOutput->getExtensionData( 'visualdataschemas' );
 
 		// *** workaround to also match parserfunctions
 		// within includeonly tags
 		} else {
 			$parserOutput_ = $getTransclusionParserOutput();
 			if ( $parserOutput_ && $parserOutput_->getExtensionData( 'visualdataform' ) !== null ) {
-				$formsData = $parserOutput_->getExtensionData( 'visualdataforms' );
+				$schemas = $parserOutput_->getExtensionData( 'visualdataschemas' );
 			}
 		}
 
-		if ( $formsData ) {
-			foreach ( $formsData as $formID => $value ) {
-				$databaseManager->storeLink( $title, 'form', $value['schemas'] );
-			}
+		if ( is_array( $schemas ) ) {
+			$databaseManager->storeLink( $title, 'form', array_keys( $schemas ) );
 		}
 
 		if ( $parserOutput->getExtensionData( 'visualdataquery' ) !== null ) {
@@ -2087,180 +2116,159 @@ class VisualData {
 	/**
 	 * @param Context $context
 	 * @param Title|MediaWiki\Title\Title $title
-	 * @param array $pageForms
-	 * @param array $config
+	 * @param array $form
 	 * @return array
 	 */
-	private static function processPageForms( $context, $title, $pageForms, $config ) {
+	public static function processPageForm( $context, $title, $form ) {
 		$services = MediaWikiServices::getInstance();
 		$slotRoleRegistry = $services->getSlotRoleRegistry();
 
-		if ( $config['context'] !== 'EditData' ) {
-			$databaseManager = new DatabaseManager();
+		$ret = $form;
+		$jsonData = [];
+		$freetext = null;
+		$categories = [];
+		$editTitle = null;
+		$targetSlot = $form['options']['target-slot'];
+
+		if ( $form['options']['action'] === 'edit' ) {
+			if ( $title ) {
+				$editTitle = $title;
+			}
+
+			if ( !empty( $form['options']['edit-page'] ) ) {
+				// $editTitle = self::getTitleIfKnown( $form['options']['edit-page'] );
+				// can be unknown
+				$editTitle = TitleClass::newFromText( $form['options']['edit-page'] );
+			}
+
+			if ( $editTitle ) {
+				$ret['options']['edit-page'] = $editTitle->getFullText();
+
+				$jsonData = self::getJsonData( $editTitle );
+
+				if ( empty( $targetSlot ) ) {
+					$targetSlot = self::getTargetSlot( $editTitle, 'jsondata' );
+				}
+			}
 		}
 
-		foreach ( $pageForms as $formID => $value ) {
-			// if ( $config['context'] !== 'EditData' ) {
-			//	$databaseManager->storeLink( $title, 'form', $value['schemas'] );
-			// }
+		// for the jsonData are considered empty
+		// the json data related to the schemas contained
+		// in the form have to be empty
+		$emptyData = empty( $jsonData['schemas'] )
+			|| !count( array_intersect_key( $jsonData['schemas'],
+				array_fill_keys( $form['schemas'], null ) ) );
 
-			$jsonData = [];
-			$freetext = null;
-			$categories = [];
-			$editTitle = null;
-			$targetSlot = $value['options']['target-slot'];
+		if ( $emptyData && !empty( $form['options']['preload-data'] ) ) {
+			$jsonData = self::getPreloadData( $form['options']['preload-data'] );
 
-			// if ( !empty( $value['options']['preload'] ) ) {
-			// 	$title_ = self::getTitleIfKnown( $value['options']['preload'] );
-			// 	if ( $title_ ) {
-			// 		$freetext = self::getWikipageContent( $title_ );
-			// 	}
-			// }
+			if ( !empty( $jsonData ) ) {
+				$title_ = self::getTitleIfKnown( $form['options']['preload-data'] );
+				$modelId = $slotRoleRegistry->getRoleHandler( SlotRecord::MAIN )->getDefaultModel( $title_ );
 
-			if ( $value['options']['action'] === 'edit' ) {
-				if ( $title ) {
-					$editTitle = $title;
-				}
-
-				if ( !empty( $value['options']['edit-page'] ) ) {
-					// $editTitle = self::getTitleIfKnown( $value['options']['edit-page'] );
-					// can be unknown
-					$editTitle = TitleClass::newFromText( $value['options']['edit-page'] );
-				}
-
-				if ( $editTitle ) {
-					$pageForms[$formID]['options']['edit-page'] = $editTitle->getFullText();
-
-					$jsonData = self::getJsonData( $editTitle );
-
-					if ( empty( $targetSlot ) ) {
-						$targetSlot = self::getTargetSlot( $editTitle, 'jsondata' );
+				// if jsonData is a simple json, apply the provided
+				// data to the current schema if not defined in the
+				// data themselves
+				if ( $modelId === 'json' && !array_exists( 'schemas', $jsonData ) ) {
+					$jsonData['schemas'] = $jsonData;
+					if ( count( $form['schemas'] ) === 1 && !array_exists( $form['schemas'][0], $jsonData['schemas'] ) ) {
+						$jsonData['schemas'][$form['schemas'][0]] = $jsonData['schemas'];
 					}
 				}
 			}
-
-			// for the jsonData are considered empty
-			// the json data related to the schemas contained
-			// in the form have to be empty
-			$emptyData = empty( $jsonData['schemas'] )
-				|| !count( array_intersect_key( $jsonData['schemas'],
-					array_fill_keys( $value['schemas'], null ) ) );
-
-			if ( $emptyData && !empty( $value['options']['preload-data'] ) ) {
-				$jsonData = self::getPreloadData( $value['options']['preload-data'] );
-
-				if ( !empty( $jsonData ) ) {
-					$title_ = self::getTitleIfKnown( $value['options']['preload-data'] );
-					$modelId = $slotRoleRegistry->getRoleHandler( SlotRecord::MAIN )->getDefaultModel( $title_ );
-
-					// if jsonData is a simple json, apply the provided
-					// data to the current schema if not defined in the
-					// data themselves
-					if ( $modelId === 'json' && !array_exists( 'schemas', $jsonData ) ) {
-						$jsonData['schemas'] = $jsonData;
-						if ( count( $value['schemas'] ) === 1 && !array_exists( $value['schemas'][0], $jsonData['schemas'] ) ) {
-							$jsonData['schemas'][$value['schemas'][0]] = $jsonData['schemas'];
-						}
-					}
-				}
-			}
-
-			if ( $emptyData && !empty( $value['options']['preload-data-override'] )
-				&& class_exists( 'Swaggest\JsonDiff\JsonPointer' )
-			) {
-
-				foreach ( $value['options']['preload-data-override'] as $k => $v ) {
-					// @TODO also try unescaped array keys as in
-					// QueryProcessor -> performQuery
-					$pathItems = explode( '/', $k );
-					if ( count( $value['schemas'] ) === 1 ) {
-						if ( !in_array( $pathItems[0], $value['schemas'] ) ) {
-							array_unshift( $pathItems, $value['schemas'][0] );
-						}
-					} elseif ( !in_array( $pathItems[0], $value['schemas'] ) ) {
-						// @FIXME $Logger is undefined when called from the api
-						// self::$Logger->error( 'schema must be specified' );
-						continue;
-					}
-
-					// convert to array if needed
-					$schema_ = self::getSchema( $context, $pathItems[0] );
-					if ( $schema_ ) {
-						$printout_ = implode( '/', array_slice( $pathItems, 1 ) );
-						$callback = static function ( $schema, $path, $printout, $property ) use ( $value, $printout_, &$v ) {
-							if ( $printout === $printout_
-								&& $schema['type'] === 'array'
-								&& !is_array( $v )
-							) {
-								// @see https://visualdata.idea-sketch.com/wiki/Preload_data_with_nested_and_multiple_values
-								$v = preg_split( "/\s*{$value['options']['preload-data-separator']}\s*/", $v, -1, PREG_SPLIT_NO_EMPTY );
-							}
-						};
-						$path = '';
-						$printout = '';
-						DatabaseManager::traverseSchema( $schema_, $path, $printout, $callback );
-					}
-
-					array_unshift( $pathItems, 'schemas' );
-					JsonPointer::add( $jsonData, $pathItems, $v,
-						JsonPointer::TOLERATE_ASSOCIATIVE_ARRAYS | JsonPointer::RECURSIVE_KEY_CREATION );
-				}
-			}
-
-			if ( $value['options']['edit-categories'] === true && $editTitle ) {
-				$categories = self::getCategories( $editTitle );
-			}
-
-			if ( $value['options']['edit-freetext'] === true && $editTitle ) {
-				$freetext = self::getWikipageContent( $editTitle );
-
-				// if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' ) ) {
-				//	$out->addModules( 'ext.veforall.main' );
-				// }
-			}
-
-			$formData = &$pageForms[$formID];
-			$formData['emptyData'] = $emptyData;
-			$formData['jsonData'] = ( !empty( $jsonData ) ? $jsonData : [] );
-			$formData['categories'] = $categories;
-			$formData['freetext'] = $freetext;
-			$formData['errors'] = [];
-
-			// show errors (SubmitForm)
-			if ( empty( $pageForms[$formID]['options']['origin-url'] ) ) {
-				$request = $context->getRequest();
-				$query = $request->getQueryValues();
-				unset( $query['title'] );
-				$pageForms[$formID]['options']['origin-url'] = $title->getLocalURL( $query );
-			}
-
-			// otherwise return-url is the target title
-			// @see SubmitForm
-			if ( empty( $value['options']['return-url'] )
-				&& !empty( $value['options']['return-page'] )
-			) {
-				// allow also unknown titles
-				$title_ = TitleClass::newFromText( $value['options']['return-page'] );
-				$query = '';
-
-				if ( !$title_ ) {
-					$pos_ = strpos( $value['options']['return-page'], '?' );
-					if ( $pos_ !== false && strlen( $value['options']['return-page'] ) > $pos_ ) {
-						// allow also unknown titles
-						$title_ = TitleClass::newFromText( substr( $value['options']['return-page'], 0, $pos_ ) );
-						$query = substr( $value['options']['return-page'], $pos_ + 1 );
-					}
-				}
-
-				if ( $title_ ) {
-					$pageForms[$formID]['options']['return-url'] = $title_->getLocalURL( $query );
-				}
-			}
-
-			$pageForms[$formID]['options']['target-slot'] = $targetSlot ?? 'jsondata';
 		}
 
-		return $pageForms;
+		if ( $emptyData && !empty( $form['options']['preload-data-override'] )
+			&& class_exists( 'Swaggest\JsonDiff\JsonPointer' )
+		) {
+
+			foreach ( $form['options']['preload-data-override'] as $k => $v ) {
+				// @TODO also try unescaped array keys as in
+				// QueryProcessor -> performQuery
+				$pathItems = explode( '/', $k );
+				if ( count( $form['schemas'] ) === 1 ) {
+					if ( !in_array( $pathItems[0], $form['schemas'] ) ) {
+						array_unshift( $pathItems, $form['schemas'][0] );
+					}
+				} elseif ( !in_array( $pathItems[0], $form['schemas'] ) ) {
+					// @FIXME $Logger is undefined when called from the api
+					// self::$Logger->error( 'schema must be specified' );
+					continue;
+				}
+
+				// convert to array if needed
+				$schema_ = self::getSchema( $context, $pathItems[0] );
+				if ( $schema_ ) {
+					$printout_ = implode( '/', array_slice( $pathItems, 1 ) );
+					$callback = static function ( $schema, $path, $printout, $property ) use ( $form, $printout_, &$v ) {
+						if ( $printout === $printout_
+							&& $schema['type'] === 'array'
+							&& !is_array( $v )
+						) {
+							// @see https://visualdata.idea-sketch.com/wiki/Preload_data_with_nested_and_multiple_values
+							$v = preg_split( "/\s*{$form['options']['preload-data-separator']}\s*/", $v, -1, PREG_SPLIT_NO_EMPTY );
+						}
+					};
+					$path = '';
+					$printout = '';
+					DatabaseManager::traverseSchema( $schema_, $path, $printout, $callback );
+				}
+
+				array_unshift( $pathItems, 'schemas' );
+				JsonPointer::add( $jsonData, $pathItems, $v,
+					JsonPointer::TOLERATE_ASSOCIATIVE_ARRAYS | JsonPointer::RECURSIVE_KEY_CREATION );
+			}
+		}
+
+		if ( $form['options']['edit-categories'] === true && $editTitle ) {
+			$categories = self::getCategories( $editTitle );
+		}
+
+		if ( $form['options']['edit-freetext'] === true && $editTitle ) {
+			$freetext = self::getWikipageContent( $editTitle );
+		}
+
+		$ret['emptyData'] = $emptyData;
+		$ret['jsonData'] = ( !empty( $jsonData ) ? $jsonData : [] );
+		$ret['categories'] = $categories;
+		$ret['freetext'] = $freetext;
+		$ret['errors'] = [];
+
+		// show errors (SubmitForm)
+		if ( empty( $form['options']['origin-url'] ) ) {
+			$request = $context->getRequest();
+			$query = $request->getQueryValues();
+			unset( $query['title'], $query['action'] );
+
+			$ret['options']['origin-url'] = $title->getLocalURL( $query );
+		}
+
+		// otherwise return-url is the target title
+		// @see SubmitForm
+		if ( empty( $form['options']['return-url'] )
+			&& !empty( $form['options']['return-page'] )
+		) {
+			// allow also unknown titles
+			$title_ = TitleClass::newFromText( $form['options']['return-page'] );
+			$query = '';
+
+			if ( !$title_ ) {
+				$pos_ = strpos( $form['options']['return-page'], '?' );
+				if ( $pos_ !== false && strlen( $form['options']['return-page'] ) > $pos_ ) {
+					// allow also unknown titles
+					$title_ = TitleClass::newFromText( substr( $form['options']['return-page'], 0, $pos_ ) );
+					$query = substr( $form['options']['return-page'], $pos_ + 1 );
+				}
+			}
+
+			if ( $title_ ) {
+				$ret['options']['return-url'] = $title_->getLocalURL( $query );
+			}
+		}
+
+		$ret['options']['target-slot'] = $targetSlot ?? 'jsondata';
+
+		return $ret;
 	}
 
 	/**
@@ -2281,6 +2289,20 @@ class VisualData {
 	}
 
 	/**
+	 * @param Context $context
+	 * @return array
+	 */
+	public static function initializeAllSchemas( $context ) {
+		$arr = self::getPagesWithPrefix( null, NS_VISUALDATASCHEMA );
+		$schemasArr = [];
+		foreach ( $arr as $title_ ) {
+			$schemasArr[] = $title_->getText();
+		}
+		// this will retrieve all schema pages without contents
+		return self::getSchemas( $context, $schemasArr, false );
+	}
+
+	/**
 	 * @param OutputPage $out
 	 * @param array $obj
 	 * @return void
@@ -2292,18 +2314,7 @@ class VisualData {
 		$schemaProcessor = new SchemaProcessor( $context );
 		$loadedData = [];
 
-		if ( isset( $obj['pageForms'] ) ) {
-			// this will populate self::$schemas with data
-			foreach ( $obj['pageForms'] as $value ) {
-				self::setSchemas( $schemaProcessor, $value['schemas'] );
-			}
-
-			// *** this accounts also of forms inside forms
-			// *** attention! switch to array_merge in case of
-			// non-numerical keys
-			$obj['pageForms'] = $obj['pageForms'] + self::$pageForms;
-			$obj['pageForms'] = self::processPageForms( $context, $title, $obj['pageForms'], $obj['config'] );
-		}
+		self::$schemas = $obj['loadedSchemas'];
 
 		// *** this is necessary to preserve the json data
 		// on form submission error
@@ -2320,23 +2331,21 @@ class VisualData {
 			|| $user->isAllowed( 'visualdata-canmanageschemas' )
 		) {
 			$loadedData[] = 'schemas';
-			// this will retrieve all schema pages without contents
-			// without content @TODO set a limit
-			$schemasArr = self::getAllSchemas();
-			self::setSchemas( $schemaProcessor, $schemasArr, false );
 		}
 
 		$obj['schemas'] = self::$schemas;
 
 		$schemaUrl = self::getFullUrlOfNamespace( NS_VISUALDATASCHEMA );
 
+		// @TODO move to ahead in the pipeline
 		// this is required as long as a 'OO.ui.SelectFileWidget'
 		// is added to a schema
 		$allowedMimeTypes = $schemaProcessor->getAllowedMimeTypes();
 
 		$VEForAll = false;
 		if ( ExtensionRegistry::getInstance()->isLoaded( 'VEForAll' )
-			&& self::VEenabledForUser( $user ) ) {
+			&& self::VEenabledForUser( $user )
+		) {
 			$userOptionsManager = MediaWikiServices::getInstance()->getUserOptionsManager();
 			$userOptionsManager->setOption( $user, 'visualeditor-enable', true );
 			$VEForAll = true;
@@ -2345,7 +2354,6 @@ class VisualData {
 
 		$default = [
 			'schemas' => [],
-			'pageForms' => [],
 			'categories' => [],
 			'config' => [
 				'VisualDataSchemaUrl' => $schemaUrl,
@@ -2381,7 +2389,6 @@ class VisualData {
 				: TitleClass::newMainPage() )->getFullText(),
 
 			'visualdata-schemas' => json_encode( $obj['schemas'], true ),
-			'visualdata-pageforms' => json_encode( $obj['pageForms'], true ),
 			'visualdata-config' => json_encode( $obj['config'], true ),
 			'visualdata-show-notice-outdated-version' => $showOutdatedVersion,
 			'visualdata-maptiler-apikey' => $GLOBALS['wgVisualDataMaptilerApiKey']
@@ -2436,10 +2443,8 @@ class VisualData {
 	 * @param SchemaProcessor $schemaProcessor
 	 * @param array $schemas
 	 * @param bool $loadSchemas
-	 * @return array
 	 */
 	public static function setSchemas( $schemaProcessor, $schemas, $loadSchemas = true ) {
-		$ret = [];
 		foreach ( $schemas as $value ) {
 			$title = TitleClass::newFromText( $value, NS_VISUALDATASCHEMA );
 
@@ -2472,6 +2477,9 @@ class VisualData {
 				self::$schemas[$titleText] = [];
 				continue;
 			}
+
+			// avoid recursion when parent schema and child coincide
+			self::$schemas[$titleText] = 'loading...';
 
 			self::$schemas[$titleText] = $schemaProcessor->processSchema( $json, $titleText );
 		}
@@ -2541,18 +2549,6 @@ class VisualData {
 				unset( $ref[''] );
 			}
 			$ref[$last] = $value;
-		}
-		return $ret;
-	}
-
-	/**
-	 * @return array
-	 */
-	public static function getAllSchemas() {
-		$arr = self::getPagesWithPrefix( null, NS_VISUALDATASCHEMA );
-		$ret = [];
-		foreach ( $arr as $title_ ) {
-			$ret[] = $title_->getText();
 		}
 		return $ret;
 	}

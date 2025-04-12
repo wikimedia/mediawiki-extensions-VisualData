@@ -31,9 +31,6 @@ VisualDataSchemas = ( function () {
 	var Config;
 	var WindowManager;
 	var Schemas = {};
-
-	/* eslint-disable-next-line no-unused-vars */
-	var VisualDataForms;
 	var VisualDataFormFieldInst;
 	var VisualDataContentBlockInst;
 	var VisualDataGeolocationInst;
@@ -1813,11 +1810,10 @@ VisualDataSchemas = ( function () {
 		initializeDataTable();
 	}
 
-	function setVars( config, windowManager, schemas, visualDataForms ) {
+	function setVars( config, windowManager, schemas ) {
 		Config = config;
 		WindowManager = windowManager;
 		Schemas = schemas;
-		VisualDataForms = visualDataForms;
 
 		VisualDataFormFieldInst = new VisualDataFormField(
 			config,

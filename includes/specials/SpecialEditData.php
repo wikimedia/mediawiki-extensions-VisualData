@@ -22,10 +22,9 @@
  * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
-// @TODO implement as form
-
 use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
+use MediaWiki\Extension\VisualData\SchemaProcessor;
 
 class SpecialEditData extends SpecialPage {
 
@@ -155,18 +154,26 @@ class SpecialEditData extends SpecialPage {
 		// 	$out->addModules( 'ext.veforall.main' );
 		// }
 
-		$pageForms = [
-			[
-				'options' => $params,
-				'schemas' => $schemas
-			]
-		];
+		$context = RequestContext::getMain();
+
+		if ( $this->user->isAllowed( 'visualdata-caneditdata' )
+			|| $this->user->isAllowed( 'visualdata-canmanageschemas' )
+		) {
+			\VisualData::initializeAllSchemas( $context );
+		}
+
+		$formData = \VisualData::processPageForm( $context, $this->title, [
+			'schemas' => $schemas,
+			'options' => $params
+		] );
+
+		$schemaProcessor = new SchemaProcessor( $context );
+		\VisualData::setSchemas( $schemaProcessor, $schemas );
 
 		\VisualData::addJsConfigVars( $out, [
-			'pageForms' => $pageForms,
+			'loadedSchemas' => \VisualData::$schemas,
 			'config' => [
 				'context' => 'EditData',
-				'loadedData' => [],
 			]
 		] );
 
@@ -191,8 +198,8 @@ class SpecialEditData extends SpecialPage {
 		);
 
 		$out->addHTML( HtmlClass::rawElement( 'div', [
-				'id' => 'visualdataform-wrapper-' . ( count( $pageForms ) - 1 ),
-				'class' => 'VisualDataFormWrapper'
+				'data-form-data' => json_encode( $formData ),
+				'class' => 'VisualDataFormItem VisualDataFormWrapper'
 			], $loadingContainer . $loadingPlaceholder )
 		);
 	}

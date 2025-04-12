@@ -131,6 +131,25 @@ class VisualDataHooks {
 	}
 
 	/**
+	 * @param MediaWiki\EditPage|EditPage $editPage
+	 * @return bool|void
+	 */
+	public static function onAlternateEdit( $editPage ) {
+		// this only works if SlotRecord::MAIN is replaced with SLOT_ROLE_VISUALDATA_JSONDATA
+		// in MediaWiki\EditPage
+		if ( !empty( $_GET['slot'] ) ) {
+			$slot = $_GET['slot'];
+			$slots = \VisualData::getSlots( $editPage->getTitle() );
+
+			if ( is_array( $slots ) && array_key_exists( $slot, $slots ) ) {
+				// set content model of active slot
+				$model = $slots[ $slot ]->getModel();
+				$editPage->contentModel = $model;
+			}
+		}
+	}
+
+	/**
 	 * @param Content $content
 	 * @param Title|Mediawiki\Title\Title $title
 	 * @param int $revId
@@ -142,8 +161,8 @@ class VisualDataHooks {
 	public static function onContentGetParserOutput( $content, $title, $revId, $options, $generateHtml, &$output ) {
 		// *** important ! otherwise maintenance/RebuildData
 		// will merge form and query data from different articles !
-		\VisualData::$pageForms = [];
 		\VisualData::$queries = [];
+		\VisualData::$schemas = [];
 
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] )
 			&& !empty( $_GET['slot'] )
@@ -485,6 +504,10 @@ class VisualDataHooks {
 		$title = $out->getTitle();
 		$user = $out->getUser();
 
+		// this is called each time the page loads but with
+		// cached parserOutput, so move all the expensive functions
+		// ahead in the pipeline
+
 		if ( $parserOutput->getExtensionData( 'visualdataform' ) !== null ) {
 
 			// required by VisualData::setSessionData for unregistered users
@@ -494,13 +517,12 @@ class VisualDataHooks {
 				$session->persist();
 			}
 
-			$pageForms = $parserOutput->getExtensionData( 'visualdataforms' );
+			$schemas = $parserOutput->getExtensionData( 'visualdataschemas' );
 
 			\VisualData::addJsConfigVars( $out, [
-				'pageForms' => $pageForms,
+				'loadedSchemas' => $schemas,
 				'config' => [
 					'context' => 'parserfunction',
-					// 'loadedData' => [],
 				]
 			] );
 

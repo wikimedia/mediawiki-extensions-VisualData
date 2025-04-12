@@ -16,7 +16,7 @@
  *
  * @file
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright © 2021-2024, https://wikisphere.org
+ * @copyright Copyright © 2021-2025, https://wikisphere.org
  */
 
 /* eslint-disable no-tabs */
@@ -25,7 +25,7 @@
 /* eslint-disable es-x/no-async-functions */
 /* eslint-disable compat/compat */
 
-const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager ) {
+const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowManager, initForms ) {
 	var Model = {};
 	var ModelSchemas;
 	var OuterStack;
@@ -56,6 +56,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	var Maps = [];
 	var TargetSlotField;
 	var MutationObservers = {};
+	var FormID;
 
 	function inArray( val, arr ) {
 		return arr.indexOf( val ) !== -1;
@@ -1574,6 +1575,10 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				updateDependentFields( model );
 			}
 		}
+
+		setTimeout( function () {
+			initForms( false );
+		}, 30 );
 	};
 
 	GroupWidget.prototype.addItems = function ( items ) {
@@ -3056,7 +3061,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	function getFormAttributes( jsondata ) {
 		return $.extend(
 			{
-				formID: FormID,
+				formIndex: FormIndex,
 				config: Config
 			},
 			jsondata
@@ -3118,7 +3123,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function isVisible() {
-		return $( '#visualdataform-wrapper-' + FormID ).is( ':visible' );
+		return $( El ).is( ':visible' );
 	}
 
 	function setMutation( schemaName, rootEl ) {
@@ -3201,14 +3206,21 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 	}
 
 	function initialize() {
+		// if not visible, wait for a new
+		// mutation
 		if ( !isVisible() ) {
 			return false;
 		}
 
+		if ( Initialized ) {
+			return true;
+		}
+
+		FormID = El.id = Math.random().toString( 16 ).slice( 2 );
+
 		Initialized = true;
 
 		if ( Form.options.view === 'button' ) {
-
 			var button = new OO.ui.ButtonWidget( {
 				icon: Form.options.icon,
 				flags: [ 'primary', 'progressive' ],
@@ -3273,7 +3285,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				VisualDataFunctions.executeFunctionByName( Form.options.callback, window, args );
 			} );
 
-			$( '#visualdataform-wrapper-' + FormID ).html( widget.$element );
+			$( El ).html( widget.$element );
 
 			return true;
 		}
@@ -3307,13 +3319,13 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 					PropertiesStack: PropertiesStack
 				} );
 			} );
-			$( '#visualdataform-wrapper-' + FormID ).html( popupButton.$element );
+
+			$( El ).html( popupButton.$element );
 
 			return true;
 		}
 
 		var formContent = [];
-
 		if ( Form.errors.length ) {
 			var messageWidget = new OO.ui.MessageWidget( {
 				type: 'error',
@@ -3365,9 +3377,8 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 				SubmitButton.toggle( true );
 				GoBackButton.toggle( true );
 				// DeleteButton.toggle( false );
-				$( '#visualdataform-wrapper-' + FormID )
-					.get( 0 )
-					.scrollIntoView( { behavior: 'smooth' } );
+
+				$( El ).get( 0 ).scrollIntoView( { behavior: 'smooth' } );
 			} );
 		} );
 
@@ -3400,9 +3411,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 			GoBackButton.toggle( false );
 			// DeleteButton.toggle( hasStoredJsonData() );
 
-			$( '#visualdataform-wrapper-' + FormID )
-				.get( 0 )
-				.scrollIntoView( { behavior: 'smooth' } );
+			$( El ).get( 0 ).scrollIntoView( { behavior: 'smooth' } );
 		} );
 
 		formContent.push( GoBackButton.$element );
@@ -3456,7 +3465,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		var editToolbar = Config.canmanageschemas || Config.caneditdata;
 
 		if ( Config.context === 'parserfunction' || !editToolbar ) {
-			$( '#visualdataform-wrapper-' + FormID ).html( form.$element );
+			$( El ).html( form.$element );
 
 			// eslint-disable-next-line no-jquery/no-global-selector
 			$( '#mw-rcfilters-spinner-wrapper' ).remove();
@@ -3543,7 +3552,7 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		// 	toolbarForms.$actions.append(actionToolbarForms.$element);
 		// }
 
-		$( '#visualdataform-wrapper-' + FormID ).html( OuterStack.$element );
+		$( El ).html( OuterStack.$element );
 
 		ToolbarMain.initialize();
 
@@ -3560,12 +3569,17 @@ const VisualDataForms = function ( Config, Form, FormID, Schemas, WindowManager 
 		return true;
 	}
 
+	function getFormID() {
+		return FormID;
+	}
+
 	return {
 		initialize,
 		getCategories,
 		// updateForms,
 		updateSchemas,
-		updatePanels
+		updatePanels,
+		getFormID
 	};
 };
 
@@ -3578,9 +3592,6 @@ $( function () {
 	);
 	// console.log("submissionData", submissionData);
 
-	var pageForms = JSON.parse( mw.config.get( 'visualdata-pageforms' ) );
-	// console.log("pageForms", pageForms);
-
 	var config = JSON.parse( mw.config.get( 'visualdata-config' ) );
 	// console.log("config", config);
 
@@ -3590,14 +3601,33 @@ $( function () {
 		submissionData = {};
 	}
 
-	function init() {
-		var instances = [];
+	var instances = {};
+	var nested = 0;
 
-		for ( var formID in pageForms ) {
+	// *** this is called on each DOM mutation and
+	// on formLoaded
+	function initForms( onPageLoad ) {
 
-			var form = pageForms[ formID ];
+		$( '.VisualDataFormItem' ).each( function ( index, el ) {
 
-			form = $.extend(
+			// same value as old wgMaxTemplateDepth/wgMaxPPExpandDepth
+			// infinite nested form
+			if ( nested > 40 ) {
+				return;
+			}
+
+			if ( el.id ) {
+				instances[ el.id ].initialize();
+				return;
+			}
+
+			if ( !onPageLoad ) {
+				nested++;
+			}
+
+			var formData = $( el ).data().formData;
+
+			var form = $.extend(
 				{
 					freetext: '',
 					jsonData: {},
@@ -3606,47 +3636,75 @@ $( function () {
 					schemas: [],
 					options: {}
 				},
-				form
+				formData
 			);
 
 			if ( !config.caneditdata ) {
-				// form.options.title
-				$( '#visualdataform-wrapper-' + formID ).addClass( 'visualdata-form-wrapper-cannot-edit' );
-				$( '#visualdataform-wrapper-' + formID ).html( mw.msg( 'visualdata-jsmodule-forms-cannot-edit-form' ) );
-				continue;
+				$( el ).addClass( 'visualdata-form-wrapper-cannot-edit' );
+				$( el ).html( mw.msg( 'visualdata-jsmodule-forms-cannot-edit-form' ) );
+				return;
 			}
 
-			if ( formID in submissionData ) {
+			if ( onPageLoad && ( index in submissionData ) ) {
 				form = $.extend(
 					form,
-					submissionData[ formID ]
+					submissionData[ index ]
 				);
 			}
 
 			var visualDataForm = new VisualDataForms(
+				el,
 				config,
 				form,
-				formID,
+				index,
 				schemas,
-				windowManager
+				windowManager,
+				initForms
 			);
 
 			visualDataForm.initialize();
 
-			if ( config.context === 'parserfunction' && form.errors.length ) {
-				$( '#visualdataform-wrapper-' + formID )
-					.get( 0 )
-					.scrollIntoView();
+			if ( onPageLoad &&
+				( index in submissionData ) &&
+				config.context === 'parserfunction' &&
+				form.errors.length
+			) {
+				$( el ).get( 0 ).scrollIntoView();
 			}
 
-			instances.push( visualDataForm );
-		}
+			instances[ visualDataForm.getFormID() ] = visualDataForm;
+		} );
 
-		return instances;
+		if ( !onPageLoad ) {
+			VisualData.setForms( instances );
+		}
+	}
+
+	function init() {
+		initForms( true );
+
+		// the following is used to manage initialization
+		// of forms within other forms (as popup buttons)
+		// initialize them as they appear in the DOM
+		var MutationObserver = window.MutationObserver || window.WebKitMutationObserver;
+
+		if ( MutationObserver ) {
+			var observer = new MutationObserver( function ( mutations, thisObserver ) {
+				initForms( false );
+			} );
+
+			observer.observe( document.body, {
+				subtree: true,
+				childList: true,
+				attributes: false
+			} );
+
+		}
 	}
 
 	if ( !config.canmanageschemas ) {
-		VisualData.setVars( config, schemas, init() );
+		VisualData.setVars( config, schemas );
+		init();
 
 	} else {
 		var modules = [ 'ext.VisualData.ManageSchemas' ];
@@ -3658,14 +3716,13 @@ $( function () {
 			modules.unshift( 'ext.VisualData.DatatablesLite' );
 		}
 		mw.loader.using( modules, function () {
-			var instances = init();
-			VisualData.setVars( config, schemas, instances );
+			VisualData.setVars( config, schemas );
 			VisualDataSchemas.setVars(
 				config,
 				windowManager,
-				schemas,
-				instances
+				schemas
 			);
+			init();
 		} );
 	}
 

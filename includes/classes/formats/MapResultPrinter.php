@@ -713,7 +713,7 @@ class MapResultPrinter extends ResultPrinter {
 	 */
 	public function processRoot( $rows ) {
 		$this->modules[] = 'ext.VisualData.Leaflet';
-		$this->conf = $this->formatOptions( $this->params );
+		$params = $this->formatOptions( $this->params );
 
 		if ( !$this->hasValidData() ) {
 			return 'No coordinates found';
@@ -724,7 +724,7 @@ class MapResultPrinter extends ResultPrinter {
 			[
 				'style' => 'width:' . $this->params['width'] . ';height:' . $this->params['height'],
 				'class' => 'visualdata-map',
-				'data-params' => json_encode( $this->conf ),
+				'data-params' => json_encode( $params ),
 				'data-json' => json_encode( $this->json ),
 				'width' => $this->params['width'],
 				'height' => $this->params['height'],

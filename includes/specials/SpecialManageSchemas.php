@@ -80,7 +80,10 @@ class SpecialManageSchemas extends SpecialPage {
 
 		$out->addModuleStyles( [ 'mediawiki.special.preferences.styles.ooui' ] );
 
+		\VisualData::initializeAllSchemas( $context );
+
 		\VisualData::addJsConfigVars( $out, [
+			'loadedSchemas' => \VisualData::$schemas,
 			'config' => [
 				'context' => 'ManageSchemas',
 			]

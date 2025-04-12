@@ -94,7 +94,7 @@ class SpecialVisualDataSubmit extends SpecialPage {
 		array_unshift( $result['errors'], $this->msg( "visualdata-special-submit-contentsnotsaved" )->text() );
 
 		$obj = [
-			$data['formID'] => [
+			$data['formIndex'] => [
 				'freetext' => $result['freetext'],
 				'jsonData' => $result['jsonData'],
 				'categories' => $result['categories'],

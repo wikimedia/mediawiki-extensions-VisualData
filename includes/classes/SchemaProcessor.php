@@ -1598,8 +1598,20 @@ e.g.
 			// $parser->setOptions( $output->parserOptions() );
 			// $parser->setOutputType( Parser::OT_HTML );
 			// $parser->clearState();
-			// return $this->parser->recursiveTagParseFully( $str );
-			$val = Parser::stripOuterParagraph( $output->parseAsContent( $str ) );
+			// return $parser->recursiveTagParseFully( $str );
+			// or:
+			// $parser = MediaWikiServices::getInstance()->getParser();
+			// $parserOutput = $parser->parse(
+			//     $str,
+			//     $output->getTitle(),
+			//     $output->parserOptions(),
+			//     true,	// linestart
+			//     false	// clear state
+			// );
+			// $val = $parserOutput->getText();
+
+			$ret = $output->parseAsContent( $str );
+			$val = Parser::stripOuterParagraph( $ret );
 
 			if ( $schema !== null ) {
 				self::castType( $val, $schema );

@@ -23,7 +23,7 @@
 
 // eslint-disable-next-line no-implicit-globals
 VisualData = ( function () {
-	var VisualDataForms = [];
+	var VisualDataForms = {};
 	var Schemas = {};
 	var Config;
 
@@ -99,8 +99,8 @@ VisualData = ( function () {
 							Schemas[ i ] = thisSchemas[ i ];
 						}
 						resolve( thisSchemas );
-						for ( var instance of VisualDataForms ) {
-							instance.updateSchemas( previousSchemas, Schemas );
+						for ( var i in VisualDataForms ) {
+							VisualDataForms[ i ].updateSchemas( previousSchemas, Schemas );
 						}
 					}
 				} )
@@ -114,9 +114,12 @@ VisualData = ( function () {
 		} );
 	}
 
-	function setVars( config, schemas, instances ) {
+	function setVars( config, schemas ) {
 		Config = config;
 		Schemas = schemas;
+	}
+
+	function setForms( instances ) {
 		VisualDataForms = instances;
 	}
 
@@ -147,8 +150,8 @@ VisualData = ( function () {
 		}
 
 		if ( Config.context !== 'ManageSchemas' ) {
-			for ( var instance of VisualDataForms ) {
-				instance.updateSchemas( previousSchemas, Schemas, data );
+			for ( var i in VisualDataForms ) {
+				VisualDataForms[ i ].updateSchemas( previousSchemas, Schemas, data );
 			}
 		}
 
@@ -160,6 +163,7 @@ VisualData = ( function () {
 		loadSchemas,
 		setVars,
 		updateSchemas,
-		matchLoadedData
+		matchLoadedData,
+		setForms
 	};
 }() );

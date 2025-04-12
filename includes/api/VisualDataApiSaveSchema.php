@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2021-2023, https://wikisphere.org
+ * @copyright Copyright ©2021-2024, https://wikisphere.org
  */
 
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
@@ -127,8 +127,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 		$resultAction = ( !empty( $previousLabel ) ? 'update' : 'create' );
 
 		if ( $resultAction === 'update' ) {
-			$schemas = \VisualData::getSchemas( $context, [ $label ] );
-			$storedSchema = $schemas[$label];
+			$storedSchema = \VisualData::getSchema( $context, $label );
 		} else {
 			$storedSchema = null;
 		}
@@ -168,8 +167,10 @@ class VisualDataApiSaveSchema extends ApiBase {
 			$resultAction = 'rename';
 		}
 
+		\VisualData::$pageForms = [];
 		$schemaProcessor = new SchemaProcessor( $context );
 		$recordedObj = $schemaProcessor->convertToSchema( $schema );
+
 		$processedSchema = $schemaProcessor->processSchema( $recordedObj, $label );
 
 		if ( $evaluateJobs ) {
@@ -181,6 +182,10 @@ class VisualDataApiSaveSchema extends ApiBase {
 		}
 
 		\VisualData::saveRevision( $user, $pageTitle, json_encode( $recordedObj ) );
+
+		if ( $sourcePage ) {
+			\VisualData::purgeArticle( $context->getTitle() );
+		}
 
 		$jobsCount = $databaseManager->diffSchema( $user, $label, $storedSchema, $processedSchema, $evaluateJobs );
 

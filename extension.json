@@ -68,6 +68,7 @@
 	},
 	"Hooks": {
 		"LoadExtensionSchemaUpdates": "VisualDataHooks::onLoadExtensionSchemaUpdates",
+		"AlternateEdit": "VisualDataHooks::onAlternateEdit",
 		"PageDeleteComplete": "VisualDataHooks::onPageDeleteComplete",
 		"ArticleUndelete": "VisualDataHooks::onArticleUndelete",
 		"ParserFirstCallInit": "VisualDataHooks::onParserFirstCallInit",

@@ -163,9 +163,7 @@ class SpecialVisualDataBrowse extends SpecialPage {
 	 */
 	protected function addJsConfigVars( $out ) {
 		$context = $this->getContext();
-
-		$out->addJsConfigVars( [
-		] );
+		$out->addJsConfigVars( [] );
 	}
 
 	/**
