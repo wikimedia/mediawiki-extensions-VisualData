@@ -314,12 +314,13 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param array $orderBy
 	 * @param array &$fields
 	 * @param array &$tables
 	 * @param array &$joins
 	 * @return array
 	 */
-	private function getOptions( &$fields, &$tables, &$joins ) {
+	private function getOptions( $orderBy, &$fields, &$tables, &$joins ) {
 		if ( $this->count || $this->params['count-printout']
 			|| $this->params['count-categories']
 		) {
@@ -372,15 +373,11 @@ class QueryProcessor {
 		// $options = ['GROUP BY' => 'page_id'];
 		foreach ( $optionsMap as $key => $value ) {
 			if ( !empty( $this->params[$key] ) ) {
-				$val = $this->params[$key];
 				switch ( $key ) {
 					case 'order':
 						$arr = [];
-						$values = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
-						foreach ( $values as $v ) {
-							preg_match( '/^\s*(.+?)\s*(ASC|DESC)?\s*$/i', $v, $match_ );
-							$printout = $match_[1];
-							$sort = $match_[2] ?? 'ASC';
+						foreach ( $orderBy as $v ) {
+							[ $printout, $sort ] = $v;
 							$index = array_search( $printout, $this->mapKeyToPrintout );
 
 							if ( $index !== false ) {
@@ -408,6 +405,7 @@ class QueryProcessor {
 						break;
 					case 'limit':
 					case 'offset':
+						$val = $this->params[$key];
 						// *** this shouldn't be anymore necessary
 						if ( preg_match( '/^\s*\d+\s*$/', $val ) ) {
 							$options[$value] = (int)$this->params[$key];
@@ -883,6 +881,21 @@ class QueryProcessor {
 		return null;
 	}
 
+	/**
+	 * @return array
+	 */
+	private function parseOrderBy() {
+		$ret = [];
+		$values = preg_split( '/\s*,\s*/', $this->params['order'], -1, PREG_SPLIT_NO_EMPTY );
+		foreach ( $values as $v ) {
+			preg_match( '/^\s*(.+?)\s*(ASC|DESC)?\s*$/i', $v, $match_ );
+			$printout = $match_[1];
+			$sort = $match_[2] ?? 'ASC';
+			$ret[] = [ $printout, $sort ];
+		}
+		return $ret;
+	}
+
 	private function performQuery() {
 		if ( count( $this->errors ) ) {
 			return;
@@ -925,6 +938,16 @@ class QueryProcessor {
 		if ( !count( $arr ) ) {
 			$this->errors[] = 'no valid printouts';
 			return;
+		}
+
+		$orderBy = $this->parseOrderBy();
+		foreach ( $orderBy as $value ) {
+			[ $printout, $sort ] = $value;
+			if ( !array_key_exists( $printout, $arr )
+				&& array_key_exists( $printout, $this->mapPathNoIndexTable )
+			) {
+				$arr[$printout] = false;
+			}
 		}
 
 		$combined = [];
@@ -972,9 +995,7 @@ class QueryProcessor {
 		foreach ( $combined as $key => $v ) {
 			$pathNoIndex = $v['printout'];
 			$isPrintout = $v['isPrintout'];
-			if ( $isPrintout ) {
-				$this->mapKeyToPrintout[$key] = $v['printout'];
-			}
+			$this->mapKeyToPrintout[$key] = $v['printout'];
 			$tablename = $this->mapPathNoIndexTable[$pathNoIndex];
 			$mapConds[$pathNoIndex] = [ 'key' => $key, 'tablename' => $tablename ];
 			$joinConds = [];
@@ -1054,7 +1075,7 @@ class QueryProcessor {
 		$method = ( !$this->debug ? ( !$this->count ? 'select' : 'selectField' )
 			: 'selectSQLText' );
 
-		$options = $this->getOptions( $fields, $tables, $joins );
+		$options = $this->getOptions( $orderBy, $fields, $tables, $joins );
 
 		// *** join always, it ensures that the related article exists
 		// join page table also when sorting by mainlabel
