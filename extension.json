@@ -376,6 +376,7 @@
 				"visualdata-jsmodule-schemas-geolocation",
 				"visualdata-jsmodule-formfield-showif",
 				"visualdata-jsmodule-formfield-showif-help",
+				"visualdata-jsmodule-formfield-showif-wikitext",
 				"visualdata-jsmodule-formfield-showif-condition-=",
 				"visualdata-jsmodule-formfield-showif-condition-!=",
 				"visualdata-jsmodule-formfield-showif-condition-starts",

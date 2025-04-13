@@ -906,6 +906,13 @@ class SchemaProcessor {
 			$ret['wiki']['input-config']['accept'] = $this->allowedMimeTypes;
 		}
 
+		if ( array_key_exists( 'visibility', $properties['wiki'] ) &&
+			$properties['wiki']['visibility'] === 'condition' &&
+			!empty( $properties['wiki']['showif-value-wikitext'] )
+		) {
+			$ret['wiki']['showif-value-parsed'] = $this->parseWikitext( $properties['wiki']['showif-value' ] );
+		}
+
 		foreach ( $properties['wiki'] as $property => $value ) {
 
 			// already assigned

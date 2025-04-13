@@ -362,7 +362,10 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		}
 
 		function toggleVisibility( value, thisModel, thisField ) {
-			var refValue = VisualDataFunctions.castType( thisField[ 'showif-value' ], sourceModel.schema.type );
+			var refValue = VisualDataFunctions.castType(
+				( !thisField[ 'showif-value-wikitext' ] ? thisField[ 'showif-value' ] : thisField[ 'showif-value-parsed' ] ),
+				sourceModel.schema.type
+			);
 
 			var res;
 			if ( sourceModel.removed ) {

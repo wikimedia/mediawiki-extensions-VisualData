@@ -642,17 +642,26 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			value: getPropertyValue( 'showif-value' )
 		} );
 
-		showifConditionInput.on( 'change', function ( value ) {
-			showifValueInput.toggle( value !== '!null' );
-			updateModelShowif( getPropertyValue( 'visibility' ) === 'condition' );
+		showifValueInput.toggle( getPropertyValue( 'showif-condition' ) !== '!null' );
+
+		var showifValueIsWikitextInput = new OO.ui.ToggleButtonWidget( {
+			label: mw.msg( 'visualdata-jsmodule-formfield-showif-wikitext' ),
+			value: getPropertyValue( 'showif-value-wikitext' )
 		} );
 
-		showifValueInput.toggle( getPropertyValue( 'showif-condition' ) !== '!null' );
+		showifValueIsWikitextInput.toggle( getPropertyValue( 'showif-condition' ) !== '!null' );
+
+		showifConditionInput.on( 'change', function ( value ) {
+			showifValueInput.toggle( value !== '!null' );
+			showifValueIsWikitextInput.toggle( value !== '!null' );
+			updateModelShowif( getPropertyValue( 'visibility' ) === 'condition' );
+		} );
 
 		var layoutHorizontal = new OO.ui.HorizontalLayout( { items: [
 			showifFieldInput,
 			showifConditionInput,
-			showifValueInput
+			showifValueInput,
+			showifValueIsWikitextInput
 		] } );
 
 		// Model[ 'showif-field' ] = showifFieldInput;
@@ -676,7 +685,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		var modelMap = {
 			'showif-field': showifFieldInput,
 			'showif-condition': showifConditionInput,
-			'showif-value': showifValueInput
+			'showif-value': showifValueInput,
+			'showif-value-wikitext': showifValueIsWikitextInput
 		};
 
 		function updateModelShowif( thisVisibleItems ) {

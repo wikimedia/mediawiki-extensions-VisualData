@@ -293,6 +293,7 @@
 	"manageschemas": "Manage Schemas",
 	"visualdata-jsmodule-formfield-showif": "Show if",
 	"visualdata-jsmodule-formfield-showif-help": "",
+	"visualdata-jsmodule-formfield-showif-wikitext": "wikitext",
 	"visualdata-jsmodule-formfield-showif-condition-=": "Equals",
 	"visualdata-jsmodule-formfield-showif-condition-!=": "Not",
 	"visualdata-jsmodule-formfield-showif-condition-starts": "Starts with",

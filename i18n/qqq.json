@@ -283,6 +283,7 @@
 
 	"visualdata-jsmodule-formfield-showif": "A label message",
 	"visualdata-jsmodule-formfield-showif-help": "A label message",
+	"visualdata-jsmodule-formfield-showif-wikitext": "A label message",
 	"visualdata-jsmodule-formfield-showif-condition-=": "A label message",
 	"visualdata-jsmodule-formfield-showif-condition-!=": "A label message",
 	"visualdata-jsmodule-formfield-showif-condition-starts": "A label message",
