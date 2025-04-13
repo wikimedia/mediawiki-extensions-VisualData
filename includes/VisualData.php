@@ -1917,7 +1917,7 @@ class VisualData {
 		$comment = CommentStoreComment::newUnsavedComment( $summary );
 		$revisionRecord = $pageUpdater->saveRevision( $comment, $flags );
 
-		// Perform an additional null-edit if requested
+		// perform an additional null-edit if requested
 		if ( $doNullEdit && !$pageUpdater->isUnchanged() ) {
 			$comment = CommentStoreComment::newUnsavedComment( '' );
 			$pageUpdater = $wikiPage->newPageUpdater( $user );
@@ -2337,7 +2337,7 @@ class VisualData {
 
 		$schemaUrl = self::getFullUrlOfNamespace( NS_VISUALDATASCHEMA );
 
-		// @TODO move to ahead in the pipeline
+		// @TODO move ahead in the pipeline
 		// this is required as long as a 'OO.ui.SelectFileWidget'
 		// is added to a schema
 		$allowedMimeTypes = $schemaProcessor->getAllowedMimeTypes();

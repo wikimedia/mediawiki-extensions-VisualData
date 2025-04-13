@@ -678,7 +678,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$params['count-categories'] = true;
 		$params['count-printout-min'] = $this->conf['searchPanes']['minCount'];
 
-		$queryProcessor = new QueryProcessor( $this->schema, $this->query['query'], [], $params );
+		$queryProcessor = new QueryProcessor( $this->user, $this->schema, $this->query['query'], [], $params );
 		$results = $queryProcessor->getResults();
 
 		if ( count( $queryProcessor->getErrors() ) ) {

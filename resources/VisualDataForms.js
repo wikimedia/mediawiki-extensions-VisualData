@@ -585,8 +585,10 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 						console.error( 'visualdata-queryoptions', thisRes );
 						reject( thisRes );
 					} );
+
 			} ).catch( ( err ) => {
 				VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
+				return [];
 			} );
 		}
 
