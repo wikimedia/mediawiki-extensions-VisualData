@@ -227,11 +227,6 @@ class SubmitForm {
 	 * @return bool
 	 */
 	private function createInitialRevision( $title, $content, $contentModel, &$errors = [] ) {
-		if ( !\VisualData::checkWritePermissions( $this->user, $title, $errors ) ) {
-			$errors[] = $this->context->msg( 'visualdata-special-submit-permission-error' )->text();
-			return false;
-		}
-
 		// "" will trigger an error by ContentHandler::makeContent
 		if ( empty( $contentModel ) ) {
 			$contentModel = null;
@@ -550,6 +545,10 @@ class SubmitForm {
 
 		$isNewPage = false;
 		if ( $targetTitle ) {
+			if ( !\VisualData::checkWritePermissions( $this->user, $targetTitle, $errors ) ) {
+				$errors[] = $this->context->msg( 'visualdata-special-submit-permission-error' )->text();
+			}
+
 			if ( !$targetTitle->isKnown() ) {
 				$isNewPage = true;
 				if ( !count( $errors ) ) {
