@@ -2248,18 +2248,20 @@ class VisualData {
 		if ( empty( $form['options']['return-url'] )
 			&& !empty( $form['options']['return-page'] )
 		) {
-			// allow also unknown titles
-			$title_ = TitleClass::newFromText( $form['options']['return-page'] );
+			// identify valid query
 			$query = '';
-
-			if ( !$title_ ) {
-				$pos_ = strpos( $form['options']['return-page'], '?' );
-				if ( $pos_ !== false && strlen( $form['options']['return-page'] ) > $pos_ ) {
-					// allow also unknown titles
-					$title_ = TitleClass::newFromText( substr( $form['options']['return-page'], 0, $pos_ ) );
-					$query = substr( $form['options']['return-page'], $pos_ + 1 );
+			$arr_ = explode( '?', $form['options']['return-page'], 2 );
+			if ( count( $arr_ ) > 1 ) {
+				parse_str( $arr_[1], $query );
+				if ( empty( array_filter( $query ) ) ) {
+					$query = '';
+				} else {
+					$form['options']['return-page'] = $arr_[0];
 				}
 			}
+
+			// allow also unknown titles
+			$title_ = TitleClass::newFromText( $form['options']['return-page'] );
 
 			if ( $title_ ) {
 				$ret['options']['return-url'] = $title_->getLocalURL( $query );
