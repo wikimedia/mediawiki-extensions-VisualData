@@ -125,7 +125,8 @@ class QueryProcessor {
 			'count-printout' => [ false, 'bool' ],
 			'count-printout-min' => [ 1, 'integer' ],
 			'count-categories' => [ false, 'bool' ],
-			'debug' => [ false, 'bool' ]
+			'debug' => [ false, 'bool' ],
+			'secondary-printouts' => [ false, 'bool' ]
 		];
 		$params = \VisualData::applyDefaultParams( $defaultParameters, $params );
 
@@ -376,14 +377,13 @@ class QueryProcessor {
 				switch ( $key ) {
 					case 'order':
 						$arr = [];
-						foreach ( $orderBy as $v ) {
-							[ $printout, $sort ] = $v;
-							$index = array_search( $printout, $this->mapKeyToPrintout );
+						foreach ( $orderBy as $printout_ => $sort_ ) {
+							$index = array_search( $printout_, $this->mapKeyToPrintout );
 
 							if ( $index !== false ) {
 								// *** this is may be superflous
-								// $arr[] = $castField( $printout, $index ) . " $sort";
-								$arr[] = "v$index $sort";
+								// $arr[] = $castField( $printout_, $index ) . " $sort_";
+								$arr[] = "v$index $sort_";
 
 								// used only for sorting, not concatenated
 								// to preserve type
@@ -391,12 +391,12 @@ class QueryProcessor {
 									$fields["v$index"] = "t$index.value";
 								}
 
-							} elseif ( in_array( $printout, ResultPrinter::$titleAliases ) ) {
-								$arr[] = "page_title $sort";
+							} elseif ( in_array( $printout_, ResultPrinter::$titleAliases ) ) {
+								$arr[] = "page_title $sort_";
 
-							} elseif ( in_array( $printout, $this->specialPrefixes ) ) {
-								$arr[] = "rev_sort.timestamp $sort";
-								$specialPrefix = $printout;
+							} elseif ( in_array( $printout_, $this->specialPrefixes ) ) {
+								$arr[] = "rev_sort.timestamp $sort_";
+								$specialPrefix = $printout_;
 							}
 						}
 						if ( count( $arr ) ) {
@@ -891,7 +891,7 @@ class QueryProcessor {
 			preg_match( '/^\s*(.+?)\s*(ASC|DESC)?\s*$/i', $v, $match_ );
 			$printout = $match_[1];
 			$sort = $match_[2] ?? 'ASC';
-			$ret[] = [ $printout, $sort ];
+			$ret[$printout] = $sort;
 		}
 		return $ret;
 	}
@@ -941,12 +941,11 @@ class QueryProcessor {
 		}
 
 		$orderBy = $this->parseOrderBy();
-		foreach ( $orderBy as $value ) {
-			[ $printout, $sort ] = $value;
-			if ( !array_key_exists( $printout, $arr )
-				&& array_key_exists( $printout, $this->mapPathNoIndexTable )
+		foreach ( $orderBy as $printout_ => $sort_ ) {
+			if ( !array_key_exists( $printout_, $arr )
+				&& array_key_exists( $printout_, $this->mapPathNoIndexTable )
 			) {
-				$arr[$printout] = false;
+				$arr[$printout_] = false;
 			}
 		}
 
@@ -958,7 +957,9 @@ class QueryProcessor {
 				'printout' => $pathNoIndex,
 				'printoutParent' => $printoutParent,
 				'depth' => substr_count( $pathNoIndex, '/' ),
-				'isPrintout' => $isPrintout
+				'isPrintout' => $isPrintout,
+				'isCondition' => in_array( $pathNoIndex, $this->conditionProperties ),
+				'isOrderBy' => array_key_exists( $pathNoIndex, $orderBy )
 			];
 		}
 
@@ -991,6 +992,8 @@ class QueryProcessor {
 			$conds[] = 't0.page_id = ' . $this->conditionId;
 		}
 
+		$printoutsLimit = 0;
+		$secondaryPrintouts = [];
 		$mapConds = [];
 		foreach ( $combined as $key => $v ) {
 			$pathNoIndex = $v['printout'];
@@ -999,6 +1002,18 @@ class QueryProcessor {
 			$tablename = $this->mapPathNoIndexTable[$pathNoIndex];
 			$mapConds[$pathNoIndex] = [ 'key' => $key, 'tablename' => $tablename ];
 			$joinConds = [];
+
+			// @todo implement secondaryPrintouts query for plain format
+			if ( $this->treeFormat ) {
+				if ( !$this->params['secondary-printouts'] && !$v['isCondition'] && !$v['isOrderBy'] ) {
+					$printoutsLimit++;
+				}
+
+				if ( $printoutsLimit > $GLOBALS['wgVisualDataQueryProcessorPrintoutsLimit'] ) {
+					$secondaryPrintouts[] = $pathNoIndex;
+					continue;
+				}
+			}
 
 			// @ATTENTION !!
 			// the following query structure assumes that
@@ -1012,6 +1027,7 @@ class QueryProcessor {
 				$joinConds["t$key.path_no_index"] = $pathNoIndex;
 			}
 
+			$conds_ = [];
 			if ( $key > 0 ) {
 				$joinConds[] = "t$key.schema_id=t0.schema_id";
 				$joinConds[] = "t$key.page_id=t0.page_id";
@@ -1030,6 +1046,11 @@ class QueryProcessor {
 					}
 				}
 				$joins["t$key"] = [ 'LEFT JOIN', $this->dbr->makeList( $joinConds, LIST_AND ) ];
+
+			} else {
+				if ( $this->conditionId ) {
+					$conds_[] = 't.page_id = ' . $this->conditionId;
+				}
 			}
 
 			$tables_ = [
@@ -1037,7 +1058,6 @@ class QueryProcessor {
 				'p' => 'visualdata_props'
 			];
 			$fields_ = [ 't.value', 't.page_id', 'p.path_no_index', 'p.path', 'p.path_parent', 'p.schema_id' ];
-			$conds_ = [];
 			$options_ = [];
 
 			// *** IMPORTANT use one of the following when appropriate !!
@@ -1233,9 +1253,32 @@ class QueryProcessor {
 			return $value;
 		};
 
+		$params_ = [
+			'schema' => $this->params['schema'],
+			'limit' => 1,
+			'offset' => 0,
+			'order' => '',
+			'pagetitle' => '',
+			'hierarchical-conditions' => true,
+			'printouts-from-conditions' => false,
+			'categories' => false,
+			'count-printout' => false,
+			'count-printout-min' => 1,
+			'count-categories' => false,
+			'debug' => false,
+			'secondary-printouts' => true
+		];
+
 		$permissionManager = MediaWikiServices::getInstance()->getPermissionManager();
 		$separator = chr( hexdec( '0x1E' ) );
 		$titles = [];
+
+		// @todo implement secondaryPrintouts query for plain format
+		// because there could be more than one row per page, this requires
+		// that the output is grouped by page_id and then to perform
+		// the new query as below. Merge each returned row with all the
+		// rows of a given page, and if there are more rows, append them
+		// after the rows of the current page
 		foreach ( $res as $row ) {
 			$categories = [];
 			$row = (array)$row;
@@ -1279,6 +1322,7 @@ class QueryProcessor {
 					$index = substr( $k, 1 );
 					$row_[$this->mapKeyToPrintout[$index]] = $v;
 				}
+
 			} else {
 				foreach ( $this->mapKeyToPrintout as $key => $printout ) {
 					if ( empty( $row["p$key"] ) ) {
@@ -1291,6 +1335,18 @@ class QueryProcessor {
 						$row_[$path] = $castType( $values[$key], $printout );
 					}
 				}
+
+				if ( $this->params['secondary-printouts'] ) {
+					$this->result = $row_;
+					continue;
+				}
+
+				if ( count( $secondaryPrintouts ) ) {
+					$queryProcessor_ = new QueryProcessor( $this->user, $this->schema, $pageId, $secondaryPrintouts, $params_ );
+					$method_ = ( !$this->treeFormat ? 'getResults' : 'getResultsTree' );
+					$results_ = $queryProcessor_->$method_();
+					$row_ = array_merge( $row_, $results_ );
+				}
 			}
 
 			$this->result[] = [
@@ -1300,7 +1356,8 @@ class QueryProcessor {
 			];
 		}
 
-		// *** only if required using a parameter
+		// *** return the first result
+		// only if required using a parameter
 		// if ( $this->conditionId && count( $this->result ) ) {
 		// 	$this->result = $this->result[0];
 		// }

@@ -586,6 +586,9 @@
 		},
 		"VisualDataMaptilerApiKey": {
 			"value": null
+		},
+		"VisualDataQueryProcessorPrintoutsLimit": {
+			"value": 4
 		}
 	},
 	"manifest_version": 2

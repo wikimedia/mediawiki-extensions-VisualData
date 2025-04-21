@@ -233,6 +233,9 @@ class SpecialVisualDataBrowse extends SpecialPage {
 					'namespace' => NS_VISUALDATASCHEMA,
 					'relative' => true,
 					'required' => false,
+
+					// @fixme this has no effect, create a custom widget
+					'limit' => 20,
 					'help-message' => 'visualdata-special-browse-form-search-schema-help',
 					'default' => $schemaname ?? null,
 				];
