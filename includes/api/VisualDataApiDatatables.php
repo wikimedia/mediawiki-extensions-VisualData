@@ -65,6 +65,7 @@ class VisualDataApiDatatables extends ApiBase {
 		$settings = $data['settings'];
 		$columnDefs = $data['columnDefs'];
 		$printouts = $data['printouts'];
+		$printoutsQuery = $data['query']['printouts'];
 		$query = $data['query']['query'];
 		$params = $data['params'];
 		$categoryFields = $data['categoryFields'];
@@ -88,17 +89,29 @@ class VisualDataApiDatatables extends ApiBase {
 				return '';
 			}
 
-			return "$printout::";
+			return null;
 		};
 
 		// filter the query
 		$queryConjunction = [];
 		if ( !empty( $datatableData['search']['value'] ) ) {
 			$queryDisjunction = [];
+
+			// use only subject and category
 			foreach ( $columnDefs as $key => $value ) {
-				$printout = $value['name'];
-				$queryDisjunction[] = $subjectExpression( $printout ) . '~' . $datatableData['search']['value'] . '~';
+				$printout = $subjectExpression( $value['name'] );
+				if ( $printout ) {
+					$queryDisjunction[] = $printout . '~' . $datatableData['search']['value'] . '~';
+				}
 			}
+
+			// use all valid printouts
+			// this ensures that fields transformed through
+			// templates are captured as well
+			foreach ( $printoutsQuery as $printout ) {
+				$queryDisjunction[] = "$printout::~" . $datatableData['search']['value'] . '~';
+			}
+
 			$queryConjunction[] = '[[' . implode( '||', $queryDisjunction ) . ']]';
 		}
 

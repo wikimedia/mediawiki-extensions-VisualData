@@ -493,12 +493,13 @@ class QueryProcessor {
 	 * @param function|null $callbackValue null
 	 * @return string
 	 */
-	private function parseCondition( $exp, $field, $dataType = 'string', $callbackValue = null ) {
+	private function parseCondition( $exp, $field, $dataType = 'text', $callbackValue = null ) {
 		// use $this->dbr->buildLike( $prefix, $this->dbr->anyString() )
 		// if $value contains ~
 		$likeBefore = false;
 		$likeAfter = false;
 		$value = $exp;
+
 		preg_match( '/^(!)?(~)?(.+?)(~)?$/', $exp, $match );
 
 		if ( !empty( $match ) ) {
@@ -684,6 +685,15 @@ class QueryProcessor {
 
 					// OR conditions same property e.g. [[prop a::a||b]]
 					foreach ( $values as $v ) {
+						// remove condition for non-string datatypes
+						// using LIKE operator (the use case is the search
+						// through datatables, which is performed on all
+						// printouts)
+						if ( $tablename !== 'text' && $dataType !== 'textarea' &&
+							preg_match( '/^(!)?(~)?(.+?)(~)?$/', $v )
+						) {
+							continue;
+						}
 						$orConds[] = $this->parseCondition( $v, $field, $tablename );
 					}
 				} elseif ( $printout === 'page_title' ) {
