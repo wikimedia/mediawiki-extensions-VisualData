@@ -689,7 +689,7 @@ class QueryProcessor {
 						// using LIKE operator (the use case is the search
 						// through datatables, which is performed on all
 						// printouts)
-						if ( $tablename !== 'text' && $dataType !== 'textarea' &&
+						if ( $tablename !== 'text' && $tablename !== 'textarea' &&
 							preg_match( '/^(!)?(~)?(.+?)(~)?$/', $v )
 						) {
 							continue;
