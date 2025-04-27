@@ -719,25 +719,34 @@ class QueryProcessor {
 	 * @param array &$tables
 	 * @param array &$joins
 	 * @param array &$fields
+	 * @param array &$having
 	 */
-	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields ) {
-		// @ATTENTION !! if the same printout is group concatenated
-		// and appears in more than 1 AND condition
-		// we shall use HAVING, instead, since WHERE is applied
-		// before the concatenation and will fail
+	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields, &$having ) {
+		// @ATTENTION !! with treeFormat the match
+		// must be performed after group concat, using
+		// HAVING
 		foreach ( $this->AndConditions as $i => $value ) {
 			$orConds = [];
 			$categories = [];
+			$havingConds = [];
 			foreach ( $value as $printout => $values ) {
 				if ( array_key_exists( $printout, $mapConds ) ) {
-					$field = "t{$mapConds[$printout]['key']}.value";
+					if ( $this->treeFormat ) {
+						$field = "c{$mapConds[$printout]['key']}";
+					} else {
+						$field = "t{$mapConds[$printout]['key']}.value";
+					}
 					$tablename = $mapConds[$printout]['tablename'];
 
 					// OR conditions same property e.g. [[prop a::a||b]]
 					foreach ( $values as $v ) {
 						$condStr = $this->parseCondition( $v, $field, $tablename );
 						if ( $condStr !== false ) {
-							$orConds[] = $condStr;
+							if ( $this->treeFormat ) {
+								$havingConds[] = $condStr;
+							} else {
+								$orConds[] = $condStr;
+							}
 						}
 					}
 				} elseif ( $printout === 'page_title' ) {
@@ -757,6 +766,9 @@ class QueryProcessor {
 			}
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
+			}
+			if ( count( $havingConds ) ) {
+				$having[] = $this->dbr->makeList( $havingConds, LIST_OR );
 			}
 		}
 	}
@@ -911,9 +923,9 @@ class QueryProcessor {
 	 * @return string|null
 	 */
 	private function getGroupBY( $fields, $printoutKey ) {
-		if ( $this->count ) {
-			return null;
-		}
+		// if ( $this->count ) {
+		// 	return null;
+		// }
 
 		if ( $this->params['count-printout'] ) {
 			return $printoutKey;
@@ -1038,6 +1050,7 @@ class QueryProcessor {
 		$conds = [];
 		$options = [];
 		$joins = [];
+		$having = [];
 
 		$fields['page_id'] = 't0.page_id';
 		$conds['t0.schema_id'] = $this->schemaId;
@@ -1145,11 +1158,17 @@ class QueryProcessor {
 					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
 				}
 			}
+
+			if ( $this->treeFormat ) {
+				if ( $v['isCondition'] ) {
+					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
+				}
+			}
 		}
 
-		$this->getConditions( $mapConds, $conds, $tables, $joins, $fields );
+		$this->getConditions( $mapConds, $conds, $tables, $joins, $fields, $having );
 
-		$method = ( !$this->debug ? ( !$this->count ? 'select' : 'selectField' )
+		$method = ( !$this->debug && !$this->count ? ( !$this->count ? 'select' : 'selectField' )
 			: 'selectSQLText' );
 
 		$options = $this->getOptions( $orderBy, $fields, $tables, $joins );
@@ -1201,17 +1220,21 @@ class QueryProcessor {
 			}
 		}
 
+		if ( count( $having ) ) {
+			$options['HAVING'] = $having;
+		}
+
 		$groupBy = $this->getGroupBy( $fields, $printoutKey );
 		if ( !empty( $groupBy ) ) {
 			$options['GROUP BY'] = $groupBy;
 		}
 
-		if ( $this->count ) {
-			$fields = [
-				'count' => ( !$this->treeFormat ?
-					'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
-			];
-		}
+		// if ( $this->count ) {
+		// 	$fields = [
+		// 		'count' => ( !$this->treeFormat ?
+		// 			'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
+		// 	];
+		// }
 
 		// prevents error "Error 1116: Too many tables"
 		if ( count( $tables ) > 61 ) {
@@ -1232,6 +1255,11 @@ class QueryProcessor {
 			// join
 			$joins
 		);
+
+		if ( $this->count ) {
+			$res = $this->dbr->query( "SELECT COUNT(*) as count FROM ( $res ) as q", __METHOD__ );
+			$res = $res->fetchObject()->count;
+		}
 
 		if ( $this->debug ) {
 			$this->result = (string)$res;
