@@ -79,7 +79,7 @@ class QueryProcessor {
 	/** @var string */
 	private $query;
 
-	/** @var databaseManager */
+	/** @var DatabaseManager */
 	private $databaseManager;
 
 	/** @var array */
@@ -90,6 +90,12 @@ class QueryProcessor {
 
 	/** @var array */
 	private $mapPathNoIndexTable = [];
+
+	/** @var array */
+	private $mapPrintoutMultiple = [];
+
+	/** @var bool */
+	private $printoutMultipleInConditions = false;
 
 	/** @var int */
 	private $schemaId = [];
@@ -724,14 +730,19 @@ class QueryProcessor {
 	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields, &$having ) {
 		// @ATTENTION !! with treeFormat the match
 		// must be performed after group concat, using
-		// HAVING
+		// HAVING (except if there aren't multiple items in conditions)
+		// with count we keep the standard condition
+		// since the number of items shouldn't be affected
+
 		foreach ( $this->AndConditions as $i => $value ) {
 			$orConds = [];
 			$categories = [];
 			$havingConds = [];
+			$havingCond = ( $this->treeFormat && !$this->count && $this->printoutMultipleInConditions );
+
 			foreach ( $value as $printout => $values ) {
 				if ( array_key_exists( $printout, $mapConds ) ) {
-					if ( $this->treeFormat ) {
+					if ( $havingCond ) {
 						$field = "c{$mapConds[$printout]['key']}";
 					} else {
 						$field = "t{$mapConds[$printout]['key']}.value";
@@ -742,7 +753,7 @@ class QueryProcessor {
 					foreach ( $values as $v ) {
 						$condStr = $this->parseCondition( $v, $field, $tablename );
 						if ( $condStr !== false ) {
-							if ( $this->treeFormat ) {
+							if ( $havingCond ) {
 								$havingConds[] = $condStr;
 							} else {
 								$orConds[] = $condStr;
@@ -923,9 +934,9 @@ class QueryProcessor {
 	 * @return string|null
 	 */
 	private function getGroupBY( $fields, $printoutKey ) {
-		// if ( $this->count ) {
-		// 	return null;
-		// }
+		if ( $this->count && $this->treeFormat ) {
+			return null;
+		}
 
 		if ( $this->params['count-printout'] ) {
 			return $printoutKey;
@@ -1029,6 +1040,21 @@ class QueryProcessor {
 			];
 		}
 
+		foreach ( $combined as $i => $v ) {
+			if ( $v['isCondition'] ) {
+				$this->mapPrintoutMultiple[$pathNoIndex] = false;
+				$parentSchemas = DatabaseManager::getParentSchemasOfPrintout( $this->schema, $v['printout'] );
+
+				foreach ( $parentSchemas as $schema_ ) {
+					if ( $schema_['type'] === 'array' ) {
+						$this->mapPrintoutMultiple[$pathNoIndex] = true;
+						$this->printoutMultipleInConditions = true;
+						break;
+					}
+				}
+			}
+		}
+
 		usort( $combined, static function ( $a, $b ) {
 			return ( $a['depth'] == $b['depth'] ? 0
 				: (int)( $a['depth'] > $b['depth'] ) );
@@ -1062,6 +1088,7 @@ class QueryProcessor {
 		$printoutsLimit = 0;
 		$secondaryPrintouts = [];
 		$mapConds = [];
+
 		foreach ( $combined as $key => $v ) {
 			$pathNoIndex = $v['printout'];
 			$isPrintout = $v['isPrintout'];
@@ -1168,8 +1195,12 @@ class QueryProcessor {
 
 		$this->getConditions( $mapConds, $conds, $tables, $joins, $fields, $having );
 
-		$method = ( !$this->debug && !$this->count ? ( !$this->count ? 'select' : 'selectField' )
+		$method = ( !$this->debug ? ( !$this->count ? 'select' : 'selectField' )
 			: 'selectSQLText' );
+
+		// if ( $this->count ) {
+		// 	$method = 'selectSQLText';
+		// }
 
 		$options = $this->getOptions( $orderBy, $fields, $tables, $joins );
 
@@ -1229,12 +1260,12 @@ class QueryProcessor {
 			$options['GROUP BY'] = $groupBy;
 		}
 
-		// if ( $this->count ) {
-		// 	$fields = [
-		// 		'count' => ( !$this->treeFormat ?
-		// 			'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
-		// 	];
-		// }
+		if ( $this->count ) {
+			$fields = [
+				'count' => ( !$this->treeFormat ?
+					'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
+			];
+		}
 
 		// prevents error "Error 1116: Too many tables"
 		if ( count( $tables ) > 61 ) {
@@ -1256,10 +1287,12 @@ class QueryProcessor {
 			$joins
 		);
 
-		if ( $this->count ) {
-			$res = $this->dbr->query( "SELECT COUNT(*) as count FROM ( $res ) as q", __METHOD__ );
-			$res = $res->fetchObject()->count;
-		}
+		// this is necessary only if HAVING or group
+		// is used for count as well
+		// if ( $this->count ) {
+		// 	$res = $this->dbr->query( "SELECT COUNT(*) as count FROM ( $res ) as q", __METHOD__ );
+		// 	$res = $res->fetchObject()->count;
+		// }
 
 		if ( $this->debug ) {
 			$this->result = (string)$res;

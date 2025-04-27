@@ -555,7 +555,7 @@ class DatabaseManager {
 		$tableNamePropTables = $this->dbr->tableName( 'visualdata_prop_tables' );
 
 		foreach ( $removed as $path ) {
-			$printout_ = $this->getPrintoutOfPath( $storedSchema, $path );
+			$printout_ = self::getPrintoutOfPath( $storedSchema, $path );
 			if ( $printout_ ) {
 				$conds = [
 					'schema_id' => $schemaId,
@@ -1073,8 +1073,12 @@ class DatabaseManager {
 	 * @param string $path
 	 * @param string $printout
 	 * @param function $callback
+	 * @param array|null $parentSchemas
 	 */
-	public static function traverseSchema( $schema, $path, $printout, $callback ) {
+	public static function traverseSchema( $schema, $path, $printout, $callback, $parentSchemas = null ) {
+		if ( $parentSchemas === null ) {
+			$parentSchemas = [];
+		}
 		switch ( $schema['type'] ) {
 			case 'object':
 				if ( isset( $schema['properties'] ) ) {
@@ -1083,7 +1087,8 @@ class DatabaseManager {
 						$currentPath = "$path/properties/$keyEscaped";
 						$printout_ = ( $printout ? "$printout/$keyEscaped" : $keyEscaped );
 						$subSchema = $value;
-						self::traverseSchema( $subSchema, $currentPath, $printout_, $callback );
+						$parentSchemas_ = array_merge( $parentSchemas, [ $subSchema ] );
+						self::traverseSchema( $subSchema, $currentPath, $printout_, $callback, $parentSchemas_ );
 					}
 				}
 				break;
@@ -1093,15 +1098,16 @@ class DatabaseManager {
 				if ( isset( $schema['items'] ) ) {
 					$pathArr = self::unescapeJsonPointer( $path );
 					$key = array_pop( $pathArr );
-					$callback( $schema, $path, $printout, $key );
 					$subSchema = $schema['items'];
-					self::traverseSchema( $subSchema, $path, $printout, $callback );
+					$parentSchemas_ = array_merge( $parentSchemas, [ $subSchema ] );
+					$callback( $schema, $path, $printout, $key, $parentSchemas_ );
+					self::traverseSchema( $subSchema, $path, $printout, $callback, $parentSchemas );
 				}
 				break;
 			default:
 				$pathArr = self::unescapeJsonPointer( $path );
 				$key = array_pop( $pathArr );
-				$callback( $schema, $path, $printout, $key );
+				$callback( $schema, $path, $printout, $key, $parentSchemas );
 		}
 	}
 
@@ -1160,11 +1166,30 @@ class DatabaseManager {
 	 * @param string $matchPath
 	 * @return string
 	 */
-	public function getPrintoutOfPath( $schema, $matchPath ) {
+	public static function getPrintoutOfPath( $schema, $matchPath ) {
 		$ret = null;
 		$callback = static function ( $schema, $path, $printout, $property ) use ( &$ret, $matchPath ) {
 			if ( $path === $matchPath ) {
 				$ret = $printout;
+			}
+		};
+
+		$printout = '';
+		$path = '';
+		self::traverseSchema( $schema, $path, $printout, $callback );
+		return $ret;
+	}
+
+	/**
+	 * @param array $schema
+	 * @param string $printout
+	 * @return array
+	 */
+	public static function getParentSchemasOfPrintout( $schema, $printout ) {
+		$ret = [];
+		$callback = static function ( $schema, $path, $printout_, $property, $parentSchemas ) use ( &$ret, $printout ) {
+			if ( $printout === $printout_ ) {
+				$ret = $parentSchemas;
 			}
 		};
 
