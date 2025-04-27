@@ -532,14 +532,14 @@ class QueryProcessor {
 
 				case 'numeric':
 					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
-					if ( null === filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE ) ) {
+					if ( null === filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE ) ) {
 						return false;
 					}
 					break;
 
 				case 'boolean':
 					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
-					if ( null === filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
+					if ( null === filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
 						return false;
 					}
 					break;
