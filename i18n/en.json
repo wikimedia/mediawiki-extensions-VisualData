@@ -231,6 +231,10 @@
 	"visualdata-parserfunction-form-selected-schema-description": "selected schema (when using form with multiple schemas)",
 	"visualdata-parserfunction-form-selected-schema-example": "",
 
+	"visualdata-parserfunction-form-preserve-other-schemas-label": "preserve other schemas",
+	"visualdata-parserfunction-form-preserve-other-schemas-description": "keep data of other schemas registered in the target page if missing from the form",
+	"visualdata-parserfunction-form-preserve-other-schemas-example": "",
+
 	"visualdata-parserfunction-query-description": "A parser function to query schemas data and print them in various formats",
 
 	"visualdata-parserfunction-query-schema-label": "schema",

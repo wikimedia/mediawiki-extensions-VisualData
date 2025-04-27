@@ -221,6 +221,10 @@
 	"visualdata-parserfunction-form-selected-schema-description": "A label message",
 	"visualdata-parserfunction-form-selected-schema-example": "A label message",
 
+	"visualdata-parserfunction-form-preserve-other-schemas-label": "A label message",
+	"visualdata-parserfunction-form-preserve-other-schemas-description": "A label message",
+	"visualdata-parserfunction-form-preserve-other-schemas-example": "A label message",
+
 	"visualdata-parserfunction-query-description": "A label message",
 
 	"visualdata-parserfunction-query-schema-label": "A label message",

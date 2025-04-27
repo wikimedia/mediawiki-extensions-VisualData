@@ -621,11 +621,31 @@ class SubmitForm {
 
 		// save new values
 		$schemas = array_replace_recursive( $data['data'], $transformedValues );
+
+		if ( $data['options']['preserve-other-schemas'] ) {
+			$schemas = array_merge( $jsonData['schemas'], $schemas );
+
+			if ( array_key_exists( 'untransformed', $jsonData['schemas-data'] ) ) {
+				foreach ( $jsonData['schemas-data']['untransformed'] as $k => $v ) {
+					$schemaName_ = substr( (string)$k, 0, strrpos( (string)$k, '/' ) );
+					$found_ = false;
+					foreach ( $untransformedValues as $k_ => $v_ ) {
+						if ( $schemaName_ === substr( (string)$k_, 0, strrpos( (string)$k_, '/' ) ) ) {
+							$found_ = true;
+							break;
+						}
+					}
+					if ( !$found_ ) {
+						$untransformedValues[$k] = $v;
+					}
+				}
+			}
+		}
+
 		$jsonData = array_merge( $jsonData, [ 'schemas' => $schemas ] );
 
-		if ( !empty( $untransformedValues ) ) {
-			$jsonData['schemas-data']['untransformed'] = $untransformedValues;
-		}
+		// assign also if empty, to unset previous values if any
+		$jsonData['schemas-data']['untransformed'] = $untransformedValues;
 
 		$wikiPage = null;
 		if ( $targetTitle && !$isNewPage ) {

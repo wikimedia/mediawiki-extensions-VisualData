@@ -489,11 +489,11 @@ class QueryProcessor {
 	/**
 	 * @param string $exp
 	 * @param string $field
-	 * @param string|null $dataType string
+	 * @param string|null $tableName string
 	 * @param function|null $callbackValue null
-	 * @return string
+	 * @return string|false
 	 */
-	private function parseCondition( $exp, $field, $dataType = 'text', $callbackValue = null ) {
+	private function parseCondition( $exp, $field, $tableName = 'text', $callbackValue = null ) {
 		// use $this->dbr->buildLike( $prefix, $this->dbr->anyString() )
 		// if $value contains ~
 		$likeBefore = false;
@@ -504,6 +504,56 @@ class QueryProcessor {
 
 		if ( !empty( $match ) ) {
 			$value = $match[3];
+			$typeOfValue = SchemaProcessor::getType( $value );
+
+			// ignore conditions for non-matching datatypes
+			// a use-case of this is datatables search, which
+			// is performed on all printouts
+			switch ( $tableName ) {
+				case 'text':
+				case 'textarea':
+					if ( $typeOfValue !== 'string' ) {
+						return false;
+					}
+					break;
+
+				case 'integer':
+					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
+					if ( null === filter_var( $value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE ) ) {
+						return false;
+					}
+					break;
+
+				case 'numeric':
+					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
+					if ( null === filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE ) ) {
+						return false;
+					}
+					break;
+
+				case 'boolean':
+					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
+					if ( null === filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
+						return false;
+					}
+					break;
+
+				// time, date and datetime support LIKE and
+				// are stored by mysql as string
+				case 'time':
+				case 'date':
+				case 'datetime':
+					if ( $typeOfValue !== 'string' && $typeOfValue !== 'integer' ) {
+						return false;
+					}
+					break;
+
+				default:
+					if ( $tablename !== $typeOfValue ) {
+						return false;
+					}
+			}
+
 			if ( !empty( $match[2] ) ) {
 				$likeBefore = true;
 			}
@@ -513,8 +563,8 @@ class QueryProcessor {
 		}
 
 		$thisClass = $this;
-		$getCastValueAndQuote = static function ( $value ) use ( $thisClass, $dataType ) {
-			$thisClass->castValAndQuote( $dataType, $value );
+		$getCastValueAndQuote = static function ( $value ) use ( $thisClass, $tableName ) {
+			$thisClass->castValAndQuote( $tableName, $value );
 			return $value;
 		};
 
@@ -523,7 +573,7 @@ class QueryProcessor {
 				return "$field IS NOT NULL";
 			}
 
-			if ( in_array( $dataType, [ 'integer', 'numeric', 'date', 'datetime', 'time' ] ) ) {
+			if ( in_array( $tableName, [ 'integer', 'numeric', 'date', 'datetime', 'time' ] ) ) {
 				// https://www.semantic-mediawiki.org/wiki/Help:Search_operators#User_manual
 
 				$patterns = [
@@ -685,16 +735,10 @@ class QueryProcessor {
 
 					// OR conditions same property e.g. [[prop a::a||b]]
 					foreach ( $values as $v ) {
-						// remove condition for non-string datatypes
-						// using LIKE operator (the use case is the search
-						// through datatables, which is performed on all
-						// printouts)
-						if ( $tablename !== 'text' && $tablename !== 'textarea' &&
-							preg_match( '/^(!)?(~)?(.+?)(~)?$/', $v )
-						) {
-							continue;
+						$condStr = $this->parseCondition( $v, $field, $tablename );
+						if ( $condStr !== false ) {
+							$orConds[] = $condStr;
 						}
-						$orConds[] = $this->parseCondition( $v, $field, $tablename );
 					}
 				} elseif ( $printout === 'page_title' ) {
 					foreach ( $values as $v ) {
@@ -1031,15 +1075,18 @@ class QueryProcessor {
 			// evaluate whether to use something like
 			// "SELECT 1 FROM DUAL" instead
 
-			if ( $key === 0 ) {
-				$conds["t$key.path_no_index"] = $pathNoIndex;
-			} else {
-				$joinConds["t$key.path_no_index"] = $pathNoIndex;
-			}
+			// if ( $key === 0 ) {
+			// 	$conds["t$key.path_no_index"] = $pathNoIndex;
+			// } else {
+			// 	$joinConds["t$key.path_no_index"] = $pathNoIndex;
+			// }
 
-			$conds_ = [];
+			$conds_ = [
+				'schema_id' => $this->schemaId,
+				'path_no_index' => $pathNoIndex
+			];
 			if ( $key > 0 ) {
-				$joinConds[] = "t$key.schema_id=t0.schema_id";
+				// $joinConds[] = "t$key.schema_id=t0.schema_id";
 				$joinConds[] = "t$key.page_id=t0.page_id";
 				if ( $this->params['hierarchical-conditions']
 					&& array_key_exists( 'parent', $v )

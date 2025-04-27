@@ -1670,7 +1670,7 @@ e.g.
 	public function parseSchemaRec( $data, $parentKey ) {
 		$ret = [];
 		if ( !is_array( $data ) ) {
-			$ret['type'] = strtolower( $this->getType( $data ) );
+			$ret['type'] = strtolower( self::getType( $data ) );
 			$ret['title'] = ucfirst( str_replace( '_', ' ', $parentKey ) );
 			return $ret;
 		}
@@ -1703,7 +1703,7 @@ e.g.
 	 * @param string|int|null $value
 	 * @return string
 	 */
-	private function getType( $value ) {
+	public static function getType( $value ) {
 		$type = gettype( $value );
 
 		if ( $type === 'string' && is_numeric( $value ) ) {

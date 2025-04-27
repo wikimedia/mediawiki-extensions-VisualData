@@ -383,6 +383,14 @@ class VisualData {
 			'default' => '',
 			'example' => 'visualdata-parserfunction-form-selected-schema-example'
 		],
+		'preserve-other-schemas' => [
+			'label' => 'visualdata-parserfunction-form-preserve-other-schemas-label',
+			'description' => 'visualdata-parserfunction-form-preserve-other-schemas-description',
+			'type' => 'bool',
+			'required' => false,
+			'default' => '',
+			'example' => 'visualdata-parserfunction-form-preserve-other-schemas-example'
+		],
 	];
 
 	/** @var array */
@@ -800,12 +808,14 @@ class VisualData {
 |navigation-next =
 |navigation-back =
 |show-progress =
+|preserve-other-schemas= true / false
 }}
 */
 		$defaultParameters = self::$FormDefaultParameters;
 
 		if ( $isButton ) {
 			$defaultParameters = array_merge( $defaultParameters, self::$ButtonDefaultParameters );
+			$defaultParameters['preserve-other-schemas']['default'] = true;
 		}
 
 		array_walk( $defaultParameters, static function ( &$value, $key ) {
