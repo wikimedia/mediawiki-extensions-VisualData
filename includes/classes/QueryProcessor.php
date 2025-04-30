@@ -92,10 +92,7 @@ class QueryProcessor {
 	private $mapPathNoIndexTable = [];
 
 	/** @var array */
-	private $mapPrintoutMultiple = [];
-
-	/** @var bool */
-	private $printoutMultipleInConditions = false;
+	private $conditionsUseHaving = [];
 
 	/** @var int */
 	private $schemaId = [];
@@ -493,6 +490,65 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param string $tableName
+	 * @param mixed $value
+	 * @return bool
+	 */
+	private function isValidData( $tableName, $value ) {
+		$typeOfValue = SchemaProcessor::getType( $value );
+
+		// ignore conditions for non-matching datatypes
+		// a use-case of this is datatables search, which
+		// is performed on all printouts
+		switch ( $tableName ) {
+			case 'text':
+			case 'textarea':
+				if ( $typeOfValue !== 'string' ) {
+					return false;
+				}
+				break;
+
+			case 'integer':
+				// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
+				if ( null === filter_var( $value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE ) ) {
+					return false;
+				}
+				break;
+
+			case 'numeric':
+				// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
+				if ( null === filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE ) ) {
+					return false;
+				}
+				break;
+
+			case 'boolean':
+				// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
+				if ( null === filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
+					return false;
+				}
+				break;
+
+			// time, date and datetime support LIKE and
+			// are stored by mysql as string
+			case 'time':
+			case 'date':
+			case 'datetime':
+				if ( $typeOfValue !== 'string' && $typeOfValue !== 'integer' ) {
+					return false;
+				}
+				break;
+
+			default:
+				if ( $tablename !== $typeOfValue ) {
+					return false;
+				}
+		}
+
+		return true;
+	}
+
+	/**
 	 * @param string $exp
 	 * @param string $field
 	 * @param string|null $tableName string
@@ -510,55 +566,6 @@ class QueryProcessor {
 
 		if ( !empty( $match ) ) {
 			$value = $match[3];
-			$typeOfValue = SchemaProcessor::getType( $value );
-
-			// ignore conditions for non-matching datatypes
-			// a use-case of this is datatables search, which
-			// is performed on all printouts
-			switch ( $tableName ) {
-				case 'text':
-				case 'textarea':
-					if ( $typeOfValue !== 'string' ) {
-						return false;
-					}
-					break;
-
-				case 'integer':
-					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
-					if ( null === filter_var( $value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE ) ) {
-						return false;
-					}
-					break;
-
-				case 'numeric':
-					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
-					if ( null === filter_var( $value, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE ) ) {
-						return false;
-					}
-					break;
-
-				case 'boolean':
-					// phpcs:ignore Generic.ControlStructures.DisallowYodaConditions.Found
-					if ( null === filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) ) {
-						return false;
-					}
-					break;
-
-				// time, date and datetime support LIKE and
-				// are stored by mysql as string
-				case 'time':
-				case 'date':
-				case 'datetime':
-					if ( $typeOfValue !== 'string' && $typeOfValue !== 'integer' ) {
-						return false;
-					}
-					break;
-
-				default:
-					if ( $tablename !== $typeOfValue ) {
-						return false;
-					}
-			}
 
 			if ( !empty( $match[2] ) ) {
 				$likeBefore = true;
@@ -581,7 +588,6 @@ class QueryProcessor {
 
 			if ( in_array( $tableName, [ 'integer', 'numeric', 'date', 'datetime', 'time' ] ) ) {
 				// https://www.semantic-mediawiki.org/wiki/Help:Search_operators#User_manual
-
 				$patterns = [
 					'/^(=)\s*(.+)$/' => '=',
 					'/^(>)\s*(.+)$/' => '>',
@@ -602,11 +608,24 @@ class QueryProcessor {
 					if ( $callbackValue ) {
 						$match_[2] = $callbackValue( $match_[2] );
 					}
+
+					if ( !$this->isValidData( $tableName, $match_[2] ) ) {
+						return false;
+					}
+
 					return "$field {$sql} " . $getCastValueAndQuote( $match_[2] );
 				}
 			}
 
+			if ( !$this->isValidData( $tableName, $value ) ) {
+				return false;
+			}
+
 			return "$field = " . $getCastValueAndQuote( $value );
+		}
+
+		if ( !$this->isValidData( $tableName, $value ) ) {
+			return false;
 		}
 
 		$any = $this->dbr->anyString();
@@ -728,21 +747,21 @@ class QueryProcessor {
 	 * @param array &$having
 	 */
 	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields, &$having ) {
-		// @ATTENTION !! with treeFormat the match
-		// must be performed after group concat, using
-		// HAVING (except if there aren't multiple items in conditions)
-		// with count we keep the standard condition
-		// since the number of items shouldn't be affected
-
 		foreach ( $this->AndConditions as $i => $value ) {
+			// @ATTENTION !! with treeFormat the match in a
+			// given set of OR conditions, must be performed after GROUP_CONCAT,
+			// using HAVING (provided that are all LIKES and there is
+			// at list one multiple item)
+			// with count we keep the standard condition
+			// since the number of items shouldn't be affected
 			$orConds = [];
 			$categories = [];
 			$havingConds = [];
-			$havingCond = ( $this->treeFormat && !$this->count && $this->printoutMultipleInConditions );
+			$useHaving = in_array( $i, $this->conditionsUseHaving );
 
 			foreach ( $value as $printout => $values ) {
 				if ( array_key_exists( $printout, $mapConds ) ) {
-					if ( $havingCond ) {
+					if ( $useHaving ) {
 						$field = "c{$mapConds[$printout]['key']}";
 					} else {
 						$field = "t{$mapConds[$printout]['key']}.value";
@@ -753,7 +772,7 @@ class QueryProcessor {
 					foreach ( $values as $v ) {
 						$condStr = $this->parseCondition( $v, $field, $tablename );
 						if ( $condStr !== false ) {
-							if ( $havingCond ) {
+							if ( $useHaving ) {
 								$havingConds[] = $condStr;
 							} else {
 								$orConds[] = $condStr;
@@ -1040,17 +1059,62 @@ class QueryProcessor {
 			];
 		}
 
-		foreach ( $combined as $i => $v ) {
-			if ( $v['isCondition'] ) {
-				$this->mapPrintoutMultiple[$pathNoIndex] = false;
-				$parentSchemas = DatabaseManager::getParentSchemasOfPrintout( $this->schema, $v['printout'] );
+		// *** attention, reset this array since
+		// performQuery is called for count or standard
+		// results without reinstantiate the class
+		$this->conditionsUseHaving = [];
 
-				foreach ( $parentSchemas as $schema_ ) {
-					if ( $schema_['type'] === 'array' ) {
-						$this->mapPrintoutMultiple[$pathNoIndex] = true;
-						$this->printoutMultipleInConditions = true;
-						break;
+		if ( $this->treeFormat && !$this->count ) {
+			$maxDepthCondition = 0;
+			foreach ( $combined as $v ) {
+				if ( $v['isCondition'] ) {
+					if ( $v['depth'] > $maxDepthCondition ) {
+						$maxDepthCondition = $v['depth'];
 					}
+				}
+			}
+
+			foreach ( $this->AndConditions as $i => $value ) {
+				// use HAVING within a given condition (which can
+				// be composed of multiple disjunctions)
+				// if all of the disjunctions are LIKE (a use case for
+				// this is Datatables search) and there is
+				// at least one multiple item in the same set
+				// -- if they aren't LIKE the match will fail
+				// since is performed on the result of the GROUP_CONCAT,
+				// not the single values
+				$allLikes = true;
+				$multipleItems = false;
+				foreach ( $value as $printout => $values ) {
+					foreach ( $values as $v ) {
+						preg_match( '/^(!)?(~)?(.+?)(~)?$/', $v, $match );
+						if ( empty( $match ) || ( empty( $match[2] ) && empty( $match[4] ) ) ) {
+							$allLikes = false;
+							break 2;
+						}
+					}
+
+					// perform an additional check, keep using WHERE
+					// if there are no multiple items in a set of
+					// disjunctions
+					if ( $allLikes && !$multipleItems ) {
+						foreach ( $combined as $v ) {
+							if ( $v['printout'] === $printout &&
+								$v['depth'] === $maxDepthCondition
+							) {
+								$parentSchemas_ = DatabaseManager::getParentSchemasOfPrintout( $this->schema, $v['printout'] );
+								$arr_ = array_slice( $parentSchemas_, -2, 1 );
+								if ( !empty( $arr_ ) && $arr_[0]['type'] === 'array' ) {
+									$multipleItems = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+
+				if ( $allLikes && $multipleItems ) {
+					$this->conditionsUseHaving[] = $i;
 				}
 			}
 		}
