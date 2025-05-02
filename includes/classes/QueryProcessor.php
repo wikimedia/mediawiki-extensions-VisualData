@@ -798,7 +798,12 @@ class QueryProcessor {
 				}
 				$tables["categorylinks_$i"] = 'categorylinks';
 				$joins["categorylinks_$i"] = [ 'LEFT JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
-				$orConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
+				if ( $useHaving ) {
+					$havingConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
+					$fields[] = "categorylinks_$i.cl_from";
+				} else {
+					$orConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
+				}
 			}
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
