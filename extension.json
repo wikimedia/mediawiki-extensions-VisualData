@@ -588,7 +588,7 @@
 			"value": null
 		},
 		"VisualDataQueryProcessorPrintoutsLimit": {
-			"value": 4
+			"value": 5
 		}
 	},
 	"manifest_version": 2

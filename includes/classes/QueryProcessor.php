@@ -318,13 +318,14 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param int $firstKey
 	 * @param array $orderBy
 	 * @param array &$fields
 	 * @param array &$tables
 	 * @param array &$joins
 	 * @return array
 	 */
-	private function getOptions( $orderBy, &$fields, &$tables, &$joins ) {
+	private function getOptions( $firstKey, $orderBy, &$fields, &$tables, &$joins ) {
 		if ( $this->count || $this->params['count-printout']
 			|| $this->params['count-categories']
 		) {
@@ -436,7 +437,7 @@ class QueryProcessor {
 			// $fields[] = 'rev_sort.timestamp';
 			$tables['rev_sort'] = $subquery;
 			$joins['rev_sort'] = [ 'JOIN', [
-				'rev_sort.rev_page = t0.page_id',
+				"rev_sort.rev_page = t$firstKey.page_id",
 			] ];
 		}
 
@@ -672,6 +673,7 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param int $firstKey
 	 * @param string $value
 	 * @param array &$orConds
 	 * @param array &$tables
@@ -679,7 +681,7 @@ class QueryProcessor {
 	 * @param array &$fields
 	 * @param array &$categories
 	 */
-	private function processTitle( $value, &$orConds, &$tables, &$joins, &$fields, &$categories ) {
+	private function processTitle( $firstKey, $value, &$orConds, &$tables, &$joins, &$fields, &$categories ) {
 		// match "Creation date"
 		[ $specialPrefix, $prefixValue, $prefixOperator ] = $this->parseSpecialPrefix( $value );
 		if ( $specialPrefix !== null ) {
@@ -691,7 +693,10 @@ class QueryProcessor {
 
 			$tables_ = [ 'revision' ];
 			$fields_  = [ 'rev_page', 'timestamp' => "$orderFunc(rev_timestamp)" ];
-			$conds_ = [ "rev_timestamp $prefixOperator $timestamp_" ];
+			// *** do not set a condition here, or take into account
+			// orderFunc and the operator
+			// $conds_ = [ "rev_timestamp $prefixOperator $timestamp_" ];
+			$conds_ = [];
 			$options_ = [ 'GROUP BY' => 'rev_page' ];
 			$subquery = $this->dbr->buildSelectSubquery(
 				$tables_,
@@ -703,7 +708,7 @@ class QueryProcessor {
 
 			$tables['rev_alias'] = $subquery;
 			$joins['rev_alias'] = [ 'JOIN', [
-				'rev_alias.rev_page = t0.page_id',
+				"rev_alias.rev_page = t$firstKey.page_id",
 				"rev_alias.timestamp $prefixOperator $timestamp_",
 			] ];
 			return;
@@ -714,7 +719,7 @@ class QueryProcessor {
 			( $title->isKnown() || $title->getNamespace() === NS_CATEGORY )
 		) {
 			if ( $title->getNamespace() !== NS_CATEGORY ) {
-				$orConds[] = 't0.page_id = ' . $title->getArticleID();
+				$orConds[] = "t$firstKey.page_id = " . $title->getArticleID();
 
 			} else {
 				$categories[] = $title;
@@ -739,6 +744,7 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param int $firstKey
 	 * @param array $mapConds
 	 * @param array &$conds
 	 * @param array &$tables
@@ -746,7 +752,7 @@ class QueryProcessor {
 	 * @param array &$fields
 	 * @param array &$having
 	 */
-	private function getConditions( $mapConds, &$conds, &$tables, &$joins, &$fields, &$having ) {
+	private function getConditions( $firstKey, $mapConds, &$conds, &$tables, &$joins, &$fields, &$having ) {
 		foreach ( $this->AndConditions as $i => $value ) {
 			// @ATTENTION !! with treeFormat the match in a
 			// given set of OR conditions, must be performed after GROUP_CONCAT,
@@ -781,7 +787,7 @@ class QueryProcessor {
 					}
 				} elseif ( $printout === 'page_title' ) {
 					foreach ( $values as $v ) {
-						$this->processTitle( $v, $orConds, $tables, $joins, $fields, $categories );
+						$this->processTitle( $firstKey, $v, $orConds, $tables, $joins, $fields, $categories );
 					}
 				}
 			}
@@ -792,7 +798,7 @@ class QueryProcessor {
 				}
 				$tables["categorylinks_$i"] = 'categorylinks';
 				$joins["categorylinks_$i"] = [ 'LEFT JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
-				$orConds[] = "t0.page_id = categorylinks_$i.cl_from";
+				$orConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
 			}
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
@@ -948,11 +954,12 @@ class QueryProcessor {
 	}
 
 	/**
+	 * @param int $firstKey
 	 * @param array $fields
 	 * @param string|null $printoutKey
 	 * @return string|null
 	 */
-	private function getGroupBY( $fields, $printoutKey ) {
+	private function getGroupBY( $firstKey, $fields, $printoutKey ) {
 		if ( $this->count && $this->treeFormat ) {
 			return null;
 		}
@@ -966,7 +973,7 @@ class QueryProcessor {
 		}
 
 		if ( $this->treeFormat ) {
-			return 't0.page_id';
+			return "t$firstKey.page_id";
 		}
 
 		if ( $this->params['categories'] ) {
@@ -1060,7 +1067,7 @@ class QueryProcessor {
 		}
 
 		// *** attention, reset this array since
-		// performQuery is called for count or standard
+		// performQuery is called both for count or standard
 		// results without reinstantiate the class
 		$this->conditionsUseHaving = [];
 
@@ -1124,16 +1131,40 @@ class QueryProcessor {
 				: (int)( $a['depth'] > $b['depth'] ) );
 		} );
 
+		$parents = [];
 		foreach ( $combined as $i => $v ) {
 			for ( $ii = 0; $ii < $i; $ii++ ) {
 				if ( !empty( $combined[$ii]['printoutParent'] )
 					&& strpos( $v['printoutParent'], $combined[$ii]['printoutParent'] ) === 0
 				) {
+					$parents[] = $ii;
 					$combined[$i]['parent'] = $ii;
 					$combined[$i]['isSibling'] = $v['depth'] === $combined[$ii]['depth'];
 				}
 			}
 		}
+
+		$secondaryPrintouts = [];
+		if ( $this->treeFormat && !$this->conditionId ) {
+			if ( count( $combined ) > $GLOBALS['wgVisualDataQueryProcessorPrintoutsLimit'] ) {
+				foreach ( $combined as $i => $v ) {
+					if ( !$v['isCondition'] && !$v['isOrderBy'] && !in_array( $i, $parents ) ) {
+						$secondaryPrintouts[] = $v['printout'];
+					}
+				}
+				foreach ( $combined as $i => $v ) {
+					if ( in_array( $v['printout'], $secondaryPrintouts ) ) {
+						unset( $combined[$i] );
+					}
+				}
+			}
+		}
+
+		$firstKey = array_key_first( $combined );
+
+		// @todo instead of $firstKey use the following and rename
+		// the indexes
+		// $combined = array_values( $combined );
 
 		$fields = [];
 		$tables = [];
@@ -1142,17 +1173,14 @@ class QueryProcessor {
 		$joins = [];
 		$having = [];
 
-		$fields['page_id'] = 't0.page_id';
-		$conds['t0.schema_id'] = $this->schemaId;
+		$fields['page_id'] = "t$firstKey.page_id";
+		$conds["t$firstKey.schema_id"] = $this->schemaId;
 
 		if ( $this->conditionId ) {
-			$conds[] = 't0.page_id = ' . $this->conditionId;
+			$conds[] = "t$firstKey.page_id = " . $this->conditionId;
 		}
 
-		$printoutsLimit = 0;
-		$secondaryPrintouts = [];
 		$mapConds = [];
-
 		foreach ( $combined as $key => $v ) {
 			$pathNoIndex = $v['printout'];
 			$isPrintout = $v['isPrintout'];
@@ -1160,18 +1188,6 @@ class QueryProcessor {
 			$tablename = $this->mapPathNoIndexTable[$pathNoIndex];
 			$mapConds[$pathNoIndex] = [ 'key' => $key, 'tablename' => $tablename ];
 			$joinConds = [];
-
-			// @todo implement secondaryPrintouts query for plain format
-			if ( $this->treeFormat ) {
-				if ( !$this->params['secondary-printouts'] && !$v['isCondition'] && !$v['isOrderBy'] ) {
-					$printoutsLimit++;
-				}
-
-				if ( $printoutsLimit > $GLOBALS['wgVisualDataQueryProcessorPrintoutsLimit'] ) {
-					$secondaryPrintouts[] = $pathNoIndex;
-					continue;
-				}
-			}
 
 			// @ATTENTION !!
 			// the following query structure assumes that
@@ -1189,9 +1205,10 @@ class QueryProcessor {
 				'schema_id' => $this->schemaId,
 				'path_no_index' => $pathNoIndex
 			];
-			if ( $key > 0 ) {
+
+			if ( $key > $firstKey ) {
 				// $joinConds[] = "t$key.schema_id=t0.schema_id";
-				$joinConds[] = "t$key.page_id=t0.page_id";
+				$joinConds[] = "t$key.page_id=t$firstKey.page_id";
 				if ( $this->params['hierarchical-conditions']
 					&& array_key_exists( 'parent', $v )
 				) {
@@ -1257,7 +1274,7 @@ class QueryProcessor {
 			}
 		}
 
-		$this->getConditions( $mapConds, $conds, $tables, $joins, $fields, $having );
+		$this->getConditions( $firstKey, $mapConds, $conds, $tables, $joins, $fields, $having );
 
 		$method = ( !$this->debug ? ( !$this->count ? 'select' : 'selectField' )
 			: 'selectSQLText' );
@@ -1266,7 +1283,7 @@ class QueryProcessor {
 		// 	$method = 'selectSQLText';
 		// }
 
-		$options = $this->getOptions( $orderBy, $fields, $tables, $joins );
+		$options = $this->getOptions( $firstKey, $orderBy, $fields, $tables, $joins );
 
 		// *** join always, it ensures that the related article exists
 		// join page table also when sorting by mainlabel
@@ -1275,19 +1292,19 @@ class QueryProcessor {
 		// ) {
 		// if ( !$this->params['count-printout'] ) {
 			$tables['page_alias'] = 'page';
-			$joins['page_alias'] = [ 'JOIN', [ 'page_alias.page_id = t0.page_id' ] ];
+			$joins['page_alias'] = [ 'JOIN', [ "page_alias.page_id = t$firstKey.page_id" ] ];
 		// }
 
 		if ( $this->params['categories'] && !$this->params['count-printout'] ) {
 			if ( !$this->params['count-categories'] ) {
-				$fields['categories'] = "GROUP_CONCAT(categorylinks_t0.cl_to SEPARATOR 0x1E)";
+				$fields['categories'] = "GROUP_CONCAT(categorylinks_t$firstKey.cl_to SEPARATOR 0x1E)";
 
 			// used with searchPanes
 			} else {
-				$fields['categories'] = 'categorylinks_t0.cl_to';
+				$fields['categories'] = "categorylinks_t$firstKey.cl_to";
 			}
 			$tables['categorylinks_t0'] = 'categorylinks';
-			$joins['categorylinks_t0'] = [ 'LEFT JOIN', [ 't0.page_id = categorylinks_t0.cl_from' ] ];
+			$joins['categorylinks_t0'] = [ 'LEFT JOIN', [ "t$firstKey.page_id = categorylinks_t$firstKey.cl_from" ] ];
 		}
 
 		// used by datatables searchPanes
@@ -1319,7 +1336,7 @@ class QueryProcessor {
 			$options['HAVING'] = $having;
 		}
 
-		$groupBy = $this->getGroupBy( $fields, $printoutKey );
+		$groupBy = $this->getGroupBy( $firstKey, $fields, $printoutKey );
 		if ( !empty( $groupBy ) ) {
 			$options['GROUP BY'] = $groupBy;
 		}
@@ -1327,7 +1344,7 @@ class QueryProcessor {
 		if ( $this->count ) {
 			$fields = [
 				'count' => ( !$this->treeFormat ?
-					'COUNT(*)' : 'COUNT( DISTINCT ( t0.page_id ) )' )
+					'COUNT(*)' : "COUNT( DISTINCT ( t$firstKey.page_id ) )" )
 			];
 		}
 
