@@ -1947,11 +1947,14 @@ class VisualData {
 		if ( !$title || !$title->isKnown() ) {
 			return $targetSlot;
 		}
-		$slots = array_reverse( self::getSlots( $title ) );
+
+		$slots = self::getSlots( $title );
 
 		if ( !$slots ) {
 			return $targetSlot;
 		}
+
+		$slots = array_reverse( $slots );
 
 		foreach ( $slots as $role => $slot ) {
 			$content = $slots[$role]->getContent();

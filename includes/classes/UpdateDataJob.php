@@ -184,8 +184,11 @@ class UpdateDataJob extends Job {
 					);
 
 					$slots = \VisualData::getSlots( $title );
-					$content = $slots[$targetSlot]->getContent();
-					\VisualData::rebuildArticleDataFromSlot( $user, $title, $content, $errors );
+
+					if ( $slots ) {
+						$content = $slots[$targetSlot]->getContent();
+						\VisualData::rebuildArticleDataFromSlot( $user, $title, $content, $errors );
+					}
 				}
 				break;
 		}
