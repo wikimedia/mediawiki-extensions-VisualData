@@ -123,6 +123,12 @@ class DeleteRegex extends Maintenance {
 			return 'no pages';
 		}
 
+		// @see DeleteBatch
+		$services = MediaWikiServices::getInstance();
+		$wikiPageFactory = $services->getWikiPageFactory();
+		$delPageFactory = $services->getDeletePageFactory();
+		$reason = 'DeleteRegex';
+
 		$ret = [];
 		foreach ( $res as $row ) {
 			$title = Title::newFromRow( $row );
@@ -131,38 +137,29 @@ class DeleteRegex extends Maintenance {
 				continue;
 			}
 			echo 'deleting ' . $title->getFullText() . PHP_EOL;
-			$ret = $this->deletePageJob( $title );
-			if ( $ret ) {
-				$title = Title::newFromRow( $row );
-				echo 'done ' . PHP_EOL;
+
+			$wikiPage = $wikiPageFactory->newFromTitle( $title );
+
+			if ( !$wikiPage ) {
+				echo 'no wikipage' . PHP_EOL;
+				continue;
+			}
+
+			$delPage = $delPageFactory->newDeletePage( $wikiPage, $user );
+			$status = $delPage
+				->forceImmediate( true )
+				->deleteUnsafe( $reason );
+
+			if ( $status->isOK() ) {
+				DeferredUpdates::doUpdates();
+				echo 'done' . PHP_EOL;
+
+			} else {
+				echo 'FAILED' . PHP_EOL;
 			}
 		}
 	}
 
-	/**
-	 * @see DeletePageJob
-	 * @param Title $title
-	 * @return Status|false
-	 */
-	private function deletePageJob( $title ) {
-		$jobParams = [
-			'namespace' => $title->getNamespace(),
-			'title' => $title->getDBkey(),
-			'wikiPageId' => $title->getArticleId(),
-			// 'requestId' => $webRequestId ?? $this->webRequestID,
-			'reason' => 'DeleteRegex',
-			'suppress' => 'delete',
-			'userId' => $this->user->getID(),
-			'tags' => json_encode( [] ),
-			'logsubtype' => 'delete',
-			'pageRole' => null,
-		];
-
-		$job = new DeletePageJob( $jobParams );
-		// \VisualData::pushJobs( $job );
-		$job->run();
-		return true;
-	}
 }
 
 $maintClass = DeleteRegex::class;
