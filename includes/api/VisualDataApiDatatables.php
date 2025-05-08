@@ -78,7 +78,7 @@ class VisualDataApiDatatables extends ApiBase {
 			$printouts = array_combine( array_values( $printouts ), array_values( $printouts ) );
 		}
 
-		$subjectExpression = static function ( $printout ) use ( $categoryFields ) {
+		$subjectExpression = static function ( $printout, $isSearchPanes = false ) use ( $categoryFields ) {
 			// category
 			if ( in_array( $printout, $categoryFields ) ) {
 				return 'Category:';
@@ -89,7 +89,7 @@ class VisualDataApiDatatables extends ApiBase {
 				return '';
 			}
 
-			return null;
+			return ( !$isSearchPanes ? null : "$printout::" );
 		};
 
 		// filter the query
@@ -124,7 +124,7 @@ class VisualDataApiDatatables extends ApiBase {
 				$printout = $datatableData['columns'][$key]['name'];
 				// @TODO consider combiner
 				// https://www.semantic-mediawiki.org/wiki/Help:Unions_of_results#User_manual
-				$queryConjunction[] = '[[' . $subjectExpression( $printout ) . implode( '||', $values ) . ']]';
+				$queryConjunction[] = '[[' . $subjectExpression( $printout, true ) . implode( '||', $values ) . ']]';
 			}
 		}
 
