@@ -267,3 +267,8 @@ body > .oo-ui-windowManager,
 .oo-ui-image-destructive.oo-ui-icon-reload {
 	background-image: url( ./reload-destructive.svg );
 }
+
+.VisualDataGroupWidgetPanel .sortable,
+.VisualDataGroupWidgetPanel-border .sortable {
+	cursor: grab;
+}

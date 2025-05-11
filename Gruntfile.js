@@ -24,7 +24,8 @@ module.exports = function ( grunt ) {
 				'!resources/Maptiler/**',
 				'!resources/tinymce/**',
 				'!resources/slick/lib/**',
-				'!resources/Leaflet/**'
+				'!resources/Leaflet/**',
+				'!resources/sortable/**'
 			]
 		},
 		stylelint: {
@@ -41,7 +42,8 @@ module.exports = function ( grunt ) {
 				'!resources/Maptiler/**',
 				'!resources/tinymce/**',
 				'!resources/slick/lib/**',
-				'!resources/Leaflet/**'
+				'!resources/Leaflet/**',
+				'!resources/sortable/**'
 			]
 		},
 		banana: conf.MessagesDirs

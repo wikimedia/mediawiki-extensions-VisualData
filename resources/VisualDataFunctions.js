@@ -669,7 +669,25 @@ VisualDataFunctions = ( function () {
 	}
 
 	function deepCopy( obj ) {
-		return JSON.parse( JSON.stringify( obj ) );
+		const seen = new WeakSet();
+		return JSON.parse( JSON.stringify( obj, ( key, value ) => {
+			if ( typeof value === 'object' && value !== null ) {
+				if ( seen.has( value ) ) {
+					return '[Circular]';
+				}
+				seen.add( value );
+			}
+			return value;
+		} ) );
+	}
+
+	function nonEnumerableProperty( obj, prop, value ) {
+		Object.defineProperty( obj, prop, {
+			get() {
+				return value;
+			},
+			enumerable: false
+		} );
 	}
 
 	function isObject( obj ) {
@@ -972,6 +990,7 @@ VisualDataFunctions = ( function () {
 		escapeHTML,
 		isEmpty,
 		arrayIntersect,
-		promisesAllSettled
+		promisesAllSettled,
+		nonEnumerableProperty
 	};
 }() );

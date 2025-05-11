@@ -269,6 +269,7 @@
 				"Widgets/VisualDataVisualEditor.js",
 				"Widgets/VisualDataTinyMCE.js",
 				"Widgets/VisualDataMaptiler.js",
+				"sortable/Sortable.js",
 				"VisualDataUpload.js",
 				"VisualDataProcessModel.js",
 				"VisualDataForms.js"

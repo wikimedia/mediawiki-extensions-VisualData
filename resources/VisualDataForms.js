@@ -1342,7 +1342,8 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 
 		this.data = data;
 
-		function showBorder() {
+		// eslint-disable-next-line wrap-iife
+		var showBorder = ( function () {
 			if (
 				data.root ||
 				data.schema.wiki.type === 'content-block' ||
@@ -1362,17 +1363,20 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 				return false;
 			}
 			return true;
+		} )();
+
+		var classes = [ 'VisualDataGroupWidgetPanel' + ( !showBorder ? '-border' : '' ) ];
+
+		if ( data.isObjectList ) {
+			classes.push( 'sortable' );
 		}
-		var showBorderValue = showBorder();
 
 		// eslint-disable-next-line mediawiki/class-doc
 		var layout = new OO.ui.PanelLayout( {
 			expanded: false,
-			padded: showBorderValue,
-			framed: showBorderValue,
-			classes: [
-				'VisualDataGroupWidgetPanel' + ( !showBorderValue ? '-border' : '' )
-			],
+			padded: showBorder,
+			framed: showBorder,
+			classes,
 			id: makeElementId( data.path )
 		} );
 
@@ -2269,7 +2273,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 				childIndex: i,
 				parentSchema: schema
 			} );
-			var widget_ = new GroupWidget( {}, { schema: item, path: path_, model: thisModel } );
+			var widget_ = new GroupWidget( {}, { isObjectList: true, schema: item, path: path_, model: thisModel } );
 			processSchema(
 				widget_,
 				item,
@@ -2305,7 +2309,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					childIndex: ii,
 					parentSchema: schema
 				} );
-				var widgetAddOption = new GroupWidget( {}, { schema: item, path, model: modelAddOption } );
+				var widgetAddOption = new GroupWidget( {}, { isObjectList: true, schema: item, path, model: modelAddOption } );
 
 				var thisPath_ = `${ path }/${ ii }`;
 				processSchema(
@@ -2320,6 +2324,32 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					true
 				);
 				self.optionsList.addItem( widgetAddOption, ii );
+			}
+		} );
+
+		function reorderInputs( inputs, oldIndex, newIndex ) {
+			const entries = VisualDataFunctions.objectEntries( inputs );
+
+			// remove the old item and get it
+			const thisItem = entries.splice( oldIndex, 1 )[ 0 ];
+
+			// insert item at new position
+			entries.splice( newIndex, 0, thisItem );
+
+			// clear existing keys
+			Object.keys( inputs ).forEach( ( key ) => delete inputs[ key ] );
+
+			// Repopulate with new order, keeping same reference
+			entries.forEach( ( [ _, value ], index ) => {
+				inputs[ index ] = value;
+			} );
+		}
+
+		Sortable.create( this.optionsList.$element.get( 0 ), {
+			// handle: '.VisualDataGroupWidgetPanel-left',
+			direction: 'vertical',
+			onEnd: function ( evt ) {
+				reorderInputs( model, evt.oldIndex, evt.newIndex );
 			}
 		} );
 
