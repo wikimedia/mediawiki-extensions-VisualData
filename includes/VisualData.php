@@ -3214,6 +3214,14 @@ class VisualData {
 	 */
 	public static function array_merge_recursive( &$arr1, &$arr2 ) {
 		$ret = $arr1;
+
+		if ( self::isList( $arr1 ) && self::isList( $arr2 ) ) {
+			foreach ( $arr2 as $value ) {
+				$ret[] = $value;
+			}
+			return $ret;
+		}
+
 		foreach ( $arr2 as $key => &$value ) {
 			if ( is_array( $value ) && isset( $ret[$key] )
 				&& is_array( $ret[$key] )
@@ -3223,6 +3231,7 @@ class VisualData {
 				$ret[$key] = $value;
 			}
 		}
+
 		return $ret;
 	}
 
