@@ -503,6 +503,13 @@ class QueryProcessor {
 		// is performed on all printouts
 		switch ( $tableName ) {
 			case 'text':
+				// an integer can be a string for instance as a result of
+				// dechex, or "1984" (book title)
+				if ( $typeOfValue !== 'string' && $typeOfValue !== 'number' ) {
+					return false;
+				}
+				break;
+
 			case 'textarea':
 				if ( $typeOfValue !== 'string' ) {
 					return false;

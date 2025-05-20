@@ -3191,19 +3191,34 @@ class VisualData {
 	 * @return array
 	 */
 	public static function array_filter_recursive( $arr, $callback = null ) {
-		$deepLevel = true;
+		$hasNested = false;
+
+		// before unset and $callback
+		$isList = self::isList( $arr );
+
 		foreach ( $arr as $key => $value ) {
 			if ( is_array( $value ) ) {
 				$arr[$key] = self::array_filter_recursive( $value, $callback );
+
 				if ( empty( $arr[$key] ) ) {
 					unset( $arr[$key] );
 				}
-				$deepLevel = false;
+				$hasNested = true;
+
 			} elseif ( empty( $value ) ) {
 				unset( $arr[$key] );
 			}
 		}
-		return ( !$callback || !$deepLevel ? $arr : $callback( $arr ) );
+
+		if ( $callback && !$hasNested ) {
+			$arr = $callback( $arr );
+		}
+
+		if ( $isList ) {
+			$arr = array_values( $arr );
+		}
+
+		return $arr;
 	}
 
 	/**
