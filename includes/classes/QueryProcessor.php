@@ -798,23 +798,30 @@ class QueryProcessor {
 					}
 				}
 			}
+
 			if ( count( $categories ) ) {
 				$categoryConds = [];
 				foreach ( $categories as $title_ ) {
-					$categoryConds[] = "categorylinks_$i.cl_to = " . $this->dbr->addQuotes( $title_->getDbKey() );
+					// or use the initial string $v passed to processTitle
+					$categoryConds[] = $this->parseCondition( $title_->getDbKey(), "categorylinks_$i.cl_to" );
 				}
+
 				$tables["categorylinks_$i"] = 'categorylinks';
 				$joins["categorylinks_$i"] = [ 'LEFT JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
+
 				if ( $useHaving ) {
 					$havingConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
 					$fields[] = "categorylinks_$i.cl_from";
+
 				} else {
 					$orConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
 				}
 			}
+
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
 			}
+
 			if ( count( $havingConds ) ) {
 				$having[] = $this->dbr->makeList( $havingConds, LIST_OR );
 			}
@@ -1516,7 +1523,7 @@ class QueryProcessor {
 			}
 
 			if ( !empty( $row['categories'] ) ) {
-				$categories = array_values( array_unique( explode( $separator, $row['categories'] ) ) );
+				$categories = array_values( array_unique( explode( $separator, str_replace( '_', ' ', $row['categories'] ) ) ) );
 			}
 			unset( $row['categories'] );
 
