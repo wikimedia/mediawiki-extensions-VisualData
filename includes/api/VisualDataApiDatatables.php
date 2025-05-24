@@ -124,7 +124,9 @@ class VisualDataApiDatatables extends ApiBase {
 				$printout = $datatableData['columns'][$key]['name'];
 				// @TODO consider combiner
 				// https://www.semantic-mediawiki.org/wiki/Help:Unions_of_results#User_manual
-				$queryConjunction[] = '[[' . $subjectExpression( $printout, true ) . implode( '||', $values ) . ']]';
+				$queryConjunction[] = '[[' . implode( '||', array_map( static function ( $a ) use ( $printout, &$subjectExpression ) {
+					return $subjectExpression( $printout, true ) . $a;
+				}, $values ) ) . ']]';
 			}
 		}
 
