@@ -551,8 +551,8 @@ class DatabaseManager {
 		}
 
 		// remove from visualdata_props and visualdata_prop_tables
-		$tableNameProps = $this->dbr->tableName( 'visualdata_props' );
-		$tableNamePropTables = $this->dbr->tableName( 'visualdata_prop_tables' );
+		$tableNameProps = 'visualdata_props';
+		$tableNamePropTables = 'visualdata_prop_tables';
 
 		foreach ( $removed as $path ) {
 			$printout_ = self::getPrintoutOfPath( $storedSchema, $path );
