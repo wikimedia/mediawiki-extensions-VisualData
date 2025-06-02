@@ -545,7 +545,9 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		// conditionally get the model
 		var found = false;
 		var match;
-		while ( ( match = /<([^<>]+)>/g.exec( query ) ) !== null ) {
+		// must be declared as val to avoid infinite loop
+		var regex = /<([^<>]+)>/g;
+		while ( ( match = regex.exec( query ) ) !== null ) {
 			if ( match && match[ 1 ] !== 'value' ) {
 				found = true;
 				break;
