@@ -538,25 +538,31 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		}
 	}
 
-	async function performQuery( model, value ) {
+	async function performQuery( model, inputValue ) {
 		var field = model.schema.wiki;
 		var query = field[ 'options-query' ] || field[ 'options-smwquery' ];
-		var matches = [];
 
-		var re = /<([^<>]+)>/g;
-		while ( true ) {
-			var match = re.exec( query );
-			if ( !match ) {
+		// conditionally get the model
+		var found = false;
+		var match;
+		while ( ( match = /<([^<>]+)>/g.exec( query ) ) !== null ) {
+			if ( match && match[ 1 ] !== 'value' ) {
+				found = true;
 				break;
 			}
-			matches.push( match );
 		}
 
-		function doQuery() {
+		if ( found ) {
+			// return Promise.resolve([]);
+			var res = await ProcessModel.getModel( 'schema', model.schemaName );
+			var parent = model.path.slice( 0, Math.max( 0, model.path.indexOf( '/' ) ) );
+		}
+
+		function doQuery( thisQuery ) {
 			var payload = {
 				action: 'visualdata-queryoptions',
 				data: JSON.stringify( {
-					query,
+					query: thisQuery,
 					properties: field[ 'query-printouts' ],
 					schema: field[ 'query-schema' ] || '',
 					'options-query-formula': field[ 'options-query-formula' ] || null,
@@ -585,50 +591,91 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 						console.error( 'visualdata-queryoptions', thisRes );
 						reject( thisRes );
 					} );
-
 			} ).catch( ( err ) => {
 				VisualDataFunctions.OOUIAlert( `error: ${ err }`, { size: 'medium' } );
 				return [];
 			} );
 		}
 
-		if ( matches.length ) {
-			var res = await ProcessModel.getModel( 'schema', model.schemaName );
-			var parent = model.path.slice( 0, Math.max( 0, model.path.indexOf( '/' ) ) );
+		// e.g. [[organization::<organizations/name>~]]
+		function replaceValue( strRight, printout, printoutLeft ) {
+			var fullPath = parent + '/' + printout;
+			var replacements = [];
 
-			for ( var match of matches ) {
-				if ( match[ 1 ] === 'value' ) {
-					query = query.replace(
-						match[ 0 ],
-						// value of lookupElement
-						value
-					);
-					continue;
+			if ( fullPath in res.flatten ) {
+				if ( !Array.isArray( res.flatten[ fullPath ].value ) ) {
+					replacements.push( res.flatten[ fullPath ].value );
+				} else {
+					replacements = replacements.concat( res.flatten[ fullPath ].value );
 				}
 
-				// @MUST MATCH classes/SubmitForm -> replaceFormula
+			} else {
+				// could be an array
 				for ( var i in res.flatten ) {
-					// match first names at the same level
-					var fullPath = parent + '/' + match[ 1 ];
-
-					if ( fullPath in res.flatten ) {
-						query = query.replace( match[ 0 ], res.flatten[ fullPath ].value );
-						continue;
-					}
-
-					// var fullPath = match[1];
-					// if (fullPath.charAt(0) !== "/") {
-					// 	fullPath = "/${ fullPath }";
-					// }
-
-					if ( res.flatten[ i ].pathNoIndex === fullPath ) {
-						query = query.replace( match[ 0 ], res.flatten[ i ].value );
+					if ( model.schemaName + '/' + res.flatten[ i ].pathNoIndex === fullPath ) {
+						replacements.push( res.flatten[ i ].value );
 					}
 				}
 			}
+
+			if ( !replacements.length ) {
+				replacements.push( '' );
+			}
+
+			return replacements.map( function ( val ) {
+				return ( printoutLeft ? printoutLeft + '::' : '' ) + strRight.replace( /<([^<>]+)>/, val );
+			} ).join( '||' );
 		}
 
-		return doQuery();
+		// must match QueryProcessor -> parseQuery
+		var parsedQuery = query.replace( /\[\[(.+?)\]\]/g, function ( thisMatch, content ) {
+			var arr = content.split( '||' );
+
+			var subquery = [];
+			for ( var value of arr ) {
+				if ( value.indexOf( '::' ) === -1 ) {
+					var trimmed = value.trim();
+					var match_ = trimmed.match( /<([^<>]+)>/ );
+
+					// match_[1] is the subject value
+					if ( match_ ) {
+						if ( match_[ 1 ] === 'value' ) {
+							trimmed = trimmed.replace( /<([^<>]+)>/, inputValue );
+						} else {
+							trimmed = replaceValue( trimmed, match_[ 1 ] );
+						}
+					}
+					subquery.push( trimmed );
+
+				} else {
+					var [ prop, rawValue ] = value.split( '::' );
+					var trimmedProp = prop.trim();
+					var trimmedValue = rawValue.trim();
+
+					var match_ = trimmedValue.match( /<([^<>]+)>/ );
+					// match_[1] is the printout value
+					var condValue = '';
+					if ( match_ ) {
+						if ( match_[ 1 ] === 'value' ) {
+							trimmedValue = trimmedValue.replace( /<([^<>]+)>/, inputValue );
+							condValue = trimmedProp + '::' + trimmedValue;
+
+						} else {
+							condValue = replaceValue( trimmedValue, match_[ 1 ], trimmedProp );
+						}
+
+					} else {
+						condValue = value;
+					}
+
+					subquery.push( condValue );
+				}
+			}
+
+			return '[[' + subquery.join( '||' ) + ']]';
+		} );
+
+		return doQuery( parsedQuery );
 	}
 
 	var FileItemWidget = function ( config ) {
