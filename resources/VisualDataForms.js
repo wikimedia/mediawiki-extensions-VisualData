@@ -40,7 +40,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 	var GoBackButton;
 	// var DeleteButton;
 	// shallow copy
-	var RecordedSchemas = Form.schemas.slice();
+	var InitialSchemas = Form.schemas.slice();
 	var Fields;
 	var DialogName = 'dialogForm';
 	var StoredJsonData = VisualDataFunctions.deepCopy( Form.jsonData );
@@ -337,7 +337,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 	}
 
 	function isNewSchema( schemaName ) {
-		return !inArray( schemaName, RecordedSchemas );
+		return !inArray( schemaName, InitialSchemas );
 	}
 
 	function getCategories() {
@@ -2694,7 +2694,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			callbackShowError,
 			Form,
 			Schemas,
-			RecordedSchemas,
+			InitialSchemas,
 			Model,
 			ModelSchemas,
 			makeElementId
@@ -2924,7 +2924,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			}
 
 			if ( res.form[ 'target-slot' ] === 'main' && !res.schemas.length &&
-				!RecordedSchemas.length ) {
+				!InitialSchemas.length ) {
 				// eslint-disable-next-line no-alert
 				alert( mw.msg( 'visualdata-jsmodule-forms-submit-no-schemas' ) );
 				return;

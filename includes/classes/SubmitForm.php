@@ -363,6 +363,14 @@ class SubmitForm {
 				if ( $jsonData_ !== false ) {
 					$jsonData = array_merge( $jsonData, $jsonData_ );
 				}
+
+				// delete removed schemas from recorded slot data
+				foreach ( $data['initialSchemas'] as $v ) {
+					if ( !in_array( $v, $data['schemas'] ) ) {
+						unset( $jsonData['schemas'][$v] );
+						unset( $jsonData['schemas-data'][$v] );
+					}
+				}
 			}
 		}
 
@@ -622,7 +630,11 @@ class SubmitForm {
 		// save new values
 		$schemas = array_replace_recursive( $data['data'], $transformedValues );
 
-		if ( $data['options']['preserve-other-schemas'] ) {
+		// count schemas that are present in json-data slot
+		// but not in form schemas
+		$preserveOtherSchemas = count( array_diff( array_keys( $jsonData['schemas'] ), $data['initialSchemas'] ) );
+
+		if ( $preserveOtherSchemas ) {
 			$schemas = array_merge( $jsonData['schemas'], $schemas );
 
 			if ( array_key_exists( 'untransformed', $jsonData['schemas-data'] ) ) {
@@ -665,7 +677,7 @@ class SubmitForm {
 		if ( !count( $errors ) ) {
 
 			if ( !empty( $editTitle ) ) {
-				$deletedSchemas = array_diff( $data['recordedSchemas'], $data['schemas'] );
+				$deletedSchemas = array_diff( $data['initialSchemas'], $data['schemas'] );
 				if ( count( $deletedSchemas ) ) {
 					$databaseManager->deleteArticleSchemas( $editTitle, $deletedSchemas, $errors );
 				}

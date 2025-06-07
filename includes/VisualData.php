@@ -382,15 +382,7 @@ class VisualData {
 			'required' => false,
 			'default' => '',
 			'example' => 'visualdata-parserfunction-form-selected-schema-example'
-		],
-		'preserve-other-schemas' => [
-			'label' => 'visualdata-parserfunction-form-preserve-other-schemas-label',
-			'description' => 'visualdata-parserfunction-form-preserve-other-schemas-description',
-			'type' => 'bool',
-			'required' => false,
-			'default' => '',
-			'example' => 'visualdata-parserfunction-form-preserve-other-schemas-example'
-		],
+		]
 	];
 
 	/** @var array */
@@ -808,14 +800,12 @@ class VisualData {
 |navigation-next =
 |navigation-back =
 |show-progress =
-|preserve-other-schemas= true / false
 }}
 */
 		$defaultParameters = self::$FormDefaultParameters;
 
 		if ( $isButton ) {
 			$defaultParameters = array_merge( $defaultParameters, self::$ButtonDefaultParameters );
-			$defaultParameters['preserve-other-schemas']['default'] = true;
 		}
 
 		array_walk( $defaultParameters, static function ( &$value, $key ) {
@@ -1712,7 +1702,7 @@ class VisualData {
 		// @ATTENTION, $schemas must contain valid schemas
 		// otherwise a new schema will be created from each key
 		// from its values
-		$jsonData['schemas'] = self::array_merge_recursive( $jsonData['schemas'], $schemas );
+		$jsonData['schemas'] = self::array_merge_recursive( $jsonData['schemas'], $schemas, true );
 
 		$targetSlot = self::getTargetSlot( $title, $defaultSlot );
 
@@ -3225,15 +3215,22 @@ class VisualData {
 	 * @see https://www.php.net/manual/en/function.array-merge-recursive.php
 	 * @param array &$arr1
 	 * @param array &$arr2
+	 * @param bool $replaceLists false
 	 * @return array
 	 */
-	public static function array_merge_recursive( &$arr1, &$arr2 ) {
+	public static function array_merge_recursive( &$arr1, &$arr2, $replaceLists = false ) {
 		$ret = $arr1;
 
 		if ( self::isList( $arr1 ) && self::isList( $arr2 ) ) {
+			if ( $replaceLists ) {
+				return $arr2;
+			}
+
+			// append values to list
 			foreach ( $arr2 as $value ) {
 				$ret[] = $value;
 			}
+
 			return $ret;
 		}
 
@@ -3241,7 +3238,7 @@ class VisualData {
 			if ( is_array( $value ) && isset( $ret[$key] )
 				&& is_array( $ret[$key] )
 			) {
-				$ret[$key] = self::array_merge_recursive( $ret[$key], $value );
+				$ret[$key] = self::array_merge_recursive( $ret[$key], $value, $replaceLists );
 			} else {
 				$ret[$key] = $value;
 			}

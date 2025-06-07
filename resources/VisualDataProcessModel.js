@@ -27,7 +27,7 @@ const VisualDataProcessModel = function (
 	callbackShowError,
 	Form,
 	Schemas,
-	RecordedSchemas,
+	InitialSchemas,
 	Model,
 	ModelSchemas,
 	makeElementId
@@ -352,7 +352,7 @@ const VisualDataProcessModel = function (
 					schemas: Form.schemas,
 					// @FIXME or retrieve it server side
 					options: Form.options,
-					recordedSchemas: RecordedSchemas
+					initialSchemas: InitialSchemas
 				};
 
 			case 'validate&submit':
@@ -370,7 +370,7 @@ const VisualDataProcessModel = function (
 				return {
 					form: formModel,
 					options: Form.options,
-					schemas: RecordedSchemas // Object.keys(ModelSchemas),
+					schemas: InitialSchemas // Object.keys(ModelSchemas),
 				};
 
 			case 'schema':

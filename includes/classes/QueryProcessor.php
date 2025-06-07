@@ -592,6 +592,8 @@ class QueryProcessor {
 		if ( !$likeBefore && !$likeAfter ) {
 			if ( $value === '+' ) {
 				return "$field IS NOT NULL";
+			} elseif ( $value === '-' ) {
+				return "$field IS NULL";
 			}
 
 			if ( in_array( $tableName, [ 'integer', 'numeric', 'date', 'datetime', 'time' ] ) ) {
