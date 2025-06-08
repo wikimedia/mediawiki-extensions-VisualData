@@ -2147,7 +2147,11 @@ class VisualData {
 			if ( $editTitle ) {
 				$ret['options']['edit-page'] = $editTitle->getFullText();
 
-				$jsonData = self::getJsonData( $editTitle );
+				$jsonData_ = self::getJsonData( $editTitle );
+
+				if ( $jsonData_ !== false ) {
+					$jsonData = array_merge( $jsonData, $jsonData_ );
+				}
 
 				if ( empty( $targetSlot ) ) {
 					$targetSlot = self::getTargetSlot( $editTitle, 'jsondata' );
@@ -2660,6 +2664,7 @@ class VisualData {
 			case 1:
 				return $ret;
 
+			// all standard categories not manually annotated on the page
 			case 2:
 				// remove tracking categories
 				$trackingCategories = self::getTrackingCategories( $title );
@@ -2671,11 +2676,14 @@ class VisualData {
 
 				// remove categories annotated on the page,
 				// since we will not tinker with wikitext
-				$jsonData = self::getJsonData( $title );
-				if ( !empty( $jsonData['categories'] ) ) {
-					foreach ( $ret as $key => $category ) {
-						if ( !in_array( $category, $jsonData['categories'] ) ) {
-							unset( $ret[$key] );
+				// necessary only if content model is wikitext
+				if ( $wikiPage->getContentModel() === CONTENT_MODEL_WIKITEXT ) {
+					$jsonData = self::getJsonData( $title );
+					if ( $jsonData && !empty( $jsonData['categories'] ) ) {
+						foreach ( $ret as $key => $category ) {
+							if ( !in_array( $category, $jsonData['categories'] ) ) {
+								unset( $ret[$key] );
+							}
 						}
 					}
 				}

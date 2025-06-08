@@ -100,7 +100,11 @@ class SpecialEditData extends SpecialPage {
 		$jsonData = [];
 
 		if ( $this->title && $this->title->isKnown() ) {
-			$jsonData = \VisualData::getJsonData( $this->title );
+			$jsonData_ = \VisualData::getJsonData( $this->title );
+
+			if ( $jsonData_ !== false ) {
+				$jsonData = array_merge( $jsonData, $jsonData_ );
+			}
 		}
 
 		if ( !empty( $jsonData['schemas'] ) ) {

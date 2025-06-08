@@ -165,6 +165,12 @@ class Importer {
 			unset( $data[$this->options['category-field']] );
 		}
 
+		// merge existing (json-data) categories
+		if ( $title->isKnown() ) {
+			$categories_ = \VisualData::getCategories( $title );
+			$categories = array_unique( array_merge( $categories_, $categories ) );
+		}
+
 		$obj = [
 			'schemas' => [
 				$this->schemaName => $data

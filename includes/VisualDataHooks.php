@@ -244,7 +244,7 @@ class VisualDataHooks {
 			$parserOutput->addCategory( $category );
 		}
 
-		if ( !empty( $jsonData['categories'] ) ) {
+		if ( $jsonData && !empty( $jsonData['categories'] ) ) {
 			foreach ( $jsonData['categories'] as $category ) {
 				$parserOutput->addCategory( $category );
 			}
