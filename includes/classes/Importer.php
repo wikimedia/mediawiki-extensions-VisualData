@@ -139,6 +139,9 @@ class Importer {
 			$showMsg( 'saving article: ' . $title_->getFullText() );
 			$pagename = $this->createArticle( $title_, $value );
 
+			// ***important !! get again the title object after article creation
+			$title_ = TitleClass::newFromText( $pagename );
+
 			$entries = $databaseManager->recordProperties( 'ImportData', $title_, $flatten, $errors );
 			$showMsg( "$entries entries created for article $pagename" );
 			$n++;
