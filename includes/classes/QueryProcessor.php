@@ -744,11 +744,12 @@ class QueryProcessor {
 
 			// check if is a registered namespace
 			$nsIndex = \VisualData::getRegisteredNamespace( $value );
-
+			$conds_ = [];
 			if ( $nsIndex !== NS_MAIN ) {
-				$orConds_[] = "page_alias.page_namespace = $nsIndex";
+				$conds_[] = "page_alias.page_namespace = $nsIndex";
 			}
-			$orConds[] = $this->parseCondition( $value, 'page_title' );
+			$conds_[] = $this->parseCondition( $value, 'page_title' );
+			$orConds[] = $this->dbr->makeList( $conds_, LIST_AND );
 		}
 	}
 
@@ -1518,7 +1519,7 @@ class QueryProcessor {
 			if ( !$canRead_ ) {
 				$this->result[] = [
 					$title_,
-					[],
+					array_fill_keys( $this->printoutsOriginal, '' ),
 					[]
 				];
 				continue;
