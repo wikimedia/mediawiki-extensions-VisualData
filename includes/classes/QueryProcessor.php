@@ -1500,6 +1500,7 @@ class QueryProcessor {
 		// the new query as below. Merge each returned row with all the
 		// rows of a given page, and if there are more rows, append them
 		// after the rows of the current page
+		$badTitle = \SpecialPage::getTitleFor( 'Badtitle' );
 		foreach ( $res as $row ) {
 			$categories = [];
 			$row = (array)$row;
@@ -1516,9 +1517,12 @@ class QueryProcessor {
 			}
 
 			[ $title_, $canRead_ ] = $titles[$pageId];
+
+			// *** fill-in with empty row to comply
+			// with count and pagination (offset, limit values)
 			if ( !$canRead_ ) {
 				$this->result[] = [
-					$title_,
+					$badTitle,
 					array_fill_keys( $this->printoutsOriginal, '' ),
 					[]
 				];

@@ -24,19 +24,62 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
+use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class CountResultPrinter extends ResultPrinter {
+
+	/** @var array */
+	public static $parameters = [
+		'mode' => [
+			'type' => 'string',
+			'required' => false,
+			// auto, plain, nested
+			'default' => 'auto',
+		],
+	];
 
 	public function isHtml() {
 		return false;
 	}
 
 	/**
+	 * @param array $validPrintouts
+	 */
+	private function determineMode( $validPrintouts ) {
+		if ( in_array( $this->params['mode'], [ 'nested', 'plain' ] ) ) {
+			return;
+		}
+
+		$paths = [];
+		$multipleValues = false;
+		$callback = static function ( $schema, $path, $printout, $property ) use ( &$paths, $validPrintouts, &$multipleValues ) {
+			if ( in_array( $printout, $validPrintouts ) ) {
+				$pathArr = explode( '/', $path );
+				array_pop( $pathArr );
+				$paths[implode( '/', $pathArr )] = 1;
+				if ( $schema['type'] === 'array' ) {
+					$multipleValues = true;
+				}
+			}
+		};
+		$printout = '';
+		$path = '';
+		DatabaseManager::traverseSchema( $this->schema, $path, $printout, $callback );
+
+		$this->params['mode'] = ( $multipleValues && count( $paths ) === 1
+			? 'nested' : 'plain' );
+	}
+
+	/**
 	 * @inheritDoc
 	 */
 	public function getResults() {
-		return $this->queryProcessor->getCountTree();
+		$validPrintouts = $this->getValidPrintouts();
+		$this->determineMode( $validPrintouts );
+
+		$method = ( $this->params['mode'] === 'plain' ? 'getCount' : 'getCountTree' );
+		return $this->queryProcessor->$method();
 	}
 
 }

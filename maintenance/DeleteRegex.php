@@ -77,7 +77,7 @@ class DeleteRegex extends Maintenance {
 			return 'no regex';
 		}
 
-		$dbr = \VisualData::getDB( DB_PRIMARY );
+		$dbw = \VisualData::getDB( DB_PRIMARY );
 
 		$user = User::newSystemUser( 'Maintenance script', [ 'steal' => true ] );
 
@@ -101,7 +101,7 @@ class DeleteRegex extends Maintenance {
 			}
 		}
 
-		$conds[] = 'page_title REGEXP ' . $dbr->addQuotes( $regex );
+		$conds[] = 'page_title REGEXP ' . $dbw->addQuotes( $regex );
 
 		$options = [
 			'USE INDEX' => ( version_compare( MW_VERSION, '1.36', '<' ) ? 'name_title' : 'page_name_title' )
@@ -111,7 +111,7 @@ class DeleteRegex extends Maintenance {
 			$options['LIMIT'] = (int)$limit;
 		}
 
-		$res = $dbr->select(
+		$res = $dbw->select(
 			'page',
 			[ 'page_namespace', 'page_title', 'page_id' ],
 			$conds,
@@ -142,6 +142,30 @@ class DeleteRegex extends Maintenance {
 
 			if ( !$wikiPage ) {
 				echo 'no wikipage' . PHP_EOL;
+				continue;
+			}
+
+			// ***prevents error "Main slot of revision not found in database. See T212428 issue"
+			$revisionRecord = $wikiPage->getRevisionRecord();
+			if ( !$revisionRecord ) {
+				$articleID = $title->getArticleID();
+
+				$tablesConds = [
+					'revision' => [ 'rev_page' => $articleID ],
+					'page' => [ 'page_id' => $articleID ],
+					'recentchanges' => [ 'rc_cur_id' => $articleID ],
+					// 'slots' => [ 'slot_revision_id NOT IN (SELECT rev_id FROM revision)' ],
+					// 'content' => [ 'content_id NOT IN (SELECT slot_content_id FROM slots)' ],
+				];
+
+				foreach ( $tablesConds as $tableName => $conds ) {
+					$dbw->delete(
+						$tableName,
+						$conds,
+						__METHOD__
+					);
+				}
+				DeferredUpdates::doUpdates();
 				continue;
 			}
 

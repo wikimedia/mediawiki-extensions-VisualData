@@ -435,6 +435,27 @@ class DatatableResultPrinter extends TableResultPrinter {
 	}
 
 	/**
+	 * @inheritDoc
+	 */
+	public function processResults( $results, $schema ) {
+		$ret = [];
+
+		foreach ( $results as $value ) {
+			[ $title_, $row, $categories ] = $value;
+
+			// @TODO implement file value from mainlabel
+			$ret[] = $this->processRow( $title_, $row, $categories );
+		}
+
+		if ( empty( $this->params['api'] ) ) {
+			return $this->processRoot( $ret );
+		}
+
+		$this->json = $this->formatJson();
+		return $this->returnRawResult( $this->json );
+	}
+
+	/**
 	 * @return array
 	 */
 	public function getConf() {

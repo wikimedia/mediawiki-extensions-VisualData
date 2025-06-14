@@ -212,6 +212,9 @@ class ResultPrinter {
 		$ret = [];
 		foreach ( $results as $value ) {
 			[ $title_, $row, $categories ] = $value;
+			if ( $title_->isSpecial( 'Badtitle' ) ) {
+				continue;
+			}
 			$ret[] = $this->processRow( $title_, $row, $categories );
 		}
 

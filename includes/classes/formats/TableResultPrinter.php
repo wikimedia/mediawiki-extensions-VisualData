@@ -391,7 +391,9 @@ class TableResultPrinter extends ResultPrinter {
 
 		foreach ( $results as $value ) {
 			[ $title_, $row, $categories ] = $value;
-
+			if ( $title_->isSpecial( 'Badtitle' ) ) {
+				continue;
+			}
 			// @TODO implement file value from mainlabel
 			$ret[] = $this->processRow( $title_, $row, $categories );
 		}

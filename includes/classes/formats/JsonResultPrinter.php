@@ -58,6 +58,9 @@ class JsonResultPrinter extends ResultPrinter {
 		$ret = [];
 		foreach ( $results as $value ) {
 			[ $title_, $row, $categories ] = $value;
+			if ( $title_->isSpecial( 'Badtitle' ) ) {
+				continue;
+			}
 			$ret_ = [
 				'title' => $title_->getFullText(),
 				'pageid' => $title_->getArticleID(),

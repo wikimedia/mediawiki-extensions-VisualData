@@ -106,7 +106,6 @@ class Importer {
 
 		$n = 0;
 		foreach ( $data as $key => $value ) {
-
 			if ( $this->options['isCsv'] ) {
 				$value = array_filter( $value );
 
@@ -139,6 +138,11 @@ class Importer {
 			$showMsg( 'saving article: ' . $title_->getFullText() );
 			$pagename = $this->createArticle( $title_, $value );
 
+			if ( $pagename === null ) {
+				$showMsg( 'article exists with no changes ' . $title_->getFullText() );
+				continue;
+			}
+
 			// ***important !! get again the title object after article creation
 			$title_ = TitleClass::newFromText( $pagename );
 
@@ -157,7 +161,7 @@ class Importer {
 	/**
 	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array $data
-	 * @return string
+	 * @return string|null
 	 */
 	public function createArticle( $title, $data ) {
 		$categories = [];
@@ -168,20 +172,43 @@ class Importer {
 			unset( $data[$this->options['category-field']] );
 		}
 
-		// merge existing (json-data) categories
-		if ( $title->isKnown() ) {
-			$categories_ = \VisualData::getCategories( $title );
-			$categories = array_unique( array_merge( $categories_, $categories ) );
-		}
-
 		$obj = [
 			'schemas' => [
 				$this->schemaName => $data
 			]
 		];
 
+		// merge existing (json-data) categories
+		if ( $title->isKnown() ) {
+			$categories_ = \VisualData::getCategories( $title );
+			$categories = array_unique( array_merge( $categories_, $categories ) );
+		}
+
 		if ( !empty( $categories ) ) {
 			$obj['categories'] = $categories;
+		}
+
+		if ( $title->isKnown() ) {
+			$deep_sort = static function ( &$arr ) use ( &$deep_sort ) {
+				foreach ( $arr as &$value ) {
+					if ( is_array( $value ) ) {
+						$deep_sort( $value );
+					}
+				}
+				ksort( $arr );
+				sort( $arr );
+			};
+
+			$nestedArraysEqual = static function ( array $a, array $b ) use ( &$deep_sort ) {
+				$deep_sort( $a );
+				$deep_sort( $b );
+				return ( $a === $b );
+			};
+
+			$obj_ = \VisualData::getJsonData( $title );
+			if ( $nestedArraysEqual( $obj_, $obj ) ) {
+				return null;
+			}
 		}
 
 		$contents = [

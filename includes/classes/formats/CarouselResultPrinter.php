@@ -368,7 +368,9 @@ class CarouselResultPrinter extends ResultPrinter {
 		$ret = [];
 		foreach ( $results as $value ) {
 			[ $title_, $row, $categories ] = $value;
-
+			if ( $title_->isSpecial( 'Badtitle' ) ) {
+				continue;
+			}
 			// @TODO implement file value from mainlabel
 			$ret[] = $this->processRowTree( $title_, $row, $categories );
 		}
