@@ -206,7 +206,7 @@ class Importer {
 			};
 
 			$obj_ = \VisualData::getJsonData( $title );
-			if ( $nestedArraysEqual( $obj_, $obj ) ) {
+			if ( $obj_ && $nestedArraysEqual( $obj_, $obj ) ) {
 				return null;
 			}
 		}
