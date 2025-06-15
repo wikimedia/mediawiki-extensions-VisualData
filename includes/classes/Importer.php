@@ -25,6 +25,7 @@
 namespace MediaWiki\Extension\VisualData;
 
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
+use MediaWiki\Extension\VisualData\Utils\SafeJsonEncoder;
 use MediaWiki\Revision\SlotRecord;
 
 class Importer {
@@ -136,7 +137,13 @@ class Importer {
 			}
 
 			$showMsg( 'saving article: ' . $title_->getFullText() );
+
 			$pagename = $this->createArticle( $title_, $value );
+
+			if ( $pagename === false ) {
+				$showMsg( 'error creating article ' . $title_->getFullText() );
+				continue;
+			}
 
 			if ( $pagename === null ) {
 				$showMsg( 'article exists with no changes ' . $title_->getFullText() );
@@ -161,7 +168,7 @@ class Importer {
 	/**
 	 * @param Title|Mediawiki\Title\Title $title
 	 * @param array $data
-	 * @return string|null
+	 * @return string|null|false
 	 */
 	public function createArticle( $title, $data ) {
 		$categories = [];
@@ -211,11 +218,21 @@ class Importer {
 			}
 		}
 
+		$encoder = new SafeJsonEncoder( $this->showMsg, JSON_PRETTY_PRINT );
+
+		try {
+			$encodedObj = $encoder->encode( $obj );
+
+		} catch ( Exception $e ) {
+			call_user_func( $this->showMsg, "error, json_encode failed: " . $e->getMessage() );
+			return false;
+		}
+
 		$contents = [
 			[
 				'role' => $this->options['main-slot'] ? SlotRecord::MAIN : SLOT_ROLE_VISUALDATA_JSONDATA,
 				'model' => CONTENT_MODEL_VISUALDATA_JSONDATA,
-				'text' => json_encode( $obj, JSON_PRETTY_PRINT )
+				'text' => $encodedObj
 			],
 		];
 
@@ -231,8 +248,17 @@ class Importer {
 
 		try {
 			$this->importer->doImportSelf( $pagename, $contents );
+
 		} catch ( \Exception $e ) {
+			call_user_func( $this->showMsg, "error: $pagename " . $e->getMessage() );
 			call_user_func( $this->showMsg, "warning: $pagename import 2nd attempt" );
+
+			// $lb = MediaWikiServices::getInstance()->getDBLoadBalancer();
+			// $dbw = $lb->getConnection( DB_PRIMARY );
+
+			// if ( $dbw->trxStatus() == TransactionManager::STATUS_TRX_ERROR ) {
+			// 	$dbw->rollback( __METHOD__ );
+			// }
 
 			// @FIXME *sometimes* this is required and it works
 			// however is not clear *why*
