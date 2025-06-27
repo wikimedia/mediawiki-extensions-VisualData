@@ -35,7 +35,16 @@ define( 'SLOT_ROLE_VISUALDATA_JSONDATA', 'jsondata' );
 define( 'CONTENT_MODEL_VISUALDATA_HTML', 'html' );
 define( 'CONTENT_MODEL_VISUALDATA_JSONDATA', 'visualdata-jsondata' );
 
-class VisualDataHooks {
+class VisualDataHooks implements
+	\MediaWiki\Hook\AlternateEditHook,
+	\MediaWiki\Hook\BeforeInitializeHook,
+	\MediaWiki\Hook\ParserAfterTidyHook,
+	\MediaWiki\Hook\ParserFirstCallInitHook,
+	\MediaWiki\Installer\Hook\LoadExtensionSchemaUpdatesHook,
+	\MediaWiki\Page\Hook\ArticleUndeleteHook,
+	// MW 1.37: \MediaWiki\Page\Hook\PageDeleteCompleteHook,
+	\MediaWiki\Storage\Hook\PageSaveCompleteHook
+{
 
 	/**
 	 * @param array $credits
@@ -90,9 +99,9 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Parser $parser
+	 * @param MediaWiki\Parser\Parser|Parser $parser
 	 */
-	public static function onParserFirstCallInit( Parser $parser ) {
+	public function onParserFirstCallInit( $parser ) {
 		$parser->setFunctionHook( 'visualdataprint', [ \VisualData::class, 'parserFunctionPrint' ] );
 		$parser->setFunctionHook( 'visualdataquery', [ \VisualData::class, 'parserFunctionQuery' ] );
 		$parser->setFunctionHook( 'visualdataform', [ \VisualData::class, 'parserFunctionForm' ] );
@@ -110,15 +119,15 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title|MediaWiki\Title\Title &$title
+	 * @param MediaWiki\Title\Title|Title $title
 	 * @param null $unused
-	 * @param OutputPage $output
-	 * @param User $user
-	 * @param WebRequest $request
+	 * @param MediaWiki\Output\OutputPage|OutputPage $output
+	 * @param MediaWiki\User\User|User $user
+	 * @param MediaWiki\Request\WebRequest|WebRequest $request
 	 * @param MediaWiki|MediaWiki\Actions\ActionEntryPoint $mediaWiki
 	 * @return void
 	 */
-	public static function onBeforeInitialize( &$title, $unused, \OutputPage $output, \User $user, \WebRequest $request, $mediaWiki ) {
+	public function onBeforeInitialize( $title, $unused, $output, $user, $request, $mediaWiki ) {
 		\VisualData::initialize();
 
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] )
@@ -139,7 +148,7 @@ class VisualDataHooks {
 	 * @param MediaWiki\EditPage\EditPage|EditPage $editPage
 	 * @return bool|void
 	 */
-	public static function onAlternateEdit( $editPage ) {
+	public function onAlternateEdit( $editPage ) {
 		// this only works if SlotRecord::MAIN is replaced with SLOT_ROLE_VISUALDATA_JSONDATA
 		// in MediaWiki\EditPage
 		if ( !empty( $_GET['slot'] ) ) {
@@ -215,16 +224,16 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param WikiPage|MediaWiki\Page\PageStoreRecord $page
-	 * @param User $deleter
+	 * @param WikiPage|MediaWiki\Page\ProperPageIdentity $page
+	 * @param User|MediaWiki\Permissions\Authority $deleter
 	 * @param string $reason
 	 * @param int $pageID
 	 * @param RevisionRecord $deletedRev
-	 * @param ManualLogEntry $logEntry
+	 * @param ManualLogEntry|MediaWiki\Logging\ManualLogEntry $logEntry
 	 * @param int $archivedRevisionCount
 	 * @return void
 	 */
-	public static function onPageDeleteComplete( $page, $deleter, $reason, $pageID, $deletedRev, $logEntry, $archivedRevisionCount ) {
+	public function onPageDeleteComplete( $page, $deleter, $reason, $pageID, $deletedRev, $logEntry, $archivedRevisionCount ) {
 		$databaseManager = new DatabaseManager();
 		$page = $deletedRev->getPage();
 		$title = TitleClass::newFromDBKey( $page->getDBkey() );
@@ -259,10 +268,10 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Parser $parser
+	 * @param MediaWiki\Parser\Parser|Parser $parser
 	 * @param string &$text
 	 */
-	public static function onParserAfterTidy( Parser $parser, &$text ) {
+	public function onParserAfterTidy( $parser, &$text ) {
 		$title = $parser->getTitle();
 
 		if ( !$title->isKnown() ) {
@@ -278,9 +287,9 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param DatabaseUpdater|null $updater
+	 * @param MediaWiki\Installer\DatabaseUpdater|DatabaseUpdater $updater
 	 */
-	public static function onLoadExtensionSchemaUpdates( ?DatabaseUpdater $updater = null ) {
+	public function onLoadExtensionSchemaUpdates( $updater ) {
 		$base = __DIR__;
 		$db = $updater->getDB();
 		$dbType = $db->getType();
@@ -413,21 +422,21 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param WikiPage $wikiPage
-	 * @param MediaWiki\User\UserIdentity $user
+	 * @param MediaWiki\Page\WikiPage|WikiPage $wikiPage
+	 * @param MediaWiki\User\UserIdentity|User $user
 	 * @param string $summary
 	 * @param int $flags
 	 * @param RevisionRecord $revisionRecord
 	 * @param MediaWiki\Storage\EditResult $editResult
 	 * @return void
 	 */
-	public static function onPageSaveComplete(
-		WikiPage $wikiPage,
-		/* User|MediaWiki\User\UserIdentity */ $user,
-		string $summary,
-		int $flags,
-		/* RevisionRecord|MediaWiki\Revision\RevisionStoreRecord */ $revisionRecord,
-		/* MediaWiki\Storage\EditResult */ $editResult
+	public function onPageSaveComplete(
+		$wikiPage,
+		$user,
+		$summary,
+		$flags,
+		$revisionRecord,
+		$editResult
 	) {
 		// *** important! prevents calling VisualData -> rebuildArticleData
 		// multiple times
@@ -486,7 +495,7 @@ class VisualDataHooks {
 	 * @param array $restoredPages
 	 * @return bool|void
 	 */
-	public static function onArticleUndelete( $title, $create, $comment, $oldPageId, $restoredPages ) {
+	public function onArticleUndelete( $title, $create, $comment, $oldPageId, $restoredPages ) {
 		// @TODO use https://www.mediawiki.org/wiki/Manual:Hooks/PageUndeleteComplete
 		$revisionRecord = \VisualData::revisionRecordFromTitle( $title );
 		$user = RequestContext::getMain()->getUser();

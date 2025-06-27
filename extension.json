@@ -16,6 +16,9 @@
 	},
 	"callback": "VisualDataHooks::initExtension",
 	"HookHandlers": {
+		"main": {
+			"class": "VisualDataHooks"
+		},
 		"visualdata_searchdata": {
 			"class": "VisualDataDataForSearchIndex",
 			"services": [
@@ -67,14 +70,14 @@
 		"VisualDataMagic": "VisualDataMagic.i18n.magic.php"
 	},
 	"Hooks": {
-		"LoadExtensionSchemaUpdates": "VisualDataHooks::onLoadExtensionSchemaUpdates",
-		"AlternateEdit": "VisualDataHooks::onAlternateEdit",
-		"PageDeleteComplete": "VisualDataHooks::onPageDeleteComplete",
-		"ArticleUndelete": "VisualDataHooks::onArticleUndelete",
-		"ParserFirstCallInit": "VisualDataHooks::onParserFirstCallInit",
-		"PageSaveComplete": "VisualDataHooks::onPageSaveComplete",
-		"BeforeInitialize": "VisualDataHooks::onBeforeInitialize",
-		"ParserAfterTidy": "VisualDataHooks::onParserAfterTidy",
+		"LoadExtensionSchemaUpdates": "main",
+		"AlternateEdit": "main",
+		"PageDeleteComplete": "main",
+		"ArticleUndelete": "main",
+		"ParserFirstCallInit": "main",
+		"PageSaveComplete": "main",
+		"BeforeInitialize": "main",
+		"ParserAfterTidy": "main",
 		"MediaWikiServices": "VisualDataHooks::onMediaWikiServices",
 		"MultiContentSave": "VisualDataHooks::onMultiContentSave",
 		"RevisionFromEditComplete": "VisualDataHooks::onRevisionFromEditComplete",
