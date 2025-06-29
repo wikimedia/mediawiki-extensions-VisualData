@@ -297,7 +297,6 @@ class VisualDataHooks {
 
 		$importer = \VisualData::getImporter();
 
-		// @TODO MW 1.42
 		if ( !$importer ) {
 			return;
 		}

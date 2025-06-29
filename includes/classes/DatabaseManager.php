@@ -915,6 +915,7 @@ class DatabaseManager {
 	 * @return int
 	 */
 	private function updateOrInsert( $tableName, $conds, $insert, $update = null ) {
+		// @TODO use upsert
 		$id = $this->dbr->selectField(
 			$tableName,
 			'id',

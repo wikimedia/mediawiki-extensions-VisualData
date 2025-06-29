@@ -894,20 +894,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			value: availableInputsValue
 		} );
 
-		availableInputsInput.on( 'change', function ( value ) {
-			var thisDefaultValueInput = getDefaultValueInput();
-
-			// eslint-disable-next-line no-use-before-define
-			Model.default = defaultValueInput;
-
-			if (
-				value === 'OO.ui.SelectFileWidget' &&
-				!( 'accept' in thisDefaultValueInput )
-			) {
-				thisDefaultValueInput.accept = Config.allowedMimeTypes;
-			}
-		} );
-
 		Model[ 'preferred-input' ] = availableInputsInput;
 
 		var inputConfigButton = new OO.ui.ButtonWidget( {
@@ -1073,6 +1059,23 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			} )
 		);
 
+		var publishFileInput = new OO.ui.DropdownInputWidget( {
+			options: VisualDataFunctions.createDropDownOptions( {
+				publish: mw.msg( 'visualdata-jsmodule-formfield-publishfile-publish' ),
+				saveonly: mw.msg( 'visualdata-jsmodule-formfield-publishfile-saveonly' )
+			} ),
+			value: ( !getPropertyValue( 'filepath' ) ? 'publish' : 'saveonly' )
+		} );
+
+		var publishFileField = new OO.ui.FieldLayout( publishFileInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-publishfile' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-publishfile-help' ),
+			helpInline: true,
+			align: 'top'
+		} );
+
+		items.push( publishFileField );
+
 		var valueFormulaInput = new OO.ui.MultilineTextInputWidget( {
 			value: getPropertyValue( 'value-formula' ),
 			autosize: true,
@@ -1081,14 +1084,58 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 		Model[ 'value-formula' ] = valueFormulaInput;
 
-		items.push(
-			new OO.ui.FieldLayout( valueFormulaInput, {
-				label: mw.msg( 'visualdata-jsmodule-formfield-valueformula' ),
-				help: mw.msg( 'visualdata-jsmodule-formfield-valueformula-help' ),
-				helpInline: true,
-				align: 'top'
-			} )
-		);
+		var valueFormulaField = new OO.ui.FieldLayout( valueFormulaInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-valueformula' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-valueformula-help' ),
+			helpInline: true,
+			align: 'top'
+		} );
+
+		items.push( valueFormulaField );
+
+		var filePathInput = new OO.ui.TextInputWidget( {
+			value: getPropertyValue( 'filepath' )
+		} );
+
+		Model.filepath = filePathInput;
+
+		var filePathField = new OO.ui.FieldLayout( filePathInput, {
+			label: mw.msg( 'visualdata-jsmodule-formfield-filepath' ),
+			help: mw.msg( 'visualdata-jsmodule-formfield-filepath-help' ),
+			helpInline: true,
+			align: 'top'
+		} );
+
+		items.push( filePathField );
+
+		function onSelectAvailableInputs() {
+			var thisAvailableInputsValue = availableInputsInput.getValue();
+			var thisDefaultValueInput = getDefaultValueInput();
+
+			// eslint-disable-next-line no-use-before-define
+			Model.default = defaultValueInput;
+
+			if (
+				thisAvailableInputsValue === 'OO.ui.SelectFileWidget' &&
+				!( 'accept' in thisDefaultValueInput )
+			) {
+				thisDefaultValueInput.accept = Config.allowedMimeTypes;
+			}
+
+			publishFileField.toggle( thisAvailableInputsValue === 'OO.ui.SelectFileWidget' );
+			valueFormulaField.toggle( thisAvailableInputsValue !== 'OO.ui.SelectFileWidget' || publishFileInput.getValue() === 'publish' );
+			filePathField.toggle( thisAvailableInputsValue === 'OO.ui.SelectFileWidget' && publishFileInput.getValue() === 'saveonly' );
+		}
+
+		publishFileInput.on( 'change', function () {
+			onSelectAvailableInputs();
+		} );
+
+		availableInputsInput.on( 'change', function () {
+			onSelectAvailableInputs();
+		} );
+
+		onSelectAvailableInputs();
 
 		function onToggleHiddenInput( hidden ) {
 			if ( hidden ) {
