@@ -153,7 +153,10 @@ class QueryProcessor {
 	public function getCount() {
 		$this->count = true;
 		$this->treeFormat = false;
+		$categories = $this->params['categories'];
+		$this->params['categories'] = false;
 		$this->performQuery();
+		$this->params['categories'] = $categories;
 		if ( !count( $this->errors ) ) {
 			return (int)$this->result;
 		}
@@ -998,6 +1001,7 @@ class QueryProcessor {
 			return "t$firstKey.page_id";
 		}
 
+		// *** attention, this must not be performed with count
 		if ( $this->params['categories'] ) {
 			unset( $fields['categories'] );
 			return implode( ', ', array_values( $fields ) );

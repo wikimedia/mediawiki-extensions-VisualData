@@ -72,7 +72,7 @@ class Importer {
 	 * @param string $pagenameFormula
 	 * @param array $data
 	 * @param function $showMsg
-	 * @return bool|void
+	 * @return bool|array
 	 */
 	public function importData( $pagenameFormula, $data, $showMsg ) {
 		if ( empty( $pagenameFormula ) ) {
@@ -87,7 +87,7 @@ class Importer {
 			$showMsg( 'generating schema' );
 			// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.Found
 			if ( !( $schema = $this->createSchema( $this->schemaName, $data ) ) ) {
-				$showMsg( "couldn't save schema" );
+				$showMsg( 'couldn\'t save schema' );
 				return false;
 			}
 		}
@@ -100,11 +100,12 @@ class Importer {
 		$submitForm = new SubmitForm( $this->user, $this->context );
 		$this->importer = \VisualData::getImporter( $this->user );
 
-		// @TODO MW 1.42
 		if ( !$this->importer ) {
-			return;
+			$showMsg( 'importer not defined' );
+			return false;
 		}
 
+		$ret = [];
 		$n = 0;
 		foreach ( $data as $key => $value ) {
 			if ( $this->options['isCsv'] ) {
@@ -155,6 +156,8 @@ class Importer {
 
 			$entries = $databaseManager->recordProperties( 'ImportData', $title_, $flatten, $errors );
 			$showMsg( "$entries entries created for article $pagename" );
+
+			$ret[$key] = $pagename;
 			$n++;
 			if ( $this->options['limit'] !== false && $n === $this->options['limit'] ) {
 				break;
@@ -162,7 +165,7 @@ class Importer {
 		}
 
 		$showMsg( "$n pages imported" );
-		return true;
+		return $ret;
 	}
 
 	/**

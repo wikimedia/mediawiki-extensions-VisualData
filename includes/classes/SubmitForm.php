@@ -48,6 +48,9 @@ class SubmitForm {
 	/** @var User */
 	private $user;
 
+	/** @var MediaWikiServices */
+	private $services;
+
 	/**
 	 * @param User $user
 	 * @param Context|null $context can be null
@@ -59,6 +62,7 @@ class SubmitForm {
 		// in a different way !
 		$this->context = $context ?? RequestContext::getMain();
 		$this->output = $this->context->getOutput();
+		$this->services = MediaWikiServices::getInstance();
 	}
 
 	/**
@@ -169,6 +173,37 @@ class SubmitForm {
 	}
 
 	/**
+	 * @param UploadStash $stash
+	 * @param string $destinationPath
+	 * @param string $filekey
+	 * @param array &$errors
+	 * @return bool
+	 */
+	private function saveStashedFileToPath( $stash, $destinationPath, $filekey, &$errors ) {
+		try {
+			$file = $stash->getFile( $filekey );
+
+			if ( !$file ) {
+				$errors[] = 'Stashed file not found';
+				return false;
+			}
+
+			$srcPath = $file->getLocalRefPath();
+
+			$dir = dirname( $destinationPath );
+			if ( !is_dir( $dir ) ) {
+				mkdir( $dir, 0777, true );
+			}
+
+			return copy( $srcPath, $destinationPath );
+
+		} catch ( \Exception $e ) {
+			$errors[] = 'Failed to save stashed file: ' . $e->getMessage();
+			return false;
+		}
+	}
+
+	/**
 	 * @param string $textFrom
 	 * @param string $textTo
 	 * @param array &$errors
@@ -258,7 +293,7 @@ class SubmitForm {
 		$performer = ( method_exists( RequestContext::class, 'getAuthority' ) ? $this->context->getAuthority()
 			: $this->user );
 		// ***edited
-		$services = MediaWikiServices::getInstance();
+		$services = $this->services;
 		$contentModelChangeFactory = $services->getContentModelChangeFactory();
 		$changer = $contentModelChangeFactory->newContentModelChange(
 			// ***edited
@@ -337,7 +372,7 @@ class SubmitForm {
 		// * delete schemas from db and slot
 		// * replacements of value-formula
 		// * replacements of pagename-formula
-		// * parsing value-formula as wikitext
+		// * parsing value as wikitext
 		// * file upload
 		// * file rename
 		// * apply values-prefixes
@@ -465,8 +500,21 @@ class SubmitForm {
 				}
 			}
 
+			if ( !empty( $value['schema']['wiki']['filepath'] ) ) {
+				if ( !is_array( $value['value'] ) ) {
+					$data['flatten'][$path]['value'] = $transformedValues[$path] =
+						$this->replaceFormula( $path, $value['value'], $data['flatten'], $value['schema']['wiki']['filepath'] );
+				} else {
+					foreach ( $value['value'] as $v ) {
+						$data['flatten'][$path]['value'][] = $transformedValues[$path][] =
+							$this->replaceFormula( $path, $v, $data['flatten'], $value['schema']['wiki']['filepath'] );
+					}
+				}
+			}
+
 			if ( !empty( $value['schema']['wiki']['value-formula'] )
 				|| !empty( $value['schema']['wiki']['value-prefix'] )
+				|| !empty( $value['schema']['wiki']['filepath'] )
 			) {
 				$untransformedValues[$path] = $value['value'];
 			}
@@ -591,9 +639,14 @@ class SubmitForm {
 		}
 
 		// save files
+		$stash = $this->services->getRepoGroup()->getLocalRepo()->getUploadStash();
 		foreach ( $data['flatten'] as $path => $value ) {
 			if ( !empty( $value['filekey'] ) ) {
-				$this->publishStashedFile( $value['value'], $value['filekey'], $errors );
+				if ( empty( $value['schema']['wiki']['filepath'] ) ) {
+					$this->publishStashedFile( $value['value'], $value['filekey'], $errors );
+				} else {
+					$this->saveStashedFileToPath( $stash, $value['value'], $value['filekey'], $errors );
+				}
 			}
 		}
 
