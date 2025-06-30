@@ -131,7 +131,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param MediaWiki\EditPage|EditPage $editPage
+	 * @param MediaWiki\EditPage\EditPage|EditPage $editPage
 	 * @return bool|void
 	 */
 	public static function onAlternateEdit( $editPage ) {
@@ -641,11 +641,11 @@ class VisualDataHooks {
 
 	/**
 	 * @todo replace the editor for alternate slots
-	 * @param EditPage $editPage
+	 * @param MediaWiki\EditPage\EditPage|EditPage $editPage
 	 * @param OutputPage $output
 	 * @return void
 	 */
-	public static function onEditPageshowEditForminitial( EditPage $editPage, OutputPage $output ) {
+	public static function onEditPageshowEditForminitial( $editPage, OutputPage $output ) {
 	}
 
 	/**
