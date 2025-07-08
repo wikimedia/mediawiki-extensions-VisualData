@@ -2485,6 +2485,10 @@ class VisualData {
 		$namespace = $formattedNamespaces[$ns];
 
 		$schemaUrl = str_replace( '$1', "$namespace:", $wgArticlePath );
+		if ( method_exists( MediaWikiServices::class, 'getUrlUtils' ) ) {
+			// MW 1.39+
+			return MediaWikiServices::getInstance()->getUrlUtils()->expand( $schemaUrl );
+		}
 		return wfExpandUrl( $schemaUrl );
 	}
 
