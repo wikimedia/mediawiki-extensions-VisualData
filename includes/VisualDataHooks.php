@@ -67,6 +67,9 @@ class VisualDataHooks {
 			'map' => 'MapResultPrinter',
 			// 'list' => 'ListResultPrinter',
 		];
+
+		$GLOBALS['wgDebugLogGroups']['VisualData'] = $GLOBALS['IP'] . '/'
+			. $GLOBALS['wgVisualDataDebugPath'];
 	}
 
 	/**

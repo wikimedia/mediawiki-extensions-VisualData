@@ -1713,7 +1713,18 @@ class VisualData {
 			]
 		];
 
-		self::rebuildArticleData( $user, $title, $jsonData, $errors );
+		if ( self::rebuildArticleData( $user, $title, $jsonData, $errors ) === false ) {
+			self::logError( 'error', 'rebuildArticleData' );
+			self::logError( 'debug', 'title', $title );
+			self::logError( 'debug', 'jsonData', $jsonData );
+
+			if ( self::isCommandLineInterface() ) {
+				echo $title->getFullText() . PHP_EOL;
+				print_r( $errors );
+				print_r( $schemas );
+				print_r( $jsonData );
+			}
+		}
 
 		$ret = self::setJsonData(
 			$user,
@@ -1814,6 +1825,17 @@ class VisualData {
 	}
 
 	/**
+	 * @param string $method
+	 * @param string $message
+	 * @param array $arr []
+	 */
+	public static function logError( $method, $message, $arr = [] ) {
+		if ( self::$Logger ) {
+			self::$Logger->$method( $message, $arr );
+		}
+	}
+
+	/**
 	 * // phpcs:ignore MediaWiki.Commenting.FunctionAnnotations.UnrecognizedAnnotation
 	 * @credits WSSlots MediaWiki extension - Wikibase Solutions
 	 * @param User $user
@@ -1825,7 +1847,8 @@ class VisualData {
 	private static function recordSlots( $user, $title, $slotsData, $doNullEdit = false ) {
 		$wikiPage = self::getWikiPage( $title );
 		if ( !$wikiPage ) {
-			self::$Logger->error( 'recordSlots: no wikiPage for ' . $title->getFullText() );
+			self::logError( 'error', 'recordSlots: no wikiPage for ' . $title->getFullText() );
+			self::logError( 'debug', 'slotsData', $slotsData );
 			return false;
 		}
 		$services = MediaWikiServices::getInstance();
@@ -1965,6 +1988,7 @@ class VisualData {
 	 * @param Title|MediaWiki\Title\Title $title
 	 * @param Content $content
 	 * @param array &$errors
+	 * @return bool|null
 	 */
 	public static function rebuildArticleDataFromSlot( $user, $title, $content, &$errors ) {
 		if ( empty( $content ) ) {
@@ -1974,7 +1998,7 @@ class VisualData {
 		$contents = $content->getNativeData();
 		$data = json_decode( $contents, true );
 
-		self::rebuildArticleData( $user, $title, $data, $errors );
+		return self::rebuildArticleData( $user, $title, $data, $errors );
 	}
 
 	/**
@@ -1982,6 +2006,7 @@ class VisualData {
 	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $data
 	 * @param array &$errors
+	 * @return bool|null
 	 */
 	public static function rebuildArticleData( $user, $title, $data, &$errors ) {
 		if ( empty( $data['schemas'] ) ) {
@@ -2010,17 +2035,35 @@ class VisualData {
 				$title_ = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
 				$statusOK = self::saveRevision( $user, $title_, json_encode( $schema ) );
 				if ( !$statusOK ) {
-					self::$Logger->error( 'rebuildArticleData cannot save schema' );
+					self::logError( 'error', 'rebuildArticleData cannot save schema' );
+					self::logError( 'debug', 'data', $data );
+					self::logError( 'debug', 'schema', $schema );
 					continue;
 				}
 				$schemas[$schemaName] = $schemaProcessor->processSchema( $schema, $schemaName );
 			}
 
-			$flatten = array_merge( $flatten, $databaseManager->prepareData( $schemas[$schemaName], $value ) );
+			$flatten_ = $databaseManager->prepareData( $schemas[$schemaName], $value );
+
+			if ( $flatten_ === false ) {
+				$errors[] = 'error processing schema';
+				return false;
+			}
+
+			$flatten = array_merge( $flatten, $flatten_ );
 		}
 
 		$databaseManager->recordProperties( 'rebuildArticleData', $title, $flatten, $errors );
 		$databaseManager->removeUnusedEntries();
+
+		return true;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public static function isCommandLineInterface() {
+		return ( defined( 'MW_ENTRY_POINT' ) && MW_ENTRY_POINT === 'cli' );
 	}
 
 	/**
@@ -2200,8 +2243,10 @@ class VisualData {
 						array_unshift( $pathItems, $form['schemas'][0] );
 					}
 				} elseif ( !in_array( $pathItems[0], $form['schemas'] ) ) {
-					// @FIXME $Logger is undefined when called from the api
-					// self::$Logger->error( 'schema must be specified' );
+					self::logError( 'error', 'schema must be specified' );
+					self::logError( 'debug', 'form', $form );
+					self::logError( 'debug', 'pathItems', $pathItems );
+
 					continue;
 				}
 

@@ -296,7 +296,11 @@ class RebuildData extends Maintenance {
 			echo 'rebuilding data for ' . $title_->getFullText() . PHP_EOL;
 
 			$errors = [];
-			\VisualData::rebuildArticleData( $this->user, $title_, $data, $errors );
+			if ( \VisualData::rebuildArticleData( $this->user, $title_, $data, $errors ) === false ) {
+				echo '***error rebuildArticleData' . PHP_EOL;
+				print_r( $errors );
+				print_r( $data );
+			}
 		}
 	}
 

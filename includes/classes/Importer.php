@@ -127,8 +127,18 @@ class Importer {
 			// required for the use by createArticle
 			$value = DatabaseManager::castDataRec( $schema, $value );
 
-			$flatten = $databaseManager->prepareData( $schema, $value );
-			$titleText = $submitForm->replacePageNameFormula( $flatten, $pagenameFormula, $properties );
+			$flatten_ = $databaseManager->prepareData( $schema, $value );
+
+			if ( $flatten_ === false ) {
+				$showMsg( 'error processing schema' );
+				if ( \VisualData::isCommandLineInterface() ) {
+					print_r( $schema );
+					print_r( $value );
+				}
+				continue;
+			}
+
+			$titleText = $submitForm->replacePageNameFormula( $flatten_, $pagenameFormula, $properties );
 
 			$title_ = \VisualData::parseTitleCounter( $titleText );
 
@@ -154,7 +164,7 @@ class Importer {
 			// ***important !! get again the title object after article creation
 			$title_ = TitleClass::newFromText( $pagename );
 
-			$entries = $databaseManager->recordProperties( 'ImportData', $title_, $flatten, $errors );
+			$entries = $databaseManager->recordProperties( 'ImportData', $title_, $flatten_, $errors );
 			$showMsg( "$entries entries created for article $pagename" );
 
 			$ret[$key] = $pagename;

@@ -751,9 +751,18 @@ class QueryProcessor {
 			if ( $nsIndex !== NS_MAIN ) {
 				$conds_[] = "page_alias.page_namespace = $nsIndex";
 			}
-			$conds_[] = $this->parseCondition( $value, 'page_title' );
+			$conds_[] = $this->parseCondition( $value, $this->fieldCaseInsensitive( 'page_alias.page_title' ) );
 			$orConds[] = $this->dbr->makeList( $conds_, LIST_AND );
 		}
+	}
+
+	/**
+	 * @param string $fullColumnName
+	 * @return string
+	 */
+	private function fieldCaseInsensitive( $fullColumnName ) {
+		// return $fullColumnName;
+		return "CONVERT($fullColumnName USING utf8mb4) COLLATE utf8mb4_general_ci";
 	}
 
 	/**
@@ -809,7 +818,7 @@ class QueryProcessor {
 				$categoryConds = [];
 				foreach ( $categories as $title_ ) {
 					// or use the initial string $v passed to processTitle
-					$categoryConds[] = $this->parseCondition( $title_->getDbKey(), "categorylinks_$i.cl_to" );
+					$categoryConds[] = $this->parseCondition( $title_->getDbKey(), $this->fieldCaseInsensitive( "categorylinks_$i.cl_to" ) );
 				}
 
 				$tables["categorylinks_$i"] = 'categorylinks';

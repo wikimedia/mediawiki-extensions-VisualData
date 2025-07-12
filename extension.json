@@ -563,6 +563,9 @@
 		}
 	},
 	"config": {
+		"VisualDataDebugPath": {
+			"value": "VisualDataDebug.log"
+		},
 		"VisualDataDisableSidebarLink": {
 			"value": false
 		},

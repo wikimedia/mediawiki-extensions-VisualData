@@ -262,7 +262,7 @@ class SchemaProcessor {
 		$ret = [];
 		foreach ( $GLOBALS['wgFileExtensions'] as $ext ) {
 			if ( !array_key_exists( $ext, $MimeTypes ) ) {
-				\VisualData::$Logger->error( 'MimeType not found: ' . $ext );
+				\VisualData::logError( 'error', 'MimeType not found: ' . $ext );
 				continue;
 			}
 			$value = $MimeTypes[$ext];

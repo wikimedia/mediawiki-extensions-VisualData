@@ -92,9 +92,12 @@ class DatabaseManager {
 	/**
 	 * @param array $schema
 	 * @param array $data
-	 * @return array
+	 * @return array|bool
 	 */
 	public function prepareData( $schema, $data ) {
+		if ( !array_key_exists( 'wiki', $schema ) ) {
+			return false;
+		}
 		$ret = [];
 		$path = self::escapeJsonPointerPart( $schema['wiki']['name'] );
 		$pathNoIndex = '';
