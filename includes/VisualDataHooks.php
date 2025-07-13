@@ -425,6 +425,10 @@ class VisualDataHooks {
 		/* RevisionRecord|MediaWiki\Revision\RevisionStoreRecord */ $revisionRecord,
 		/* MediaWiki\Storage\EditResult */ $editResult
 	) {
+		if ( $flags & EDIT_INTERNAL ) {
+			return;
+		}
+
 		$title = $wikiPage->getTitle();
 		$revertMethod = $editResult->getRevertMethod();
 		\VisualData::onArticleSaveOrUndelete( $user, $wikiPage, $revisionRecord, $revertMethod );
