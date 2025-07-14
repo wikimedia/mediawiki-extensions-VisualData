@@ -95,7 +95,7 @@ class DatabaseManager {
 	 * @return array|bool
 	 */
 	public function prepareData( $schema, $data ) {
-		if ( !array_key_exists( 'wiki', $schema ) ) {
+		if ( !is_array( $schema ) ) {
 			return false;
 		}
 		$ret = [];
@@ -1009,6 +1009,14 @@ class DatabaseManager {
 	 * @param function $callbackValue
 	 */
 	public static function traverseData( $schema, &$data, $path, $printout, $callback, $callbackValue ) {
+		if ( !is_array( $schema ) ) {
+			\VisualData::logError( 'error', 'traverseData invalid schema' );
+			\VisualData::logError( 'debug', 'schema', $schema );
+			\VisualData::logError( 'debug', 'data', $data );
+
+			throw new \Exception( 'invalid schema' );
+		}
+
 		// *** this assumes that the schema is in a canonical
 		// form, leave as it is, since it shows errors on data
 		switch ( $schema['type'] ) {
@@ -1219,7 +1227,10 @@ class DatabaseManager {
 				array_key_exists( 'format', $schema ) ? $schema['format'] : null );
 
 			if ( !$table_id || !$propType ) {
-				// @TODO log error
+				\VisualData::logError( 'error', 'createSchemaIdAndPrintouts, no table_id or propType' );
+				\VisualData::logError( 'debug', 'schema', $schema );
+				\VisualData::logError( 'debug', 'table_id', $table_id );
+				\VisualData::logError( 'debug', 'propType', $propType );
 				return;
 			}
 

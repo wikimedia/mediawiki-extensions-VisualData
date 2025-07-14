@@ -425,6 +425,8 @@ class VisualDataHooks {
 		/* RevisionRecord|MediaWiki\Revision\RevisionStoreRecord */ $revisionRecord,
 		/* MediaWiki\Storage\EditResult */ $editResult
 	) {
+		// *** important! prevents calling VisualData -> rebuildArticleData
+		// multiple times
 		if ( $flags & EDIT_INTERNAL ) {
 			return;
 		}

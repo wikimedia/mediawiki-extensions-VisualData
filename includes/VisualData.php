@@ -60,7 +60,7 @@ class VisualData {
 	/** @var array */
 	public static $pageButtons = [];
 
-	/** @var Logger */
+	/** @var LoggerFactory */
 	public static $Logger;
 
 	/** @var int */
@@ -824,7 +824,7 @@ class VisualData {
 
 		foreach ( $unknownNamed as $key => $val ) {
 			if ( strpos( $key, 'preload-data?' ) === 0 ) {
-				// *** attention !! (.+)$ may contain an = symbol
+				// @ATTENTION !! (.+)$ may contain an = symbol
 				if ( preg_match( '/^preload-data(\?(.+?))?=(.+)$/', "$key=$val", $match ) ) {
 					[ $field_, $option_ ] = explode( '+', $match[2] ) + [ null, null ];
 					switch ( $option_ ) {
@@ -1553,9 +1553,8 @@ class VisualData {
 	 * @return false|array
 	 */
 	public static function getJsonData( $title ) {
-		// @ATTENTION!
-		// $page_id is 0 for newly created pages
-		// $title->getArticleID();
+		// *** do not use $title->getArticleID()
+		// since it will be 0 for new articles
 		$key = $title->getFullText();
 
 		// read from cache
@@ -1715,14 +1714,12 @@ class VisualData {
 
 		if ( self::rebuildArticleData( $user, $title, $jsonData, $errors ) === false ) {
 			self::logError( 'error', 'rebuildArticleData' );
-			self::logError( 'debug', 'title', $title );
+			self::logError( 'debug', 'title ' . $title->getFullText() );
 			self::logError( 'debug', 'jsonData', $jsonData );
 
 			if ( self::isCommandLineInterface() ) {
 				echo $title->getFullText() . PHP_EOL;
-				print_r( $errors );
-				print_r( $schemas );
-				print_r( $jsonData );
+				echo '***there are errors, check ' . $GLOBALS['wgDebugLogGroups']['VisualData'] . PHP_EOL;
 			}
 		}
 
@@ -1805,6 +1802,13 @@ class VisualData {
 						foreach ( $value['content']['schemas'] as $schemaName => &$schemaData ) {
 							$schema_ = self::getSchema( $context, $schemaName );
 							if ( !empty( $schema_ ) ) {
+								// @FIXME $schema_ can be "loading..." !!
+								if ( !is_array( $schema_ ) ) {
+									self::logError( 'error', 'setJsonData before castDataRec' );
+									self::logError( 'debug', 'schema_', $schema_ );
+									self::logError( 'debug', 'schemaData', $schemaData );
+									continue;
+								}
 								$schemaData = DatabaseManager::castDataRec( $schema_, $schemaData );
 							}
 						}
@@ -1830,9 +1834,8 @@ class VisualData {
 	 * @param array $arr []
 	 */
 	public static function logError( $method, $message, $arr = [] ) {
-		if ( self::$Logger ) {
-			self::$Logger->$method( $message, $arr );
-		}
+		$logger = self::$Logger ?? LoggerFactory::getInstance( 'VisualData' );
+		$logger->$method( $message . ( $arr ? ' ' . print_r( $arr, true ) : '' ) );
 	}
 
 	/**
@@ -2042,6 +2045,8 @@ class VisualData {
 				}
 				$schemas[$schemaName] = $schemaProcessor->processSchema( $schema, $schemaName );
 			}
+
+			// @FIXME $schemas[$schemaName] can be "loading..." !!
 
 			$flatten_ = $databaseManager->prepareData( $schemas[$schemaName], $value );
 
