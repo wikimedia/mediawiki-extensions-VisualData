@@ -141,7 +141,8 @@ class SchemasPager extends TablePager {
 		$join_conds = [];
 		$options = [];
 
-		$tables = [ $dbr->tableName( 'page' ) ];
+		$tables = [];
+		$tables['page_alias'] = 'page';
 		$fields = [ 'page_namespace', 'page_title', 'page_id' ];
 		$conds['page_namespace'] = NS_VISUALDATASCHEMA;
 
