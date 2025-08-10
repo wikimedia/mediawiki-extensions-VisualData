@@ -1111,15 +1111,15 @@ class DatabaseManager {
 					$pathArr = self::unescapeJsonPointer( $path );
 					$key = array_pop( $pathArr );
 					$subSchema = $schema['items'];
-					$parentSchemas_ = array_merge( $parentSchemas, [ $subSchema ] );
-					$callback( $schema, $path, $printout, $key, $parentSchemas_ );
+					$callback( $schema, $path, $printout, $key, $parentSchemas );
 					self::traverseSchema( $subSchema, $path, $printout, $callback, $parentSchemas );
 				}
 				break;
 			default:
 				$pathArr = self::unescapeJsonPointer( $path );
 				$key = array_pop( $pathArr );
-				$callback( $schema, $path, $printout, $key, $parentSchemas );
+				$parentSchemas_ = array_merge( $parentSchemas, [ $schema ] );
+				$callback( $schema, $path, $printout, $key, $parentSchemas_ );
 		}
 	}
 
@@ -1205,9 +1205,10 @@ class DatabaseManager {
 			}
 		};
 
-		$printout = '';
+		$printout_ = '';
 		$path = '';
-		self::traverseSchema( $schema, $path, $printout, $callback );
+		self::traverseSchema( $schema, $path, $printout_, $callback );
+
 		return $ret;
 	}
 

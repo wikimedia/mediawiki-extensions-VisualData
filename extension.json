@@ -560,6 +560,19 @@
 			],
 			"dependencies": [
 			]
+		},
+		"ext.VisualData.Calendar": {
+			"position": "top",
+			"scripts": [
+				"EventCalendar/event-calendar.min.js",
+				"VisualDataCalendar.js"
+			],
+			"styles": [
+				"EventCalendar/event-calendar.min.css"
+			],
+			"dependencies": [
+				"ext.VisualData.Common"
+			]
 		}
 	},
 	"config": {

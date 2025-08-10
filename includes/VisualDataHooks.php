@@ -65,6 +65,7 @@ class VisualDataHooks {
 			'pageid' => 'PageidResultPrinter',
 			'pagetitle' => 'PagetitleResultPrinter',
 			'map' => 'MapResultPrinter',
+			'calendar' => 'CalendarResultPrinter',
 			// 'list' => 'ListResultPrinter',
 		];
 

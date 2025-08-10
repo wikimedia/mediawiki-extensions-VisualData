@@ -25,7 +25,8 @@ module.exports = function ( grunt ) {
 				'!resources/tinymce/**',
 				'!resources/slick/lib/**',
 				'!resources/Leaflet/**',
-				'!resources/sortable/**'
+				'!resources/sortable/**',
+				'!resources/EventCalendar/**'
 			]
 		},
 		stylelint: {
@@ -46,7 +47,8 @@ module.exports = function ( grunt ) {
 				'!resources/tinymce/**',
 				'!resources/slick/lib/**',
 				'!resources/Leaflet/**',
-				'!resources/sortable/**'
+				'!resources/sortable/**',
+				'!resources/EventCalendar/**'
 			]
 		},
 		banana: conf.MessagesDirs

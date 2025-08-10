@@ -92,6 +92,9 @@ class QueryProcessor {
 	private $mapPathNoIndexTable = [];
 
 	/** @var array */
+	private $mapPrintoutParentSchemas = [];
+
+	/** @var array */
 	private $conditionsUseHaving = [];
 
 	/** @var int */
@@ -901,7 +904,6 @@ class QueryProcessor {
 					//  || preg_match( "/^$pattern\//", $k )
 
 					if ( preg_match( "#^$pattern$#", $k ) ) {
-						// $thisClass->$varName[] = $k;
 						$thisClass->$varName[$key] = $k;
 						$replacements[$value] = $k;
 
@@ -1078,6 +1080,21 @@ class QueryProcessor {
 			return;
 		}
 
+		$thisClass = $this;
+		$parentSchemaIsarray = static function ( $printout ) use ( $thisClass ) {
+			if ( !array_key_exists( $printout, $thisClass->mapPrintoutParentSchemas ) ) {
+				$thisClass->mapPrintoutParentSchemas[$printout] = DatabaseManager::getParentSchemasOfPrintout( $thisClass->schema, $printout );
+			}
+			$parentSchemas = $thisClass->mapPrintoutParentSchemas[$printout];
+			$subSchema = array_slice( $parentSchemas, -2, 1 );
+
+			return (
+				!empty( $subSchema[0] ) &&
+				array_key_exists( 'type', $subSchema[0] ) &&
+				$subSchema[0]['type'] === 'array'
+			);
+		};
+
 		$orderBy = $this->parseOrderBy();
 		foreach ( $orderBy as $printout_ => $sort_ ) {
 			if ( !array_key_exists( $printout_, $arr )
@@ -1087,14 +1104,17 @@ class QueryProcessor {
 			}
 		}
 
-		$combined = [];
+		$items = [];
 		foreach ( $arr as $pathNoIndex => $isPrintout ) {
+			$depth = substr_count( $pathNoIndex, '/' );
+			$isArray = $parentSchemaIsarray( $pathNoIndex );
 			$printoutParent = substr( $pathNoIndex, 0, strrpos( $pathNoIndex, '/' ) );
 
-			$combined[] = [
+			$items[] = [
 				'printout' => $pathNoIndex,
 				'printoutParent' => $printoutParent,
-				'depth' => substr_count( $pathNoIndex, '/' ),
+				'depth' => $depth,
+				'isArray' => $isArray,
 				'isPrintout' => $isPrintout,
 				'isCondition' => in_array( $pathNoIndex, $this->conditionProperties ),
 				'isOrderBy' => array_key_exists( $pathNoIndex, $orderBy )
@@ -1108,7 +1128,7 @@ class QueryProcessor {
 
 		if ( $this->treeFormat && !$this->count ) {
 			$maxDepthCondition = 0;
-			foreach ( $combined as $v ) {
+			foreach ( $items as $v ) {
 				if ( $v['isCondition'] ) {
 					if ( $v['depth'] > $maxDepthCondition ) {
 						$maxDepthCondition = $v['depth'];
@@ -1140,13 +1160,11 @@ class QueryProcessor {
 					// if there are no multiple items in a set of
 					// disjunctions
 					if ( $allLikes && !$multipleItems ) {
-						foreach ( $combined as $v ) {
+						foreach ( $items as $v ) {
 							if ( $v['printout'] === $printout &&
 								$v['depth'] === $maxDepthCondition
 							) {
-								$parentSchemas_ = DatabaseManager::getParentSchemasOfPrintout( $this->schema, $v['printout'] );
-								$arr_ = array_slice( $parentSchemas_, -2, 1 );
-								if ( !empty( $arr_ ) && $arr_[0]['type'] === 'array' ) {
+								if ( $parentSchemaIsarray( $v['printout'] ) ) {
 									$multipleItems = true;
 									break;
 								}
@@ -1161,45 +1179,87 @@ class QueryProcessor {
 			}
 		}
 
-		usort( $combined, static function ( $a, $b ) {
-			return ( $a['depth'] == $b['depth'] ? 0
-				: (int)( $a['depth'] > $b['depth'] ) );
+		usort( $items, static function ( $a, $b ) {
+			$aVal = $a['depth'] + (int)$a['isArray'];
+			$bVal = $b['depth'] + (int)$b['isArray'];
+
+			return ( $aVal == $bVal ? 0
+				: (int)( $aVal > $bVal ) );
 		} );
 
+		$printoutToIndex = [];
+		foreach ( $items as $index => $item ) {
+			$printoutToIndex[$item['printout']] = $index;
+		}
+
 		$parents = [];
-		foreach ( $combined as $i => $v ) {
-			for ( $ii = 0; $ii < $i; $ii++ ) {
-				if ( !empty( $combined[$ii]['printoutParent'] )
-					&& strpos( $v['printoutParent'], $combined[$ii]['printoutParent'] ) === 0
-				) {
-					$parents[] = $ii;
-					$combined[$i]['parent'] = $ii;
-					$combined[$i]['isSibling'] = $v['depth'] === $combined[$ii]['depth'];
+		foreach ( $items as $i => &$item ) {
+			if ( isset( $printoutToIndex[$item['printoutParent']] ) ) {
+				$parents[] = $item['printoutParent'];
+			}
+
+			if ( !$item['isArray'] ) {
+				for ( $j = 0; $j < $i; $j++ ) {
+					if ( empty( $items[$j]['printoutParent'] ) ) {
+						continue;
+					}
+					if ( $items[$j]['isArray'] ) {
+						continue;
+					}
+					if ( strpos( $item['printoutParent'], $items[$j]['printoutParent'] . '/' ) === 0 ) {
+						$item['parentIndex'] = $j;
+						break;
+					}
+				}
+
+				// get first item at the same depth which is not an array
+				for ( $j = 0; $j < $i; $j++ ) {
+					if ( $items[$j]['isArray'] ) {
+						continue;
+					}
+					if ( $item['printoutParent'] === $items[$j]['printoutParent'] ) {
+						$item['topSiblingIndex'] = $j;
+						break;
+					}
+				}
+
+			} else {
+				for ( $j = 0; $j < $i; $j++ ) {
+					if ( $items[$j]['isArray'] ) {
+						continue;
+					}
+					if ( empty( $items[$j]['printoutParent'] ) ) {
+						continue;
+					}
+					if ( $item['printoutParent'] === $items[$j]['printoutParent'] ) {
+						$item['parentIndex'] = $j;
+						break;
+					}
 				}
 			}
 		}
 
 		$secondaryPrintouts = [];
 		if ( $this->treeFormat && !$this->conditionId ) {
-			if ( count( $combined ) > $GLOBALS['wgVisualDataQueryProcessorPrintoutsLimit'] ) {
-				foreach ( $combined as $i => $v ) {
+			if ( count( $items ) > $GLOBALS['wgVisualDataQueryProcessorPrintoutsLimit'] ) {
+				foreach ( $items as $i => $v ) {
 					if ( !$v['isCondition'] && !$v['isOrderBy'] && !in_array( $i, $parents ) ) {
 						$secondaryPrintouts[] = $v['printout'];
 					}
 				}
-				foreach ( $combined as $i => $v ) {
+				foreach ( $items as $i => $v ) {
 					if ( in_array( $v['printout'], $secondaryPrintouts ) ) {
-						unset( $combined[$i] );
+						unset( $items[$i] );
 					}
 				}
 			}
 		}
 
-		$firstKey = array_key_first( $combined );
+		$firstKey = array_key_first( $items );
 
 		// @todo instead of $firstKey use the following and rename
 		// the indexes
-		// $combined = array_values( $combined );
+		// $items = array_values( $items );
 
 		$fields = [];
 		$tables = [];
@@ -1209,14 +1269,14 @@ class QueryProcessor {
 		$having = [];
 
 		$fields['page_id'] = "t$firstKey.page_id";
-		$conds["t$firstKey.schema_id"] = $this->schemaId;
+		// $conds["t$firstKey.schema_id"] = $this->schemaId;
 
 		if ( $this->conditionId ) {
 			$conds[] = "t$firstKey.page_id = " . $this->conditionId;
 		}
 
 		$mapConds = [];
-		foreach ( $combined as $key => $v ) {
+		foreach ( $items as $key => $v ) {
 			$pathNoIndex = $v['printout'];
 			$isPrintout = $v['isPrintout'];
 			$this->mapKeyToPrintout[$key] = $v['printout'];
@@ -1237,25 +1297,23 @@ class QueryProcessor {
 			// }
 
 			$conds_ = [
-				'schema_id' => $this->schemaId,
-				'path_no_index' => $pathNoIndex
+				'p.schema_id' => $this->schemaId,
+				'p.path_no_index' => $pathNoIndex
 			];
 
 			if ( $key > $firstKey ) {
-				// $joinConds[] = "t$key.schema_id=t0.schema_id";
 				$joinConds[] = "t$key.page_id=t$firstKey.page_id";
-				if ( $this->params['hierarchical-conditions']
-					&& array_key_exists( 'parent', $v )
-				) {
-					$parentKey = $v['parent'];
-					if ( !$v['isSibling'] ) {
-						$joinConds[] = "LOCATE( t$parentKey.path_parent, t$key.path_parent ) = 1";
-
+				if ( $this->params['hierarchical-conditions'] ) {
 					// @IMPORTANT!! otherwise, with locate between
 					// identical strings, the query will not work!!
 					// (it could be related to how mysql manages indexes)
-					} else {
-						$joinConds[] = "t$parentKey.path_parent = t$key.path_parent";
+					if ( isset( $v['topSiblingIndex'] ) ) {
+						$parentIndex = $v['topSiblingIndex'];
+						$joinConds[] = "t$key.path_parent = t$parentIndex.path_parent";
+
+					} elseif ( isset( $v['parentIndex'] ) ) {
+						$parentIndex = $v['parentIndex'];
+						$joinConds[] = "LOCATE( t$parentIndex.path_parent, t$key.path_parent ) = 1";
 					}
 				}
 				$joins["t$key"] = [ 'LEFT JOIN', $this->dbr->makeList( $joinConds, LIST_AND ) ];
@@ -1270,8 +1328,22 @@ class QueryProcessor {
 				't' => "visualdata_$tablename",
 				'p' => 'visualdata_props'
 			];
-			$fields_ = [ 't.value', 't.page_id', 'p.path_no_index', 'p.path', 'p.path_parent', 'p.schema_id' ];
+
+			$fields_ = [
+				't.page_id',
+				'p.path_parent',
+				't.value',
+			];
+
+			if ( $this->treeFormat ) {
+				$fields_[] = "GROUP_CONCAT(p.path SEPARATOR 0x1e) AS p$key";
+				$fields_[] = "GROUP_CONCAT(t.value SEPARATOR 0x1e) AS c$key";
+			}
+
 			$options_ = [];
+			if ( $this->treeFormat ) {
+				$options_['GROUP BY'] = 't.page_id';
+			}
 
 			// *** IMPORTANT use one of the following when appropriate !!
 			// $options_['IGNORE INDEX'] = [ 'p' => [ 'path_parent', 'path_no_index', 'index_1', 'index_2', 'index_3' ] ];
@@ -1297,14 +1369,14 @@ class QueryProcessor {
 					$fields["v$key"] = "t$key.value";
 
 				} else {
-					$fields["p$key"] = "GROUP_CONCAT(t$key.path SEPARATOR 0x1E)";
-					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
+					$fields[] = "p$key";
+					$fields[] = "c$key";
 				}
 			}
 
 			if ( $this->treeFormat ) {
 				if ( $v['isCondition'] ) {
-					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
+					$fields[] = "c$key";
 				}
 			}
 		}
@@ -1347,7 +1419,7 @@ class QueryProcessor {
 		if ( $this->params['count-printout'] ) {
 			$fields['count'] = 'COUNT(*)';
 
-			foreach ( $combined as $k => $v ) {
+			foreach ( $items as $k => $v ) {
 				if ( $v['isPrintout'] ) {
 					$printoutKey = "v$k";
 					break;
