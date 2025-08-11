@@ -26,17 +26,85 @@ $( function () {
 		var element = $el.get( 0 );
 		var data = $el.data();
 		var json = data.json;
+		var params = data.params;
 
-		const ec = EventCalendar.create( element, {
-			selectable: true,
+		if ( !params.date ) {
+			params.date = new Date().toISOString();
+		} else {
+			var dateObj = new Date( params.date * 1000 );
+			params.date = dateObj.toISOString();
+		}
+
+		// ***temporary solution, ensure the values of the following keys
+		// are consistent to the selected view
+		// @see https://github.com/vkurko/calendar/tree/master
+		var overrides = [
+			'buttonText',
+			'dayHeaderAriaLabelFormat',
+			'dayHeaderFormat',
+			'displayEventEnd',
+			'duration',
+			'slotDuration',
+			'theme',
+			'titleFormat'
+		];
+
+		for ( var key of overrides ) {
+			delete params[ key ];
+		}
+
+		// handle resources
+		var resources = [];
+		for ( var value of json ) {
+			var event = value[ 1 ];
+			if ( 'resources' in event ) {
+				event.resourcesIds = [];
+				for ( var i in event.resources ) {
+					resources.push( { id: i, title: event.resources[ i ] } );
+					event.resourcesIds.push( i );
+				}
+			}
+		}
+
+		if ( resources.length ) {
+			var additionalButtons = [];
+			var resourceTimeGridWeekFound = false;
+			for ( var i in params.headerToolbar ) {
+				if ( params.headerToolbar[ i ].indexOf( 'resourceTimeGridWeek' ) !== -1 ) {
+					resourceTimeGridWeekFound = true;
+				}
+			}
+
+			if ( !resourceTimeGridWeekFound ) {
+				additionalButtons.push( 'resourceTimeGridWeek' );
+			}
+
+			var resourceTimelineWeekFound = false;
+			for ( var i in params.headerToolbar ) {
+				if ( params.headerToolbar[ i ].indexOf( 'resourceTimelineWeek' ) !== -1 ) {
+					resourceTimelineWeekFound = true;
+				}
+			}
+
+			if ( !resourceTimelineWeekFound ) {
+				additionalButtons.push( 'resourceTimelineWeek' );
+			}
+
+			if ( !resourceTimeGridWeekFound || !resourceTimelineWeekFound ) {
+				params.headerToolbar.end += ' ' + additionalButtons.join( ',' );
+			}
+		}
+
+		const ec = EventCalendar.create( element, $.extend( params, {
 			events: json.map( ( x ) => x[ 1 ] ),
+			resources,
 			dateClick: function ( info ) {
 				// console.log( info );
 			},
 			select: function ( info ) {
 				// console.log( info );
 			}
-		} );
+		} ) );
 	}
 
 	$( '.visualdata-calendar' ).each( function () {

@@ -128,20 +128,10 @@ class ResultPrinter {
 	 * @param array $printoutsOptions []
 	 */
 	public function __construct( $parser, $user, $output, $queryProcessor, $schema, $templates, $params, $printouts, $printoutsOptions = [] ) {
-		$defaultParameters = [
-			'format' => [ 'json', 'string' ],
-			'schema' => [ '', 'string' ],
-			'separator' => [ '', 'string' ],
-			'values-separator' => [ ', ', 'string' ],
-			'template' => [ '', 'string' ],
-			'module' => [ '', 'string' ],
-			'pagetitle' => [ 'page title', 'string' ],
-			'debug' => [ false, 'bool' ]
-		];
-
 		// *** do not discard original entries,
 		// only ensure default parameters exist
 		// when internally called from VisualData -> getResults
+		$defaultParameters = $this->getDefaultParameters();
 		$params = array_merge( $params,
 			\VisualData::applyDefaultParams( $defaultParameters, $params ) );
 
@@ -657,4 +647,102 @@ class ResultPrinter {
 	public function getModules() {
 		return $this->modules;
 	}
+
+	/**
+	 * @return array
+	 */
+	public function getDefaultParameters() {
+		// @see \VisualData -> parserFunctionQuery
+		$ret = \VisualData::$QueryDefaultParameters;
+
+		array_walk( $ret, static function ( &$value, $key ) {
+			$value = [ $value['default'], $value['type'] ];
+		} );
+
+		$ret['function'] = [ 'query', 'string' ];
+
+		return $ret;
+	}
+
+	/**
+	 * @param string|null $prefix null
+	 * @return array
+	 */
+	public function getFormattedParams( $prefix = null ) {
+		$params = [];
+		if ( $prefix ) {
+			foreach ( $this->params as $key => $value ) {
+				if ( strpos( $key, $prefix ) === 0 ) {
+					$ret[str_replace( $prefix, '', $key )] = $value;
+				}
+			}
+
+		} else {
+			$params = $this->params;
+			$defaultParameters = $this->getDefaultParameters();
+			foreach ( $params as $key => $value ) {
+				if ( array_key_exists( $key, $defaultParameters ) ) {
+					unset( $params[$key] );
+				}
+			}
+		}
+
+		$ret = [];
+
+		// convert strings like "columns.searchPanes.show"
+		// to nested objects
+		foreach ( $params as $key => $value ) {
+			if ( strpos( $key, '.' ) === false ) {
+				$ret[$key] = $value;
+				continue;
+			}
+
+			$parts = explode( '.', $key );
+			// \VisualData::array_merge_recursive will remove the parent
+			// value, however we rather use it to enable/disable the options' set
+			$ret = \VisualData::array_merge_recursive(
+				$ret,
+				$this->plainToNestedObj( $parts, $value )
+			);
+		}
+
+		// used in congjunction with array_merge_recursive
+		// where the parent is disabled with eg. searchpanes = false
+		foreach ( $ret as $key => $value ) {
+			if ( \VisualData::isAssoc( $value ) && array_key_exists( 0, $value ) ) {
+				if ( $value[0] === false ) {
+					unset( $ret[$key] );
+				} else {
+					unset( $ret[$key][0] );
+				}
+			}
+		}
+
+		return $ret;
+	}
+
+	/**
+	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php
+	 * @param array $arr
+	 * @param string $value
+	 * @return array
+	 */
+	private function plainToNestedObj( $arr, $value ) {
+		$ret = [];
+
+		// link to first level
+		$t = &$ret;
+		foreach ( $arr as $key => $k ) {
+			if ( !array_key_exists( $k, $t ) ) {
+				$t[$k] = [];
+			}
+			// link to deepest level
+			$t = &$t[$k];
+			if ( $key === count( $arr ) - 1 ) {
+				$t = $value;
+			}
+		}
+		return $ret;
+	}
+
 }

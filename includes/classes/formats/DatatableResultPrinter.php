@@ -156,7 +156,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'default' => 20,
 		],
 		'datatables-lengthMenu' => [
-			'type' => 'string',
+			'type' => 'array-integer',
 			'required' => false,
 			'default' => '10, 20, 50, 100, 200',
 		],
@@ -181,7 +181,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'default' => false
 		],
 		'datatables-buttons' => [
-			'type' => 'string',
+			'type' => 'array-string',
 			'required' => false,
 			'default' => '',
 		],
@@ -260,7 +260,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'default' => false,
 		],
 		'datatables-mark.ignorePunctuation' => [
-			'type' => 'string',
+			'type' => 'array-chunks',
 			'required' => false,
 			// or ':;.,-–—‒_(){}[]!\'"+='
 			'default' => '',
@@ -304,7 +304,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 			'default' => true,
 		],
 		'datatables-searchPanes.columns' => [
-			'type' => 'string',
+			'type' => 'array-integer',
 			'required' => false,
 			'default' => '',
 		],
@@ -399,7 +399,7 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$this->count = $this->getCount();
 
 		$this->query = $this->queryProcessor->getQueryData();
-		$this->conf = $this->getConf();
+		$this->conf = $this->getFormattedParams( 'datatables-' );
 
 		$tableAttrs['data-printouts-options'] = json_encode( $formattedPrintoutsOptions );
 		$tableAttrs['data-map-path-schema'] = json_encode( $this->mapPathSchema );
@@ -456,94 +456,17 @@ class DatatableResultPrinter extends TableResultPrinter {
 	}
 
 	/**
-	 * @return array
-	 */
-	public function getConf() {
-		$ret = [];
-		foreach ( $this->params as $key => $value ) {
-			if ( strpos( $key, 'datatables-' ) === 0 ) {
-				$ret[str_replace( 'datatables-', '', $key )] = $value;
-			}
-		}
-		return $this->formatOptions( $ret );
-	}
-
-	/**
-	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php
-	 * @param array $params
-	 * @return array
-	 */
-	private function formatOptions( $params ) {
-		$arrayTypes = [
-			'lengthMenu' => 'number',
-			'buttons' => 'string',
-			'searchPanes.columns' => 'number',
-			'mark.ignorePunctuation' => '',
-			// ...
-		];
-
-		$ret = [];
-		foreach ( $params as $key => $value ) {
-
-			// transform csv to array
-			if ( array_key_exists( $key, $arrayTypes ) ) {
-
-				// https://markjs.io/#mark
-				if ( $arrayTypes[$key] === '' ) {
-					$value = str_split( $value );
-
-				} else {
-					$value = preg_split( '/\s*,\s*/', $value, -1, PREG_SPLIT_NO_EMPTY );
-
-					if ( $arrayTypes[$key] === 'number' ) {
-						$value = array_map( static function ( $value ) {
-							return (int)$value;
-						}, $value );
-					}
-				}
-			}
-
-			// convert strings like columns.searchPanes.show
-			// to nested objects
-			$arr = explode( '.', $key );
-
-			$ret = array_merge_recursive( $this->plainToNestedObj( $arr, $value ),
-				$ret );
-
-		}
-
-		$isAssoc = static function ( $value ) {
-			if ( !is_array( $value ) || $value === [] ) {
-				return false;
-			}
-			return array_keys( $value ) !== range( 0, count( $value ) - 1 );
-		};
-
-		// remove $ret["searchPanes"] = [] if $ret["searchPanes"][0] === false
-		foreach ( $ret as $key => $value ) {
-			if ( $isAssoc( $value ) && array_key_exists( 0, $value ) ) {
-				if ( $value[0] === false ) {
-					unset( $ret[$key] );
-				} else {
-					unset( $ret[$key][0] );
-				}
-			}
-		}
-
-		return $ret;
-	}
-
-	/**
 	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php
 	 * @param array $parameters
 	 * @return array
 	 */
 	private function getPrintoutsOptions( $parameters ) {
+		// e.g ?title |+datatables-columns.type=string |+datatables-width=50px
 		$arrayTypesColumns = [
 			'orderable' => 'boolean',
 			'searchable' => 'boolean',
 			'visible' => 'boolean',
-			'orderData' => 'numeric-array',
+			'orderData' => 'array-number',
 			'searchPanes.collapse' => 'boolean',
 			'searchPanes.controls' => 'boolean',
 			'searchPanes.hideCount' => 'boolean',
@@ -561,56 +484,20 @@ class DatatableResultPrinter extends TableResultPrinter {
 			$value = trim( $value );
 
 			if ( array_key_exists( $key, $arrayTypesColumns ) ) {
-				switch ( $arrayTypesColumns[$key] ) {
-					case 'boolean':
-						$value = strtolower( $value ) === 'true'
-							|| ( is_numeric( $value ) && $value == 1 );
-						break;
-
-					case 'numeric-array':
-						$value = preg_split( '/\s*,\s*/', $value, -1, PREG_SPLIT_NO_EMPTY );
-						break;
-
-					case 'number':
-						$value = $value * 1;
-						break;
-
-					// ...
-				}
+				$type = $arrayTypesColumns[$key];
+				$value = \VisualData::castType( $value );
 			}
 
 			// convert strings like columns.searchPanes.show
 			// to nested objects
-			$arr = explode( '.', $key );
+			$parts = explode( '.', $key );
 
-			$ret = array_merge_recursive( $this->plainToNestedObj( $arr, $value ),
-				$ret );
+			$ret = array_merge_recursive(
+				$this->plainToNestedObj( $parts, $value ),
+				$ret
+			);
 		}
 
-		return $ret;
-	}
-
-	/**
-	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php
-	 * @param array $arr
-	 * @param string $value
-	 * @return array
-	 */
-	private function plainToNestedObj( $arr, $value ) {
-		$ret = [];
-
-		// link to first level
-		$t = &$ret;
-		foreach ( $arr as $key => $k ) {
-			if ( !array_key_exists( $k, $t ) ) {
-				$t[$k] = [];
-			}
-			// link to deepest level
-			$t = &$t[$k];
-			if ( $key === count( $arr ) - 1 ) {
-				$t = $value;
-			}
-		}
 		return $ret;
 	}
 

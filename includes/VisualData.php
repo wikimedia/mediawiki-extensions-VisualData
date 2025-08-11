@@ -951,12 +951,48 @@ class VisualData {
 	}
 
 	/**
+	 * @param string $type
+	 * @param string $val
+	 * @param string|null $defaultValue
+	 * @return mixed
+	 */
+	public static function castType( $type, $val, $defaultValue = null ) {
+		switch ( $type ) {
+			case 'bool':
+			case 'boolean':
+				$ret = filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+				if ( $ret === null && $defaultValue ) {
+					$ret = filter_var( $defaultValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+				}
+				settype( $ret, 'bool' );
+				return $ret;
+
+			case 'array':
+				return preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
+
+			case 'array-chunks':
+				return str_split( $val );
+
+			case 'number':
+			case 'numeric':
+				return filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
+
+			case 'int':
+			case 'integer':
+				return filter_var( $val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
+		}
+
+		return $val;
+	}
+
+	/**
 	 * @param array $defaultParams
 	 * @param array $params
 	 * @return array
 	 */
 	public static function applyDefaultParams( $defaultParams, $params ) {
 		$ret = [];
+
 		foreach ( $defaultParams as $key => $value ) {
 			[ $defaultValue, $type ] = $value;
 			$val = $defaultValue;
@@ -965,35 +1001,26 @@ class VisualData {
 			}
 
 			switch ( $type ) {
-				case 'bool':
-				case 'boolean':
-					$val = filter_var( $val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
-					if ( $val === null ) {
-						$val = filter_var( $defaultValue, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+				case 'array-string':
+				case 'array-int':
+				case 'array-integer':
+				case 'array-bool':
+				case 'array-boolean':
+					$values = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
+					$val = [];
+					foreach ( $values as $val_ ) {
+						[ , $subType ] = explode( '-', $type ) + [ null, null ];
+						$val[] = self::castType( $subType, $val_, $defaultValue );
 					}
-					settype( $val, 'bool' );
-					break;
-
-				case 'array':
-					$val = array_filter(
-						preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY ) );
-					break;
-
-				case 'number':
-					$val = filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
-					settype( $val, 'float' );
-					break;
-
-				case 'int':
-				case 'integer':
-					$val = filter_var( $val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE );
-					settype( $val, 'integer' );
 					break;
 
 				default:
+					$val = self::castType( $type, $val, $defaultValue );
 			}
 
-			$ret[$key] = $val;
+			if ( $val !== null ) {
+				$ret[$key] = $val;
+			}
 		}
 
 		return $ret;
@@ -3241,6 +3268,17 @@ class VisualData {
 
 	/**
 	 * @param array $arr
+	 * @return bool
+	 */
+	public static function isAssoc( $arr ) {
+		if ( !is_array( $arr ) || $arr === [] ) {
+			return false;
+		}
+		return array_keys( $arr ) !== range( 0, count( $arr ) - 1 );
+	}
+
+	/**
+	 * @param array $arr
 	 * @param function|null $callback null
 	 * @return array
 	 */
@@ -3277,12 +3315,12 @@ class VisualData {
 
 	/**
 	 * @see https://www.php.net/manual/en/function.array-merge-recursive.php
-	 * @param array &$arr1
-	 * @param array &$arr2
+	 * @param array $arr1
+	 * @param array $arr2
 	 * @param bool $replaceLists false
 	 * @return array
 	 */
-	public static function array_merge_recursive( &$arr1, &$arr2, $replaceLists = false ) {
+	public static function array_merge_recursive( $arr1, $arr2, $replaceLists = false ) {
 		$ret = $arr1;
 
 		if ( self::isList( $arr1 ) && self::isList( $arr2 ) ) {
@@ -3298,7 +3336,7 @@ class VisualData {
 			return $ret;
 		}
 
-		foreach ( $arr2 as $key => &$value ) {
+		foreach ( $arr2 as $key => $value ) {
 			if ( is_array( $value ) && isset( $ret[$key] )
 				&& is_array( $ret[$key] )
 			) {
