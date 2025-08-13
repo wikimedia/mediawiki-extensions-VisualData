@@ -785,6 +785,19 @@ class CalendarResultPrinter extends ResultPrinter {
 		],
 
 		// custom parameters
+		'simple' => [
+			'type' => 'boolean',
+			'required' => false,
+			// if true it uses (EventCalendar default)
+			// headerToolbar.start = title
+			// headerToolbar.center =
+			// headerToolbar.end = today prev,next
+			// otherwise:
+			// headerToolbar.start = prev,next today
+			// headerToolbar.center = title
+			// headerToolbar.end = dayGridMonth,timeGridWeek,timeGridDay,listWeek
+			'default' => false,
+		],
 		'start-property' => [
 			'type' => 'string',
 			'required' => false,
@@ -799,6 +812,11 @@ class CalendarResultPrinter extends ResultPrinter {
 			'type' => 'string',
 			'required' => false,
 			'default' => 'title',
+		],
+		'resources-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'resources',
 		],
 		'height' => [
 			'type' => 'string',
@@ -842,6 +860,7 @@ class CalendarResultPrinter extends ResultPrinter {
 			$this->params['start-property'] => 'start',
 			$this->params['end-property'] => 'end',
 			$this->params['title-property'] => 'title',
+			$this->params['resources-property'] => 'resources',
 		];
 
 		$ret = [];
@@ -864,14 +883,20 @@ class CalendarResultPrinter extends ResultPrinter {
 
 		$required = [ 'start', 'end' ];
 		$mapValues = [];
-		foreach ( $properties as $key => $value ) {
-			if ( isset( $this->mapProperties[$key] ) ) {
-				$mapValues[] = $this->mapProperties[$key];
+		foreach ( $properties as $key_ => $value_ ) {
+			if ( isset( $this->mapProperties[$key_] ) ) {
+				$mapValues[] = $this->mapProperties[$key_];
 			}
 		}
 
 		// $pathParent = substr( $path, 0, strrpos( $path, '/' ) );
 		if ( count( array_intersect( $required, $mapValues ) ) === count( $required ) ) {
+			foreach ( $properties as $key_ => $value_ ) {
+				if ( isset( $this->mapProperties[$key_] ) ) {
+					$properties[$this->mapProperties[$key_]] = $value_;
+				}
+			}
+
 			$formatted = Linker::link( $title, $title->getFullText() );
 			$this->json[] = [
 				$formatted,
@@ -879,18 +904,30 @@ class CalendarResultPrinter extends ResultPrinter {
 			];
 		}
 
-		$isArray = ( $schema['type'] === 'array' );
-		if ( $isArray ) {
-			return $properties;
-		}
-
-		return $value;
+		return $properties;
 	}
 
 	/**
 	 * @inheritDoc
 	 */
 	public function processRoot( $rows ) {
+		if ( $this->params['simple'] === true ) {
+			$found_ = false;
+			foreach ( [	'headerToolbar.start', 'headerToolbar.center', 'headerToolbar.end' ] as $key_ ) {
+				if ( $this->params[$key_] !== self::$parameters[$key_]['default'] ) {
+					$found_ = true;
+					break;
+				}
+			}
+			if ( !$found_ ) {
+				// use  https://vkurko.github.io/calendar/ defaults
+				// if "simple" is false (default) and those parameters are not changed
+				$this->params['headerToolbar.start'] = 'title';
+				$this->params['headerToolbar.center'] = '';
+				$this->params['headerToolbar.end'] = 'today prev,next';
+			}
+		}
+
 		$params = $this->getFormattedParams();
 		$this->modules[] = 'ext.VisualData.Calendar';
 
@@ -918,7 +955,7 @@ class CalendarResultPrinter extends ResultPrinter {
 				'width' => $this->params['width'],
 				'height' => $this->params['height'],
 			],
-			''
+			wfMessage( 'visualdata-resultprinter-calendar-placeholder' )->text()
 		);
 	}
 

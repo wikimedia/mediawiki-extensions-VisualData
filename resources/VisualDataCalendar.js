@@ -30,6 +30,7 @@ $( function () {
 
 		if ( !params.date ) {
 			params.date = new Date().toISOString();
+
 		} else {
 			var dateObj = new Date( params.date * 1000 );
 			params.date = dateObj.toISOString();
@@ -68,32 +69,31 @@ $( function () {
 
 		if ( resources.length ) {
 			var additionalButtons = [];
-			var resourceTimeGridWeekFound = false;
-			for ( var i in params.headerToolbar ) {
-				if ( params.headerToolbar[ i ].indexOf( 'resourceTimeGridWeek' ) !== -1 ) {
-					resourceTimeGridWeekFound = true;
+			var relatedViews = [ 'resourceTimeGridWeek', 'resourceTimelineWeek' ];
+
+			// eslint-disable-next-line no-underscore-dangle
+			for ( var view_ of relatedViews ) {
+				// eslint-disable-next-line no-underscore-dangle
+				var found_ = false;
+				for ( var i in params.headerToolbar ) {
+					if ( params.headerToolbar[ i ].indexOf( view_ ) !== -1 ) {
+						found_ = true;
+						break;
+					}
+				}
+
+				if ( !found_ ) {
+					additionalButtons.push( view_ );
 				}
 			}
 
-			if ( !resourceTimeGridWeekFound ) {
-				additionalButtons.push( 'resourceTimeGridWeek' );
-			}
-
-			var resourceTimelineWeekFound = false;
-			for ( var i in params.headerToolbar ) {
-				if ( params.headerToolbar[ i ].indexOf( 'resourceTimelineWeek' ) !== -1 ) {
-					resourceTimelineWeekFound = true;
-				}
-			}
-
-			if ( !resourceTimelineWeekFound ) {
-				additionalButtons.push( 'resourceTimelineWeek' );
-			}
-
-			if ( !resourceTimeGridWeekFound || !resourceTimelineWeekFound ) {
+			if ( additionalButtons.length ) {
 				params.headerToolbar.end += ' ' + additionalButtons.join( ',' );
 			}
 		}
+
+		// remove placeholder
+		$el.text( '' );
 
 		const ec = EventCalendar.create( element, $.extend( params, {
 			events: json.map( ( x ) => x[ 1 ] ),
@@ -105,6 +105,7 @@ $( function () {
 				// console.log( info );
 			}
 		} ) );
+
 	}
 
 	$( '.visualdata-calendar' ).each( function () {

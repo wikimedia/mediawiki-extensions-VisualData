@@ -82,9 +82,10 @@
 	"visualdata-parserfunction-print-description": "A parser function to print article-related data",
 
 	"visualdata-loading-placeholder": "Loading...",
-	"visualdata-parserfunction-form-placeholder": "form is loading...",
-	"visualdata-parserfunction-button-placeholder": "button is rendering...",
-	"visualdata-parserfunction-query-placeholder": "query is rendering...",
+	"visualdata-parserfunction-form-placeholder": "Form is loading...",
+	"visualdata-parserfunction-button-placeholder": "Button is loading...",
+	"visualdata-parserfunction-query-placeholder": "Query is loading...",
+	"visualdata-resultprinter-calendar-placeholder": "Calendar is loading...",
 
 	"visualdata-parserfunction-template-notice-visual-editor-newlines": "'''Attention!''' VisualEditor won't handle the template correctly if it contains new lines!!",
 	"visualdata-parserfunction-button-description": "A parser function to print a button with value or data submitted to a (javascript) callback",
