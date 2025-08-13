@@ -701,8 +701,8 @@ class ResultPrinter {
 			// \VisualData::array_merge_recursive will remove the parent
 			// value, however we rather use it to enable/disable the options' set
 			$ret = \VisualData::array_merge_recursive(
-				$ret,
-				$this->plainToNestedObj( $parts, $value )
+				$this->plainToNestedObj( $parts, $value ),
+				$ret
 			);
 		}
 
