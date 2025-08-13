@@ -673,7 +673,7 @@ class ResultPrinter {
 		if ( $prefix ) {
 			foreach ( $this->params as $key => $value ) {
 				if ( strpos( $key, $prefix ) === 0 ) {
-					$ret[str_replace( $prefix, '', $key )] = $value;
+					$params[str_replace( $prefix, '', $key )] = $value;
 				}
 			}
 
