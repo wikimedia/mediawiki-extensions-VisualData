@@ -1004,6 +1004,7 @@ class VisualData {
 				case 'array-string':
 				case 'array-int':
 				case 'array-integer':
+				case 'array-number':
 				case 'array-bool':
 				case 'array-boolean':
 					$values = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );

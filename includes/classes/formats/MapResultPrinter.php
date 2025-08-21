@@ -339,17 +339,17 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => 'marker-icon-2x.png',
 		],
 		'icon.iconSize' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '25, 41',
 		],
 		'icon.iconAnchor' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '12, 41',
 		],
 		'icon.popupAnchor' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '1, -34',
 		],
@@ -359,12 +359,12 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => 'marker-shadow.png',
 		],
 		'icon.shadowSize' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '41, 41',
 		],
 		'icon.shadowAnchor' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '12, 41',
 		],
@@ -391,7 +391,7 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => true,
 		],
 		'popup.autoPanPadding' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '50, 50',
 		],
@@ -411,7 +411,7 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => '',
 		],
 		'popup.offset' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '10, -10',
 		],
@@ -479,7 +479,7 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => 'markerPane',
 		],
 		'marker.autoPanPadding' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '50, 50',
 		],
@@ -520,17 +520,17 @@ class MapResultPrinter extends ResultPrinter {
 			'default' => false,
 		],
 		'map.fitBounds.paddingTopLeft' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '0,0',
 		],
 		'map.fitBounds.paddingBottomRight' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '0,0',
 		],
 		'map.fitBounds.padding' => [
-			'type' => 'string',
+			'type' => 'array-number',
 			'required' => false,
 			'default' => '0,0',
 		],
