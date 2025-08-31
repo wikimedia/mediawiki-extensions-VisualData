@@ -448,6 +448,9 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					toggleVisibility( value, model_, field_ );
 				}
 				resolve();
+			} ).catch( ( err ) => {
+				// eslint-disable-next-line no-console
+				console.error( err );
 			} );
 		} );
 	}
@@ -806,6 +809,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 	OO.mixinClass( FileUploadGroupWidget, OO.ui.mixin.GroupElement );
 
 	var ItemWidget = function ( config ) {
+		var self = this;
 		config = config || {};
 		ItemWidget.super.call( this, config );
 
@@ -854,8 +858,6 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			};
 
 			var loadedFiles = {};
-
-			var self = this;
 
 			// @FIXME
 			// eslint-disable-next-line no-inner-declarations
@@ -988,6 +990,29 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		);
 
 		Fields[ config.model.path ] = fieldLayout;
+
+		if ( config.optionsList ) {
+			var deleteButton = new OO.ui.ButtonWidget( {
+				icon: 'close',
+				classes: [ 'visualdata-input-widget-right' ]
+			} );
+
+			deleteButton.on( 'click', function () {
+				config.optionsList.removeItem( config.widget );
+			} );
+
+			var icon = new OO.ui.IconWidget( {
+				icon: 'draggable'
+				// title: 'drag to sort'
+			} );
+
+			var moveEl = $( '<div class="visualdata-input-widget-move"></div>' );
+			moveEl.append( icon.$element );
+
+			fieldLayout.$field.addClass( 'visualdata-input-widget-field-container' );
+			fieldLayout.$field.append( [ deleteButton.$element ] );
+			fieldLayout.$field.prepend( [ moveEl ] );
+		}
 
 		this.$element.append( fieldLayout.$element );
 	};
@@ -1508,19 +1533,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		switch ( data.schema.wiki.layout ) {
 			case 'horizontal':
 				this.layoutHorizontal = new OO.ui.HorizontalLayout();
-
-				layout.$element.append(
-					$(
-						'<div class="visualdata-form-table-multiple-fields" style="display: table">'
-					).append( [
-						$( '<div style="display: table-cell;vertical-align:middle">' ).append(
-							this.layoutHorizontal.$element
-						),
-						$(
-							'<div class="visualdata-horizontal-section-remove-row" style="display: table-cell">'
-						)
-					] )
-				);
+				layout.$element.append( this.layoutHorizontal.$element );
 				break;
 
 			default:
@@ -1543,22 +1556,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					] );
 				}
 
-				if ( data.schema.wiki.layout === 'table' ) {
-					layout.$element.append(
-						$(
-							'<div class="visualdata-form-table-multiple-fields" style="display: table">'
-						).append( [
-							$( '<div style="display: table-cell">' ).append(
-								this.fieldset.$element
-							),
-							$(
-								'<div class="visualdata-horizontal-section-remove-row" style="display: table-cell">'
-							)
-						] )
-					);
-				} else {
-					layout.$element.append( this.fieldset.$element );
-				}
+				layout.$element.append( this.fieldset.$element );
 
 				if ( data.schema.wiki.type === 'geolocation' && data.schema.wiki.map === true ) {
 					if ( !Maps.length ) {
@@ -2097,6 +2095,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 
 	var OptionsList = function ListWidget( config, schema, model ) {
 		config = config || {};
+		var self = this;
 
 		// Call parent constructor
 		OptionsList.super.call( this, config );
@@ -2113,6 +2112,28 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 
 		this.schema = schema;
 		this.model = model;
+
+		this.recDeleteValue = function ( thisModel ) {
+			switch ( thisModel.schema.type ) {
+				case 'object':
+					if ( 'properties' in thisModel ) {
+						for ( var ii in thisModel.properties ) {
+							self.recDeleteValue( thisModel.properties[ ii ] );
+						}
+					}
+					break;
+				case 'array':
+					// @TODO implement tuple
+					if ( VisualDataFunctions.isObject( schema.items ) ) {
+						self.recDeleteValue( thisModel.items );
+					}
+					break;
+				default:
+					if ( 'input' in thisModel ) {
+						thisModel.input.setValue( !thisModel.multiselect ? '' : [] );
+					}
+			}
+		};
 
 		this.aggregate( {
 			delete: 'itemDelete'
@@ -2144,62 +2165,17 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		var self = this;
 		item.data.index = i;
 
-		function recDeleteValue( model ) {
-			switch ( model.schema.type ) {
-				case 'object':
-					if ( 'properties' in model ) {
-						for ( var ii in model.properties ) {
-							recDeleteValue( model.properties[ ii ] );
-						}
-					}
-					break;
-				case 'array':
-					// @TODO implement tuple
-					if ( VisualDataFunctions.isObject( schema.items ) ) {
-						recDeleteValue( model.items );
-					}
-					break;
-				default:
-					if ( 'input' in model ) {
-						model.input.setValue( !model.multiselect ? '' : [] );
-					}
-			}
-		}
+		if ( item.data.schema.wiki.layout === 'section' ) {
+			var deleteButton = new OO.ui.ButtonWidget( {
+				icon: 'close'
+				// flags: ["destructive"],
+				// classes: ["VisualDataOptionsListDeleteButton"],
+			} );
 
-		var deleteButton = new OO.ui.ButtonWidget( {
-			icon: 'close'
-			// flags: ["destructive"],
-			// classes: ["VisualDataOptionsListDeleteButton"],
-		} );
-		deleteButton.on( 'click', function () {
-			if (
-				!( 'minItems' in self.schema ) ||
-				self.items.length > self.schema.minItems
-			) {
-				// *** rather than removing the item
-				// from the model, we mark it as removed
-				// this ensures consistency of the data
-				// structure, the items marked as removed
-				// will be removed from submitted data.
-				// Both the 2 alternate methods aren't
-				// optimal: updatePanels() is too expensive
-				// and renaming all the data structure
-				// is too tricky and leads to errors
-				self.removeItems( [ item ] );
-				self.model[ item.data.index ].removed = true;
-			} else {
-				recDeleteValue( self.model[ item.data.index ] );
-			}
-		} );
+			deleteButton.on( 'click', function () {
+				self.removeItem( item );
+			} );
 
-		if (
-			item.data.schema.wiki.layout === 'horizontal' ||
-			item.data.schema.wiki.layout === 'table'
-		) {
-			$( item.$element )
-				.find( '.visualdata-horizontal-section-remove-row' )
-				.append( deleteButton.$element );
-		} else {
 			item.$element.prepend(
 				$( '<div style="text-align:right">' ).append( deleteButton.$element )
 			);
@@ -2208,6 +2184,32 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		OO.ui.mixin.GroupWidget.prototype.addItems.call( this, [ item ] );
 
 		this.emit( 'add', item );
+
+		return this;
+	};
+
+	OptionsList.prototype.removeItem = function ( item ) {
+		var self = this;
+
+		if (
+			!( 'minItems' in self.schema ) ||
+			self.items.length > self.schema.minItems
+		) {
+			// *** rather than removing the item
+			// from the model, we mark it as removed
+			// this ensures consistency of the data
+			// structure, the items marked as removed
+			// will be removed from submitted data.
+			// Both the 2 alternate methods aren't
+			// optimal: updatePanels() is too expensive
+			// and renaming all the data structure
+			// is too tricky and leads to errors
+			self.removeItems( [ item ] );
+			self.model[ item.data.index ].removed = true;
+
+		} else {
+			self.recDeleteValue( self.model[ item.data.index ] );
+		}
 
 		return this;
 	};
@@ -2258,6 +2260,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		newItem
 	) {
 		config = config || {};
+		var self = this;
 
 		// Call parent constructor
 		OptionsListContainer.super.call( this, config );
@@ -2323,6 +2326,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 				parentSchema: schema
 			} );
 			var widget_ = new GroupWidget( {}, { isObjectList: true, schema: item, path: path_, model: thisModel } );
+
 			processSchema(
 				widget_,
 				item,
@@ -2332,13 +2336,12 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 				data[ i ],
 				path_,
 				pathNoIndex,
-				newItem
+				newItem,
+				this.optionsList
 			);
 			this.optionsList.addItem( widget_, i );
 			i++;
 		}
-
-		var self = this;
 
 		var addOption = new OO.ui.ButtonWidget( {
 			icon: 'add'
@@ -2358,6 +2361,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					childIndex: ii,
 					parentSchema: schema
 				} );
+
 				var widgetAddOption = new GroupWidget( {}, { isObjectList: true, schema: item, path, model: modelAddOption } );
 
 				var thisPath_ = `${ path }/${ ii }`;
@@ -2370,8 +2374,10 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					( data[ ii ] = {} ),
 					thisPath_,
 					pathNoIndex,
-					true
+					true,
+					self.optionsList
 				);
+
 				self.optionsList.addItem( widgetAddOption, ii );
 			}
 		} );
@@ -2395,7 +2401,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		}
 
 		Sortable.create( this.optionsList.$element.get( 0 ), {
-			// handle: '.VisualDataGroupWidgetPanel-left',
+			handle: '.visualdata-input-widget-move',
 			direction: 'vertical',
 			onEnd: function ( evt ) {
 				reorderInputs( model, evt.oldIndex, evt.newIndex );
@@ -2424,6 +2430,9 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			) {
 				model.input.setValue( model.schema.wiki.default );
 			}
+		} ).catch( ( err ) => {
+			// eslint-disable-next-line no-console
+			console.error( err );
 		} );
 	}
 
@@ -2510,8 +2519,13 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		data,
 		path,
 		pathNoIndex,
-		newItem
+		newItem,
+		optionsList
 	) {
+		if ( typeof optionsList === 'undefined' ) {
+			optionsList = null;
+		}
+
 		QueuedWidgets[ schemaName ].push( widget );
 		PendingRecursive++;
 
@@ -2646,7 +2660,9 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					var item = new ItemWidget( {
 						classes: [ 'VisualDataItemWidget' ],
 						model: model,
-						data: inputValue
+						data: inputValue,
+						optionsList,
+						widget
 					} );
 
 					widget.addItems( [ item ] );

@@ -460,7 +460,7 @@ class DatabaseManager {
 	 * @param array $storedSchema
 	 * @param array $updatedSchema
 	 * @param bool $evaluate
-	 * @return int
+	 * @return int|null
 	 */
 	public function diffSchema( $user, $schemaName, $storedSchema, $updatedSchema, $evaluate ) {
 		if ( !class_exists( 'Swaggest\JsonDiff\JsonDiff' ) ) {
@@ -591,21 +591,24 @@ class DatabaseManager {
 		// and to replace properties in the json
 		// object
 
-		$jobs = [];
-		foreach ( $pages as $title_ ) {
-			$jobs[] = new UpdateDataJob( $title_,
-				[
-					'user_id' => $user->getId(),
-					'action' => 'edit-schema',
-					'schema' => $schemaName,
-					'renamed' => $renamed,
-					'removed' => $removed,
-					'added' => $added,
-				]
-			);
-		}
+		// *** disable until https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/VisualData/+/refs/heads/master/resources/VisualDataSchemas.js#1527
+		// is fixed
 
-		\VisualData::pushJobs( $jobs );
+		// $jobs = [];
+		// foreach ( $pages as $title_ ) {
+		// 	$jobs[] = new UpdateDataJob( $title_,
+		// 		[
+		// 			'user_id' => $user->getId(),
+		// 			'action' => 'edit-schema',
+		// 			'schema' => $schemaName,
+		// 			'renamed' => $renamed,
+		// 			'removed' => $removed,
+		// 			'added' => $added,
+		// 		]
+		// 	);
+		// }
+
+		// \VisualData::pushJobs( $jobs );
 	}
 
 	/**

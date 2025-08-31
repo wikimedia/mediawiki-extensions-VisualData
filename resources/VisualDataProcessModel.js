@@ -37,7 +37,7 @@ const VisualDataProcessModel = function (
 	var Removed;
 	var Errors;
 
-	async function getValue( model, errors ) {
+	async function getValue( model ) {
 		var value = 'getValue' in model.input ? model.input.getValue() : '';
 
 		if ( VisualDataFunctions.isPromise( value ) ) {
@@ -50,7 +50,7 @@ const VisualDataProcessModel = function (
 				errorMsg = await errorMsg;
 			}
 			if ( typeof errorMsg === 'string' ) {
-				errors.push( errorMsg );
+				throw new Error( errorMsg );
 			}
 		}
 
@@ -87,6 +87,10 @@ const VisualDataProcessModel = function (
 	async function formatValue( path, model ) {
 		var path_ = ( Action === 'submit' ? path : model.path );
 		var value = 'getValue' in model.input ? model.input.getValue() : '';
+
+		if ( model.removed ) {
+			return value;
+		}
 
 		if ( VisualDataFunctions.isPromise( value ) ) {
 			value = await value;
@@ -127,9 +131,21 @@ const VisualDataProcessModel = function (
 		var errors = Errors;
 		// eslint-disable-next-line new-cap
 		const ajv = new window.ajv7( { strict: false, allErrors: true } );
+
+		ajv.addFormat( 'email', {
+			type: 'string',
+			validate: ( value ) => ( !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( value ) )
+		} );
+
+		ajv.addFormat( 'url', {
+			type: 'string',
+			validate: ( value ) => ( !value || /^(https?:\/\/[^\s/$.?#][^\s]*)$/.test( value ) )
+		} );
+
 		var validateAjv;
 		try {
 			validateAjv = ajv.compile( schema );
+
 		} catch ( e ) {
 			// eslint-disable-next-line no-console
 			console.error( 'validate', e );
@@ -229,6 +245,7 @@ const VisualDataProcessModel = function (
 				// multiselect
 				if ( 'schema' in model.items ) {
 					items = await formatValue( path, model.items );
+
 				} else {
 					var n = 0;
 					for ( var ii in model.items ) {

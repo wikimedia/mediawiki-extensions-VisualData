@@ -1007,7 +1007,11 @@ class VisualData {
 				case 'array-number':
 				case 'array-bool':
 				case 'array-boolean':
-					$values = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
+					// can be an array when called by VisualDataApiDatatables -> \VisualData::getResults()
+					$values = ( !is_array( $val )
+						? preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY )
+						: $val );
+
 					$val = [];
 					foreach ( $values as $val_ ) {
 						[ , $subType ] = explode( '-', $type ) + [ null, null ];

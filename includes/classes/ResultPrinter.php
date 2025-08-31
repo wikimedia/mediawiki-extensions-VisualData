@@ -410,7 +410,8 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				[ $ret[$key], $recPaths ] = $this->processSchemaRecTree( $title, $subschema, $value, $categories, $currentPath, $currentPathNoIndex, $isFirst_, $isLast_ );
+				[ $ret[$key], $recPathsPart ] = $this->processSchemaRecTree( $title, $subschema, $value, $categories, $currentPath, $currentPathNoIndex, $isFirst_, $isLast_ );
+				$recPaths = array_merge( $recPaths, $recPathsPart );
 
 			} else {
 				$ret[$key] = $this->processChild(
@@ -484,7 +485,9 @@ class ResultPrinter {
 			}
 
 			if ( is_array( $value ) ) {
-				[ $ret[$key], $recPaths ] = $this->processSchemaRec( $title, $subschema, $value, $categories, $currentPath, $isFirst_, $isLast_ );
+				[ $ret[$key], $recPathsPart ] = $this->processSchemaRec( $title, $subschema, $value, $categories, $currentPath, $isFirst_, $isLast_ );
+				$recPaths = array_merge( $recPaths, $recPathsPart );
+
 			} else {
 				$ret[$key] = $this->processChild(
 					$title,
@@ -531,16 +534,23 @@ class ResultPrinter {
 
 		$ret = '';
 		if ( $this->hasTemplate( $path ) ) {
-			$properties_ = array_merge( $properties, $recPaths );
+			$params_ = array_merge( $properties, $recPaths );
 			$ret = $this->processTemplate( $this->templates[$path],
-				$this->getTemplateParams( $title, $path, $properties_, $categories, $isFirst, $isLast ) );
+				$this->getTemplateParams( $title, $path, $params_, $categories, $isFirst, $isLast ) );
 
 		} else {
 			// *** the cleaning here has no effect
 			// for TableResultPrinter since the columns
 			// are added to the table from the children
 			// $properties = array_intersect_key( $properties, array_filter( $this->printouts ) );
-			$ret = implode( $this->separator ?? '', $properties );
+			$separator = ( $this->hasTemplate( $path ) ? $this->separator : $this->valuesSeparator );
+			$lastKey = array_key_last( $properties );
+			foreach ( $properties as $k => $v ) {
+				$ret .= $v;
+				if ( $k !== $lastKey ) {
+					$ret .= $separator;
+				}
+			}
 		}
 
 		if ( $this->isHtml() && $isRoot ) {

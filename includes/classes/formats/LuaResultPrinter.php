@@ -19,12 +19,13 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024, https://wikisphere.org
+ * @copyright Copyright ©2024-2025, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
 use MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class LuaResultPrinter extends ResultPrinter {
@@ -37,10 +38,19 @@ class LuaResultPrinter extends ResultPrinter {
 	 * @inheritDoc
 	 */
 	public function getResults() {
+		if ( empty( $this->params['module'] ) ) {
+			return wfMessage( 'visualdata-resultprinter-lua-module-error' )->text();
+		}
+		$title_ = TitleClass::newFromText( $this->params['module'], NS_TEMPLATE );
+		if ( !$title_ || !$title_->isKnown ) {
+			return wfMessage( 'visualdata-resultprinter-lua-module-error' )->text();
+		}
+
 		$results = $this->queryProcessor->getResultsTree();
 		if ( count( $this->queryProcessorErrors() ) ) {
 			return implode( ', ', $this->queryProcessorErrors() );
 		}
+
 		if ( $this->params['debug'] ) {
 			return $results;
 		}

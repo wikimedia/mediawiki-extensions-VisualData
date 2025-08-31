@@ -717,6 +717,20 @@ class SubmitForm {
 			$wikiPage = \VisualData::getWikiPage( $targetTitle );
 		}
 
+		// $errors is handled by reference
+		if ( !count( $errors ) ) {
+			$targetUrl = ( !empty( $data['options']['return-url'] )
+				? $data['options']['return-url']
+				: $targetTitle->getLocalURL() );
+
+			// @see Title -> getFullURL
+			$fullUrl = (string)$services->getUrlUtils()->expand( $targetUrl, PROTO_FALLBACK );
+
+			if ( filter_var( $fullUrl, FILTER_VALIDATE_URL ) === false ) {
+				$errors[] = $this->context->msg( 'visualdata-special-submit-return-url-error', $targetUrl )->text();
+			}
+		}
+
 		// update content model if necessary
 		if ( $targetTitle
 			&& !$isNewPage
@@ -726,9 +740,7 @@ class SubmitForm {
 			$this->updateContentModel( $targetTitle, $wikiPage, $contentModel, $errors );
 		}
 
-		// $errors is handled by reference
 		if ( !count( $errors ) ) {
-
 			if ( !empty( $editTitle ) ) {
 				$deletedSchemas = array_diff( $data['initialSchemas'], $data['schemas'] );
 				if ( count( $deletedSchemas ) ) {
@@ -768,9 +780,7 @@ class SubmitForm {
 			$databaseManager->invalidatePagesWithQueries( array_map( static function ( $v ) {
 				return [ 'name' => $v ];
 			}, $data['schemas'] ) );
-		}
 
-		if ( !count( $errors ) ) {
 			$services->getHookContainer()->run( 'VisualData::OnFormSubmit', [
 				$this->user,
 				$targetTitle,
@@ -779,17 +789,6 @@ class SubmitForm {
 				$isNewPage,
 				&$errors
 			] );
-		}
-
-		$targetUrl = ( !empty( $data['options']['return-url'] )
-			? $data['options']['return-url']
-			: $targetTitle->getLocalURL() );
-
-		// @see Title -> getFullURL
-		$fullUrl = (string)$services->getUrlUtils()->expand( $targetUrl, PROTO_FALLBACK );
-
-		if ( filter_var( $fullUrl, FILTER_VALIDATE_URL ) === false ) {
-			$errors[] = $this->context->msg( 'visualdata-special-submit-return-url-error', $targetUrl )->text();
 		}
 
 		if ( count( $errors ) ) {

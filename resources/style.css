@@ -122,19 +122,6 @@
 	width: 100%;
 }
 
-.visualdata-form-table-multiple-fields {
-	width: 100%;
-}
-
-.visualdata-form-table-multiple-fields > div:first-child {
-	padding-right: 12px;
-}
-
-.visualdata-horizontal-section-remove-row {
-	width: 1%;
-	vertical-align: middle;
-}
-
 .VisualDataGroupWidgetPanel .oo-ui-horizontalLayout .oo-ui-numberInputWidget-field,
 .VisualDataGroupWidgetPanel-border .oo-ui-horizontalLayout .oo-ui-numberInputWidget-field {
 	table-layout: auto;
@@ -270,5 +257,19 @@ body > .oo-ui-windowManager,
 
 .VisualDataGroupWidgetPanel .sortable,
 .VisualDataGroupWidgetPanel-border .sortable {
+	/* cursor: grab; */
+}
+
+.visualdata-input-widget-field-container {
+	display: flex !important;
+	align-items: stretch;
+	gap: 2px;
+}
+
+.visualdata-input-widget-move {
 	cursor: grab;
+	width: 32px;
+	display: flex;
+	align-items: center;
+	/* background: url( ./rearrangeDots.png ) repeat top left / 4px 4px; */
 }

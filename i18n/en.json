@@ -278,6 +278,8 @@
 	"visualdata-parserfunction-query-pagetitle-description": "",
 	"visualdata-parserfunction-query-pagetitle-example": "",
 
+	"visualdata-resultprinter-lua-module-error": "\"module\" must be a template",
+
 	"visualdata-special-browse-data-description": "Here you can browse all pages with json data filtered by schema",
 	"visualdata-special-browse-queries-description": "Here you can browse all pages with visualdata queries filtered by schema",
 	"visualdata-special-browse-forms-description": "Here you can browse all pages with visualdata forms filtered by schema",

@@ -825,7 +825,12 @@ class QueryProcessor {
 				}
 
 				$tables["categorylinks_$i"] = 'categorylinks';
-				$joins["categorylinks_$i"] = [ 'LEFT JOIN', $this->dbr->makeList( $categoryConds, LIST_OR ) ];
+
+				$joins["categorylinks_$i"] = [ 'LEFT JOIN',
+					$this->dbr->makeList( [
+						"categorylinks_$i.cl_from = t0.page_id",
+						$this->dbr->makeList( $categoryConds, LIST_OR )
+					], LIST_AND ) ];
 
 				if ( $useHaving ) {
 					$havingConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
@@ -1299,6 +1304,14 @@ class QueryProcessor {
 			$conds_ = [
 				'p.schema_id' => $this->schemaId,
 				'p.path_no_index' => $pathNoIndex
+
+/*
+#update --- requires to bring the related WHERE condition inside the subquery
+only if conditionsUseHaving is false
+
+				'schema_id' => $this->schemaId,
+				'path_no_index' => $pathNoIndex
+*/
 			];
 
 			if ( $key > $firstKey ) {
@@ -1329,6 +1342,8 @@ class QueryProcessor {
 				'p' => 'visualdata_props'
 			];
 
+/*
+#update
 			$fields_ = [
 				't.page_id',
 				'p.path_parent',
@@ -1339,11 +1354,16 @@ class QueryProcessor {
 				$fields_[] = "GROUP_CONCAT(p.path SEPARATOR 0x1e) AS p$key";
 				$fields_[] = "GROUP_CONCAT(t.value SEPARATOR 0x1e) AS c$key";
 			}
+*/
+			$fields_ = [ 't.value', 't.page_id', 'p.path_no_index', 'p.path', 'p.path_parent', 'p.schema_id' ];
 
 			$options_ = [];
+/*
+#update
 			if ( $this->treeFormat ) {
 				$options_['GROUP BY'] = 't.page_id';
 			}
+*/
 
 			// *** IMPORTANT use one of the following when appropriate !!
 			// $options_['IGNORE INDEX'] = [ 'p' => [ 'path_parent', 'path_no_index', 'index_1', 'index_2', 'index_3' ] ];
@@ -1369,14 +1389,23 @@ class QueryProcessor {
 					$fields["v$key"] = "t$key.value";
 
 				} else {
+					$fields["p$key"] = "GROUP_CONCAT(t$key.path SEPARATOR 0x1E)";
+					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
+/*
+#update
 					$fields[] = "p$key";
 					$fields[] = "c$key";
+*/
 				}
 			}
 
 			if ( $this->treeFormat ) {
 				if ( $v['isCondition'] ) {
+/*
+#update
 					$fields[] = "c$key";
+*/
+					$fields["c$key"] = "GROUP_CONCAT(t$key.value SEPARATOR 0x1E)";
 				}
 			}
 		}
@@ -1672,5 +1701,4 @@ class QueryProcessor {
 		// 	$this->result = $this->result[0];
 		// }
 	}
-
 }

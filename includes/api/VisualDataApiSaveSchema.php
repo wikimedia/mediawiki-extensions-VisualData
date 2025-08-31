@@ -175,7 +175,7 @@ class VisualDataApiSaveSchema extends ApiBase {
 
 		if ( $evaluateJobs ) {
 			$jobsCount = $databaseManager->diffSchema( $user, $label, $storedSchema, $processedSchema, $evaluateJobs );
-			if ( $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
+			if ( is_int( $jobsCount ) && $jobsCount > $GLOBALS['wgVisualDataCreateJobsWarningLimit'] ) {
 				$result->addValue( [ $this->getModuleName() ], 'jobs-count-warning', $jobsCount );
 				return true;
 			}

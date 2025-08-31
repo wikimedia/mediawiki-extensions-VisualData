@@ -94,6 +94,9 @@
 	OO.mixinClass( VisualDataIntlTelInput, OO.EventEmitter );
 
 	VisualDataIntlTelInput.prototype.formatNumber = function () {
+		if ( typeof intlTelInputUtils === 'undefined' ) {
+			return;
+		}
 		// https://github.com/jackocnr/intl-tel-input/blob/master/src/js/utils.js#L109
 		var numberFormat = intlTelInputUtils.numberFormat.E164;
 		if ( 'nationalMode' in this.config && this.config.nationalMode === true ) {
