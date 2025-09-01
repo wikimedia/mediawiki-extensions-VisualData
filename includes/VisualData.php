@@ -967,12 +967,6 @@ class VisualData {
 				settype( $ret, 'bool' );
 				return $ret;
 
-			case 'array':
-				return preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
-
-			case 'array-chunks':
-				return str_split( $val );
-
 			case 'number':
 			case 'numeric':
 				return filter_var( $val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE );
@@ -1001,6 +995,18 @@ class VisualData {
 			}
 
 			switch ( $type ) {
+				case 'array':
+					if ( !is_array( $val ) ) {
+						$val = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
+					}
+					break;
+
+				case 'array-chunks':
+					if ( !is_array( $val ) ) {
+						$val = str_split( $val );
+					}
+					break;
+
 				case 'array-string':
 				case 'array-int':
 				case 'array-integer':
