@@ -105,10 +105,11 @@ class SubmitForm {
 	private	function replaceFormula( $path, $value, $flatten, $formula ) {
 		// e.g. $path = Book/authors/0/first_name
 		$parent = substr( (string)$path, 0, strrpos( (string)$path, '/' ) );
+		$schemaName = strtok( (string)$path, '/' );
 
 		// @FIXME match the properties actually defined in the schema
 		// which could also contain angular brackets
-		return preg_replace_callback( SchemaProcessor::MATCH_PROPERTY_PATTERN, static function ( $matches ) use ( $parent, $value, $flatten ) {
+		return preg_replace_callback( SchemaProcessor::MATCH_PROPERTY_PATTERN, static function ( $matches ) use ( $parent, $value, $flatten, $schemaName ) {
 			if ( $matches[1] === 'value' ) {
 				return $value;
 			}
@@ -118,19 +119,15 @@ class SubmitForm {
 			// must be prefixed with '/'
 
 			// first search reference in the same path
-
 			$fullPath = $parent . '/' . $matches[1];
 			if ( array_key_exists( $fullPath, $flatten ) ) {
 				return $flatten[$fullPath]['value'];
 			}
 
-			$fullPath = $matches[1];
-			if ( $fullPath[0] !== '/' ) {
-				$fullPath = "/$fullPath";
-			}
-
-			if ( $value_['pathNoIndex'] === $fullPath ) {
-				return $value;
+			// then at root level
+			$fullPath = $schemaName . ( $matches[1][0] !== '/' ? '/' : '' ) . $matches[1];
+			if ( array_key_exists( $fullPath, $flatten ) ) {
+				return $flatten[$fullPath]['value'];
 			}
 		}, $formula );
 	}

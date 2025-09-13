@@ -1252,9 +1252,13 @@ class QueryProcessor {
 						$secondaryPrintouts[] = $v['printout'];
 					}
 				}
-				foreach ( $items as $i => $v ) {
+				foreach ( array_reverse( $items, true ) as $i => $v ) {
 					if ( in_array( $v['printout'], $secondaryPrintouts ) ) {
-						unset( $items[$i] );
+						if ( count( $items ) > 1 ) {
+							unset( $items[$i] );
+						} else {
+							unset( $secondaryPrintouts[array_search( $v['printout'], $secondaryPrintouts )] );
+						}
 					}
 				}
 			}

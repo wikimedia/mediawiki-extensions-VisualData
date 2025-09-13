@@ -828,6 +828,16 @@ class CalendarResultPrinter extends ResultPrinter {
 			'required' => false,
 			'default' => '100%',
 		],
+		'duration-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'duration',
+		],
+		'default-event-duration' => [
+			'type' => 'int',
+			'required' => false,
+			'default' => 60,
+		],
 	];
 
 	public function isHtml() {
@@ -861,6 +871,7 @@ class CalendarResultPrinter extends ResultPrinter {
 			$this->params['end-property'] => 'end',
 			$this->params['title-property'] => 'title',
 			$this->params['resources-property'] => 'resources',
+			$this->params['duration-property'] => 'duration',
 		];
 
 		$ret = [];
@@ -881,7 +892,7 @@ class CalendarResultPrinter extends ResultPrinter {
 	public function processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast ) {
 		// $value = parent::processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast );
 
-		$required = [ 'start', 'end' ];
+		$required = [ 'start' ];
 		$mapValues = [];
 		foreach ( $properties as $key_ => $value_ ) {
 			if ( isset( $this->mapProperties[$key_] ) ) {
@@ -891,16 +902,17 @@ class CalendarResultPrinter extends ResultPrinter {
 
 		// $pathParent = substr( $path, 0, strrpos( $path, '/' ) );
 		if ( count( array_intersect( $required, $mapValues ) ) === count( $required ) ) {
+			$properties_ = [];
 			foreach ( $properties as $key_ => $value_ ) {
 				if ( isset( $this->mapProperties[$key_] ) ) {
-					$properties[$this->mapProperties[$key_]] = $value_;
+					$properties_[$this->mapProperties[$key_]] = $value_;
 				}
 			}
 
 			$formatted = Linker::link( $title, $title->getFullText() );
 			$this->json[] = [
 				$formatted,
-				$properties
+				$properties_
 			];
 		}
 

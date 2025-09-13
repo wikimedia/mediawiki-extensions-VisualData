@@ -65,6 +65,13 @@ $( function () {
 					event.resourcesIds.push( i );
 				}
 			}
+			if ( !event.end ) {
+				// eslint-disable-next-line no-underscore-dangle
+				var dateObj_ = new Date( event.start );
+				var durationMinutes = ( event.duration ? event.duration : params[ 'default-event-duration' ] ) * 1;
+				dateObj_.setMinutes( dateObj_.getMinutes() + durationMinutes );
+				event.end = dateObj_;
+			}
 		}
 
 		if ( resources.length ) {
