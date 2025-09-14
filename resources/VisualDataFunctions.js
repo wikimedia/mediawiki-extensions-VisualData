@@ -948,6 +948,61 @@ VisualDataFunctions = ( function () {
 		return Promise.all( allSettled );
 	}
 
+	function dateToLocalPrintout( val, format, printoutOptions ) {
+	/*
+		| Format string        | Example output                 |
+		| -------------------- | ------------------------------ |
+		| `YYYY-MM-DD`         | `2025-09-13`                   |
+		| `MM/DD/YYYY`         | `09/13/2025`                   |
+		| `DD/MM/YYYY`         | `13/09/2025`                   |
+		| `ddd, MMM D`         | `Sat, Sep 13`                  |
+		| `dddd, MMMM D, YYYY` | `Saturday, September 13, 2025` |
+		| `MMM D, YYYY`        | `Sep 13, 2025`                 |
+		| `D MMM YYYY`         | `13 Sep 2025`                  |
+		| `YYYY/MM/DD`         | `2025/09/13`                   |
+
+		| Format string | Example output |
+		| ------------- | -------------- |
+		| `HH:mm`       | `14:30`        |
+		| `HH:mm:ss`    | `14:30:45`     |
+		| `hh:mm A`     | `02:30 PM`     |
+		| `hh:mm:ss A`  | `02:30:45 PM`  |
+
+		| Format string               | Example output                               |
+		| --------------------------- | -------------------------------------------- |
+		| `YYYY-MM-DD HH:mm:ss`       | `2025-09-13 14:30:45`                        |
+		| `YYYY/MM/DD HH:mm`          | `2025/09/13 14:30`                           |
+		| `MMM D, YYYY h:mm A`        | `Sep 13, 2025 2:30 PM`                       |
+		| `dddd, MMMM D, YYYY h:mm A` | `Saturday, September 13, 2025 2:30 PM`       |
+		| `YYYY-MM-DDTHH:mm:ssZ`      | `2025-09-13T14:30:45+02:00` (ISO-8601 style) |
+	*/
+		if ( !( 'date-format' in printoutOptions ) || !printoutOptions[ 'date-format' ] ) {
+			switch ( format ) {
+				case 'date':
+					printoutOptions[ 'date-format' ] = 'MMM D, YYYY';
+					break;
+				case 'datetime':
+				case 'datetime-local':
+					printoutOptions[ 'date-format' ] = 'MMM D, YYYY HH:mm';
+					break;
+				case 'time':
+					printoutOptions[ 'date-format' ] = 'HH:mm';
+					break;
+			}
+		}
+
+		return 	dateToLocal( val, printoutOptions[ 'date-format' ] );
+	}
+
+	function dateToLocal( val, format ) {
+		if ( !val ) {
+			return '';
+		}
+		var utcDate = dayjs.utc( val );
+		var localDate = utcDate.local();
+		return localDate.format( format );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -991,6 +1046,8 @@ VisualDataFunctions = ( function () {
 		isEmpty,
 		arrayIntersect,
 		promisesAllSettled,
-		nonEnumerableProperty
+		nonEnumerableProperty,
+		dateToLocal,
+		dateToLocalPrintout
 	};
 }() );

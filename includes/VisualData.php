@@ -600,6 +600,37 @@ class VisualData {
 	 * @param mixed ...$argv
 	 * @return array
 	 */
+	public static function parserFunctionTimeLocal( Parser $parser, ...$argv ) {
+		$parserOutput = $parser->getOutput();
+		$parserOutput->addModules( [ 'ext.VisualData.PrintResults' ] );
+/*
+{{#timelocal: datetime | format }}
+*/
+		[ $datetime, $format ] = $argv;
+
+		// @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time
+		$ret = HtmlClass::element(
+			'time',
+			[
+				'data-datetime' => $datetime,
+				'data-format' => $format,
+				'class' => 'visualdata-time-element'
+			],
+			$datetime
+		);
+
+		return [
+			$ret,
+			'noparse' => true,
+			'isHTML' => true
+		];
+	}
+
+	/**
+	 * @param Parser $parser
+	 * @param mixed ...$argv
+	 * @return array
+	 */
 	public static function parserFunctionButton( Parser $parser, ...$argv ) {
 /*
 {{#visualdatabutton: Get folders
@@ -1155,6 +1186,7 @@ class VisualData {
 				// |?name= is processed in templates but not rendered
 				// |?name=abc abc is the field alias
 				$value = substr( $val, 1 );
+
 				$printoutsOptions[$value] = $parsePrintoutsOptions( $value );
 
 				// @TODO set to null and do the related changes
@@ -1515,7 +1547,7 @@ class VisualData {
 		$prevKey = null;
 		foreach ( $parameters as $key => $value ) {
 			if ( strpos( $value, '+' ) === 0 ) {
-				$parameters[$prevKey] .= ' |' . urlencode( substr( $value, 1 ) );
+				$parameters[$prevKey] .= ' |+' . urlencode( substr( $value, 1 ) );
 				unset( $parameters[$key] );
 			} else {
 				$prevKey = $key;
@@ -2975,7 +3007,6 @@ class VisualData {
 		}
 
 		$path = [];
-
 		foreach ( $title_parts as $value ) {
 			$path[] = $value;
 			$title_text = implode( '/', $path );

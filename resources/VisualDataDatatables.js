@@ -658,6 +658,15 @@ html-num-fmt
 */
 		var index = 0;
 		var columnDefs = [];
+
+		// or use mapPathSchema[ printout ].format
+		var mapColumnIndexFormat = {};
+		VisualDataFunctions.objectEntries( headers ).forEach( ( [ k, header ], thisIndex ) => {
+			if ( mapPathSchema[ k ] ) {
+				mapColumnIndexFormat[ thisIndex ] = mapPathSchema[ k ].format;
+			}
+		} );
+
 		for ( var key in headers ) {
 			var datatablesFormat;
 			var columnType;
@@ -670,6 +679,7 @@ html-num-fmt
 						break;
 
 					case 'string':
+						// mapColumnIndexFormat[ Object.keys( headers ).indexOf( key ) ] = mapPathSchema[ key ].format;
 						columnType = mapPathSchema[ key ].format;
 						switch ( mapPathSchema[ key ].format ) {
 							case 'color':
@@ -737,7 +747,19 @@ html-num-fmt
 						// },
 
 						render: function ( thisData, type, row, meta ) {
-						// if ( !headersRaw[ Object.keys( headers )[ meta.col ] ] ) {
+							// or use mapPathSchema[ printout ].format
+							if (
+								meta.col in mapColumnIndexFormat &&
+								$.inArray( mapColumnIndexFormat[ meta.col ], [ 'time', 'date', 'datetime', 'datetime-local' ] )
+							) {
+								var printout = Object.keys( headers )[ meta.col ];
+								var printoutOptions = printoutsOptions[ printout ];
+								thisData = thisData.map( function ( value ) {
+									return VisualDataFunctions.dateToLocalPrintout( value, mapColumnIndexFormat[ meta.col ], printoutOptions );
+								} );
+							}
+
+							// if ( !headersRaw[ Object.keys( headers )[ meta.col ] ] ) {
 							if ( !headersRaw[ meta.col ] ) {
 								thisData = thisData.map( function ( value ) {
 									return VisualDataFunctions.escapeHTML( value );
@@ -750,7 +772,7 @@ html-num-fmt
 						searchBuilderType: datatablesFormat
 					},
 					conf.columns,
-					printoutsOptions[ key ]
+					( !( 'columns' in printoutsOptions[ key ] ) ? {} : printoutsOptions[ key ].columns )
 				)
 			);
 			index++;

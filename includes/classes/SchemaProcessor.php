@@ -1536,8 +1536,10 @@ e.g.
 						$value = self::parseDateTime( $value, 'H:i:s' );
 						break;
 					case 'datetime':
+					case 'datetime-local':
 						// *** this ensures consistency with mw.widgets.datetime.DateTimeInputWidget
 						// +0100 (ISO 8601 vO)
+						// ***attention, 0000-00-00 00:00:00 is not a valid date
 						$value = self::parseDateTime( $value, ( !$display ? 'Y-m-d\TH:i:s.vO' : 'Y-m-d H:i:s' ) );
 						break;
 					case 'url':
@@ -1557,32 +1559,27 @@ e.g.
 
 	/**
 	 * @see https://github.com/barbushin/php-imap/blob/master/src/PhpImap/Mailbox.php
-	 * @param string $dateHeader
+	 * @param string $dateStr
 	 * @param string $format
 	 * @return string
 	 */
-	public static function parseDateTime( $dateHeader, $format = \DATE_RFC3339 ) {
-		if ( is_string( $dateHeader ) ) {
-			$dateHeader = \trim( $dateHeader );
+	public static function parseDateTime( $dateStr, $format = \DATE_RFC3339 ) {
+		if ( is_string( $dateStr ) ) {
+			$dateStr = \trim( $dateStr );
 		}
-		if ( empty( $dateHeader ) ) {
+
+		if ( empty( $dateStr ) ) {
 			return '';
 		}
 
-		$dateParser = new DateParser( $dateHeader );
-		$dateHeaderUnixtimestamp = $dateParser->parse();
+		$dateParser = new DateParser( $dateStr );
+		$dateUnixtimestamp = $dateParser->parse();
 
-		if ( !$dateHeaderUnixtimestamp ) {
-			return $dateHeader;
+		if ( !$dateUnixtimestamp ) {
+			return '';
 		}
 
-		$dateHeaderRfc3339 = \date( $format, $dateHeaderUnixtimestamp );
-
-		if ( !$dateHeaderRfc3339 ) {
-			return $dateHeader;
-		}
-
-		return $dateHeaderRfc3339;
+		return \date( $format, $dateUnixtimestamp );
 	}
 
 	/**

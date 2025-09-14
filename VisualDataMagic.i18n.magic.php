@@ -38,6 +38,7 @@ $magicWords['en'] = [
 	'visualdatabase64encode' => [ 0, 'visualdatabase64encode', 'vdatabase64encode', 'base64encode' ],
 	'visualdatabase64decode' => [ 0, 'visualdatabase64decode', 'vdatabase64decode', 'base64decode' ],
 	'buttonlink' => [ 0, 'buttonlink', 'querybutton' ],
+	'timelocal' => [ 0, 'timelocal' ],
 
 	// @credits https://www.mediawiki.org/wiki/Extension:Page_Forms
 	'arraymap' => [ 0, 'arraymap' ],

@@ -784,7 +784,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			'color',
 			'date',
 			'datetime',
-			'datetime-local',
+			// 'datetime-local',
 			'email',
 			'month',
 			'password',

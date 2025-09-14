@@ -116,6 +116,13 @@ class ResultPrinter {
 		'_islast'
 	];
 
+	/** @var array */
+	public static $printoutOptionsTypes = [
+		'date-local' => 'boolean',
+		'date-format' => 'string',
+		// ...
+	];
+
 	/**
 	 * @param Parser $parser
 	 * @param User $user
@@ -597,7 +604,7 @@ class ResultPrinter {
 				$this->getTemplateParams( $title, $path, $properties, $categories, $isFirst, $isLast ), false );
 		}
 
-		$value = (string)$value;
+		$value = $this->formatValue( $schema, $key, $value );
 
 		// @ATTENTION in tree mode $key will be an integer and $path/$properties
 		// are unrelated from categories, however doesn't seem to be a reason
@@ -617,6 +624,25 @@ class ResultPrinter {
 		$replaceAlias( self::$categoriesAliases, implode( ', ', $categories ) );
 
 		return $value;
+	}
+
+	/**
+	 * @param array $schema
+	 * @param string $key
+	 * @param mixed $value
+	 * @return string
+	 */
+	public function formatValue( $schema, $key, $value ) {
+		switch ( $schema['type'] ) {
+			case 'string':
+				switch ( $schema['format'] ) {
+					case 'datetime-local':
+						// add date-local $this->printoutsOptions
+						$this->printoutsOptions[$key]['date-local'] = true;
+						break;
+				}
+		}
+		return (string)$value;
 	}
 
 	/**
@@ -670,6 +696,46 @@ class ResultPrinter {
 		} );
 
 		$ret['function'] = [ 'query', 'string' ];
+
+		return $ret;
+	}
+
+	/**
+	 * @param array $types
+	 * @param string|null $prefix null
+	 * @return array
+	 */
+	protected function formatPrintoutsOptions( $types, $prefix = null ) {
+		// phpcs:ignore Squiz.Classes.SelfMemberReference.NotUsed
+		$types = array_merge( ResultPrinter::$printoutOptionsTypes, $types );
+
+		$ret = [];
+		// pagetitle is ''
+		foreach ( $this->printoutsOptions as $printout => $options ) {
+			$arr = [];
+			// e.g ?title |+datatables-columns.type=string |+datatables-columns.width=50px
+			foreach ( $options as $key => $value ) {
+				$value = trim( $value );
+
+				if ( !array_key_exists( $key, $types ) && $prefix ) {
+					$key = preg_replace( '/^' . preg_quote( $prefix, '/' ) . '/', '', $key );
+				}
+
+				if ( array_key_exists( $key, $types ) ) {
+					$value = \VisualData::castType( $types[$key], $value );
+				}
+
+				// convert strings like columns.searchPanes.show
+				// to nested objects
+				$parts = explode( '.', $key );
+
+				$arr = array_merge_recursive(
+					$this->plainToNestedObj( $parts, $value ),
+					$arr
+				);
+			}
+			$ret[$printout] = $arr;
+		}
 
 		return $ret;
 	}
@@ -737,7 +803,7 @@ class ResultPrinter {
 	 * @param string $value
 	 * @return array
 	 */
-	private function plainToNestedObj( $arr, $value ) {
+	protected function plainToNestedObj( $arr, $value ) {
 		$ret = [];
 
 		// link to first level

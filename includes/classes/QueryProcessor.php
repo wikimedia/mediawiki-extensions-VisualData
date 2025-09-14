@@ -1663,7 +1663,8 @@ only if conditionsUseHaving is false
 					// 	continue;
 					// }
 					$index = substr( $k, 1 );
-					$row_[$this->mapKeyToPrintout[$index]] = $v;
+					$printout = $this->mapKeyToPrintout[$index];
+					$row_[$printout] = $castType( $v, $printout );
 				}
 
 			} else {

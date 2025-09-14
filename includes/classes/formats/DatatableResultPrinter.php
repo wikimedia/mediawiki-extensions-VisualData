@@ -375,6 +375,35 @@ class DatatableResultPrinter extends TableResultPrinter {
 	];
 
 	/**
+	 * @var array
+	 * @see https://datatables.net/reference/option/columns
+	 */
+	public static $printoutOptionsTypes = [
+		'columns.cellType' => 'string',
+		'columns.className' => 'string',
+		'columns.contentPadding' => 'string',
+		'columns.defaultContent' => 'string',
+		'columns.name' => 'string',
+		'columns.orderable' => 'boolean',
+		'columns.orderData' => 'array-number',
+		'columns.orderDataType' => 'string',
+		'columns.searchable' => 'boolean',
+		'columns.title' => 'string',
+		'columns.type' => 'string',
+		'columns.visible' => 'boolean',
+		'columns.width' => 'string',
+		'searchPanes.collapse' => 'boolean',
+		'searchPanes.controls' => 'boolean',
+		'searchPanes.hideCount' => 'boolean',
+		'searchPanes.orderable' => 'boolean',
+		'searchPanes.initCollapsed' => 'boolean',
+		'searchPanes.show' => 'boolean',
+		'searchPanes.threshold' => 'number',
+		'searchPanes.viewCount' => 'boolean',
+		// ...
+	];
+
+	/**
 	 * @inheritDoc
 	 */
 	public function processRoot( $rows ) {
@@ -388,20 +417,14 @@ class DatatableResultPrinter extends TableResultPrinter {
 		$this->createHtmlTable();
 
 		$tableAttrs = [];
-		$formattedPrintoutsOptions = [];
 
-		// pagetitle is ''
-		foreach ( $this->printoutsOptions as $printout => $options ) {
-			$formattedPrintoutsOptions[$printout] = $this->getPrintoutsOptions( $options );
-		}
-
-		$this->formattedPrintoutsOptions = $formattedPrintoutsOptions;
+		$this->formattedPrintoutsOptions = $this->formatPrintoutsOptions( self::$printoutOptionsTypes, 'datatables-' );
 		$this->count = $this->getCount();
 
 		$this->query = $this->queryProcessor->getQueryData();
 		$this->conf = $this->getFormattedParams( 'datatables-' );
 
-		$tableAttrs['data-printouts-options'] = json_encode( $formattedPrintoutsOptions );
+		$tableAttrs['data-printouts-options'] = json_encode( $this->formattedPrintoutsOptions );
 		$tableAttrs['data-map-path-schema'] = json_encode( $this->mapPathSchema );
 		$tableAttrs['data-printouts'] = json_encode( $this->printouts );
 		$tableAttrs['data-templates'] = json_encode( $this->templates );
@@ -453,52 +476,6 @@ class DatatableResultPrinter extends TableResultPrinter {
 
 		$this->json = $this->formatJson();
 		return $this->returnRawResult( $this->json );
-	}
-
-	/**
-	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php
-	 * @param array $parameters
-	 * @return array
-	 */
-	private function getPrintoutsOptions( $parameters ) {
-		// e.g ?title |+datatables-columns.type=string |+datatables-width=50px
-		$arrayTypesColumns = [
-			'orderable' => 'boolean',
-			'searchable' => 'boolean',
-			'visible' => 'boolean',
-			'orderData' => 'array-number',
-			'searchPanes.collapse' => 'boolean',
-			'searchPanes.controls' => 'boolean',
-			'searchPanes.hideCount' => 'boolean',
-			'searchPanes.orderable' => 'boolean',
-			'searchPanes.initCollapsed' => 'boolean',
-			'searchPanes.show' => 'boolean',
-			'searchPanes.threshold' => 'number',
-			'searchPanes.viewCount' => 'boolean',
-			// ...
-		];
-
-		$ret = [];
-		foreach ( $parameters as $key => $value ) {
-			$key = preg_replace( '/datatables-(columns\.)?/', '', $key );
-			$value = trim( $value );
-
-			if ( array_key_exists( $key, $arrayTypesColumns ) ) {
-				$type = $arrayTypesColumns[$key];
-				$value = \VisualData::castType( $value );
-			}
-
-			// convert strings like columns.searchPanes.show
-			// to nested objects
-			$parts = explode( '.', $key );
-
-			$ret = array_merge_recursive(
-				$this->plainToNestedObj( $parts, $value ),
-				$ret
-			);
-		}
-
-		return $ret;
 	}
 
 	/**

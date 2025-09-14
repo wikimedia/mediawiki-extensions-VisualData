@@ -24,10 +24,25 @@
 ( function () {
 	// eslint-disable-next-line no-implicit-globals
 	VisualDataDateTimeInputWidget = function ( config ) {
-		var date = this.parseLocalDate( config.value );
-		if ( date ) {
-			config.value = date.toISOString();
+		var type = 'datetime';
+
+		if ( VisualDataFunctions.getNestedProp( [ 'data', 'model', 'schema', 'format' ], config ) ) {
+			type = config.data.model.schema.format;
+
+			// *** not used anymore, set always as local
+			if ( type === 'datetime-local' ) {
+				type = 'datetime';
+			}
 		}
+
+		var formatter = {
+			format: '@' + type
+		};
+
+		config.formatter = new mw.widgets.datetime.ProlepticGregorianDateTimeFormatter( formatter );
+
+		// config.formatter.local = ( config.data.model.schema.format === 'datetime-local' );
+		config.formatter.local = true;
 
 		VisualDataDateTimeInputWidget.super.call( this, config );
 	};
@@ -35,31 +50,25 @@
 	OO.inheritClass( VisualDataDateTimeInputWidget, mw.widgets.datetime.DateTimeInputWidget );
 
 	/**
-	 * @private
-	 * @param {string} value
-	 * @return {Date|null}
+	 * @inheritDoc
 	 */
-	VisualDataDateTimeInputWidget.prototype.parseLocalDate = function ( value ) {
-		// @see mw.widgets.datetime.DateTimeInputWidget -> parseDate
-		var date, m;
+	VisualDataDateTimeInputWidget.prototype.parseDateValue = function ( value ) {
+		value = String( value );
+		switch ( this.type ) {
+			case 'date':
+				value = value + 'T00:00:00Z';
+				break;
+			case 'time':
+				value = '1970-01-01T' + value + 'Z';
+				break;
+		}
 
-		// value = String( value );
-		// switch ( this.type ) {
-		// 	case 'date':
-		// 		value = value + 'T00:00:00Z';
-		// 		break;
-		// 	case 'time':
-		// 		value = '1970-01-01T' + value + 'Z';
-		// 		break;
-		// }
+		let date;
 
-		// m = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?Z$/.exec( value );
-
+		// const m = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?Z$/.exec( value );
 		// ***edited, matches both +01:00 (ISO 8601 vP) and +0100 (ISO 8601 vO)
 		// eslint-disable-next-line security/detect-unsafe-regex
-		const regex = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(Z|[+-]\d{2}:?\d{2}|[+-]\d{4})?$/;
-
-		m = regex.exec( value );
+		const m = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(Z|[+-]\d{2}:?\d{2}|[+-]\d{4})?$/.exec( value );
 
 		if ( m ) {
 			if ( m[ 7 ] ) {
@@ -70,28 +79,24 @@
 				m[ 7 ] = 0;
 			}
 			date = new Date();
-
-			// ***edited, replace UTC with '' in following methods
-			date.setFullYear( m[ 1 ], m[ 2 ] - 1, m[ 3 ] );
-			date.setHours( m[ 4 ], m[ 5 ], m[ 6 ], m[ 7 ] );
-
-			// ***edited, replace UTC with '' in following methods
+			date.setUTCFullYear( m[ 1 ], m[ 2 ] - 1, m[ 3 ] );
+			date.setUTCHours( m[ 4 ], m[ 5 ], m[ 6 ], m[ 7 ] );
 			if ( date.getTime() < -62167219200000 || date.getTime() > 253402300799999 ||
-				date.getFullYear() !== +m[ 1 ] ||
-				date.getMonth() + 1 !== +m[ 2 ] ||
-				date.getDate() !== +m[ 3 ] ||
-				date.getHours() !== +m[ 4 ] ||
-				date.getMinutes() !== +m[ 5 ] ||
-				date.getSeconds() !== +m[ 6 ] ||
-				date.getMilliseconds() !== +m[ 7 ]
+				date.getUTCFullYear() !== +m[ 1 ] ||
+				date.getUTCMonth() + 1 !== +m[ 2 ] ||
+				date.getUTCDate() !== +m[ 3 ] ||
+				date.getUTCHours() !== +m[ 4 ] ||
+				date.getUTCMinutes() !== +m[ 5 ] ||
+				date.getUTCSeconds() !== +m[ 6 ] ||
+				date.getUTCMilliseconds() !== +m[ 7 ]
 			) {
 				date = null;
 			}
-
 		} else {
 			date = null;
 		}
 
 		return date;
 	};
+
 }() );

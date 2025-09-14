@@ -102,6 +102,7 @@ class VisualDataHooks {
 		$parser->setFunctionHook( 'visualdatabase64encode', [ \VisualData::class, 'parserFunctionBase64Encode' ] );
 		$parser->setFunctionHook( 'visualdatabase64decode', [ \VisualData::class, 'parserFunctionBase64Decode' ] );
 		$parser->setFunctionHook( 'buttonlink', [ \VisualData::class, 'parserFunctionButtonlink' ] );
+		$parser->setFunctionHook( 'timelocal', [ \VisualData::class, 'parserFunctionTimeLocal' ] );
 
 		// @credits https://www.mediawiki.org/wiki/Extension:Page_Forms
 		$parser->setFunctionHook( 'arraymap', [ PFArrayMap::class, 'run' ], Parser::SFH_OBJECT_ARGS );

@@ -1,7 +1,7 @@
 {
 	"name": "VisualData",
 	"author": "thomas-topway-it",
-	"version": "1.0.9",
+	"version": "1.1.2",
 	"url": "https://www.mediawiki.org/wiki/Extension:VisualData",
 	"descriptionmsg": "visualdata-extension-desc",
 	"license-name": "GPL-2.0-or-later",
@@ -481,7 +481,11 @@
 		"ext.VisualData.PrintResults": {
 			"position": "top",
 			"scripts": [
-				"VisualDataFunctions.js"
+				"dayjs/dayjs.min.js",
+				"dayjs/utc.js",
+				"dayjs/timezone.js",
+				"VisualDataFunctions.js",
+				"VisualDataPrintouts.js"
 			],
 			"styles": [
 				"style.css"

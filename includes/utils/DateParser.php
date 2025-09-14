@@ -40,6 +40,10 @@ class DateParser {
 	 * @return false|int
 	 */
 	public function parse() {
+		if ( $this->isZeroDate() ) {
+			return false;
+		}
+
 		$timestamp = strtotime( $this->dateStr );
 		if ( $timestamp ) {
 			return $timestamp;
@@ -64,6 +68,13 @@ class DateParser {
 		}
 
 		return false;
+	}
+
+	/**
+	 * @return bool
+	 */
+	protected function isZeroDate() {
+		return ( preg_match( '/^0{4}-0{2}-0{2}(?: 0{2}:0{2}:0{2})?$/', $this->dateStr ) === 1 );
 	}
 
 	/**

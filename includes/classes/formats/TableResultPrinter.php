@@ -442,9 +442,14 @@ class TableResultPrinter extends ResultPrinter {
 	public function processRoot( $rows ) {
 		$this->createHtmlTable();
 
+		$formattedPrintoutsOptions = $this->formatPrintoutsOptions( [] );
+
 		$tableAttrs = [];
+		$tableAttrs['data-printouts-options'] = json_encode( $formattedPrintoutsOptions );
+		$tableAttrs['data-printouts'] = json_encode( $this->printouts );
+		$tableAttrs['data-map-path-schema'] = json_encode( $this->mapPathSchema );
 		$tableAttrs['width'] = '100%';
-		$tableAttrs['class'] = 'wikitable display dataTable'
+		$tableAttrs['class'] = 'visualdata wikitable display dataTable'
 			. ( !empty( $this->params['class'] ) ? ' ' . $this->params['class'] : '' );
 
 		return $this->htmlTable->table(

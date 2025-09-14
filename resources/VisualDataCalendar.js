@@ -72,6 +72,11 @@ $( function () {
 				dateObj_.setMinutes( dateObj_.getMinutes() + durationMinutes );
 				event.end = dateObj_;
 			}
+
+			// convert to local
+			for ( var prop of [ 'start', 'end' ] ) {
+				event[ prop ] = dayjs.utc( event[ prop ] ).local().toDate();
+			}
 		}
 
 		if ( resources.length ) {
