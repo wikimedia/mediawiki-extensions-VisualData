@@ -95,10 +95,19 @@ VisualData = ( function () {
 					if ( payload.action in res ) {
 						var thisSchemas = JSON.parse( res[ payload.action ].schemas );
 						adjustSchemas( thisSchemas );
+
 						for ( var i in thisSchemas ) {
-							Schemas[ i ] = thisSchemas[ i ];
+							// @FIXME check why it returns all empty schemas
+							if (
+								VisualDataFunctions.isObject( thisSchemas[ i ] ) &&
+								Object.keys( thisSchemas[ i ] )
+							) {
+								Schemas[ i ] = thisSchemas[ i ];
+							}
 						}
+
 						resolve( thisSchemas );
+
 						for ( var i in VisualDataForms ) {
 							VisualDataForms[ i ].updateSchemas( previousSchemas, Schemas );
 						}

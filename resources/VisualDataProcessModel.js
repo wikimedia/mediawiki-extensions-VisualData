@@ -86,6 +86,13 @@ const VisualDataProcessModel = function (
 
 	async function formatValue( path, model ) {
 		var path_ = ( Action === 'submit' ? path : model.path );
+
+		if ( !( 'input' in model ) ) {
+			// eslint-disable-next-line no-console
+			console.error( 'input does not exist', path, model );
+			return;
+		}
+
 		var value = 'getValue' in model.input ? model.input.getValue() : '';
 
 		if ( model.removed ) {

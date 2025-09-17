@@ -47,22 +47,24 @@
 		this.VEInstance = $( '<span>' ).attr( 'class', 've-area-wrapper' );
 		this.$element.append( this.VEInstance.append( this.textarea ) );
 		this.Editor = null;
-		this.initialized = false;
+		// this.editorID = VisualDataFunctions.uniqueID();
+
+		this.initializing = false;
+		this.destroyEditor();
 	};
 
 	OO.inheritClass( VisualDataVisualEditor, OO.ui.Widget );
 	OO.mixinClass( VisualDataVisualEditor, OO.EventEmitter );
 
 	// @see https://github.com/Open-CSP/FlexForm/blob/main/Modules/FlexForm.general.js
-	VisualDataVisualEditor.prototype.initialize = async function ( destroy ) {
+	VisualDataVisualEditor.prototype.initialize = async function () {
 		var self = this;
-		if ( destroy ) {
-			this.destroyEditor();
-		}
 
-		if ( this.initialized ) {
+		if ( this.isInitialized() || this.initializing ) {
 			return Promise.resolve( true );
 		}
+
+		this.initializing = true;
 
 		if ( !self.$element.parent().is( ':visible' ) ) {
 			return Promise.reject( 'VEForAll element not visible' );
@@ -70,10 +72,11 @@
 
 		return new Promise( ( resolve, reject ) => {
 			this.loadVEForAll().then( function () {
-				var editor = self.getEditor();
+				var editor = self.getNewEditor();
 				if ( editor ) {
+					self.Editor = editor;
 					editor.initCallbacks.push( function () {
-						self.initialized = true;
+						self.initializing = false;
 						resolve();
 					} );
 				} else {
@@ -111,7 +114,6 @@
 	};
 
 	VisualDataVisualEditor.prototype.destroyEditor = function () {
-		this.initialized = false;
 		if ( typeof $.fn.getVEInstances === 'function' ) {
 			var visualEditors = $.fn.getVEInstances();
 			for ( var i in visualEditors ) {
@@ -125,27 +127,33 @@
 	};
 
 	// @see PageForms PF_submit.js
-	VisualDataVisualEditor.prototype.getEditor = function () {
+	VisualDataVisualEditor.prototype.getNewEditor = function () {
 		if ( !( 'getVEInstances' in $.fn ) ) {
 			return null;
 		}
-		if ( this.Editor ) {
-			return this.Editor;
-		}
+
 		var visualEditors = $.fn.getVEInstances();
 		for ( var editor of visualEditors ) {
 			if ( $( editor.$node ).attr( 'name' ) === this.config.name ) {
-				// eslint-disable-next-line no-return-assign
-				return this.Editor = editor;
+				return editor;
 			}
 		}
 	};
 
+	// @see PageForms PF_submit.js
+	VisualDataVisualEditor.prototype.getEditor = function () {
+		return this.Editor;
+	};
+
+	VisualDataVisualEditor.prototype.isInitialized = function () {
+		var editor = this.getEditor();
+		return ( editor && ( 'target' in editor ) );
+	};
+
 	VisualDataVisualEditor.prototype.getValue = async function () {
 		var self = this;
-		var editor = this.getEditor();
 
-		if ( !this.initialized || !( 'target' in editor ) ) {
+		if ( !this.isInitialized() ) {
 			return this.textarea.val();
 		}
 
@@ -153,6 +161,7 @@
 		// 	return VisualDataFunctions.decodeHTMLEntities( editor.target.getSurface().getHtml() );
 		// }
 
+		var editor = this.getEditor();
 		return new Promise( ( resolve, reject ) => {
 			$.when( editor.target.updateContent() ).then( function () {
 				// @see ext.veforall.target.js

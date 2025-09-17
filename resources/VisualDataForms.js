@@ -1472,8 +1472,14 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 				deleteButton.on( 'click', function () {
 					Form.schemas.splice( Form.schemas.indexOf( data.schema.wiki.name ), 1 );
 					// delete Form.jsonData.schemas[ data.schema.wiki.name ];
+					// Schemas[ data.schema.wiki.name ] = {};
 					delete ModelSchemas[ data.schema.wiki.name ];
 					delete Fields[ data.schema.wiki.name ];
+					for ( var i in InputWidgets ) {
+						if ( i.indexOf( FormID + '-' + data.schema.wiki.name + '/' ) === 0 ) {
+							delete InputWidgets[ i ];
+						}
+					}
 					updatePanels();
 				} );
 
@@ -1697,6 +1703,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			for ( var schemaName_ of Form.schemas ) {
 				QueuedWidgets[ schemaName_ ] = [];
 				var schema = Schemas[ schemaName_ ];
+
 				var previousSchema =
 					schemaName_ in PreviousSchemas ?
 						PreviousSchemas[ schemaName_ ] :
@@ -3316,7 +3323,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			return true;
 		}
 
-		FormID = El.id = Math.random().toString( 16 ).slice( 2 );
+		FormID = El.id = VisualDataFunctions.uniqueID();
 
 		Initialized = true;
 

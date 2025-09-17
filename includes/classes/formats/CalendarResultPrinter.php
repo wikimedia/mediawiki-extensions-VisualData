@@ -35,7 +35,7 @@ class CalendarResultPrinter extends ResultPrinter {
 	private $json = [];
 
 	/** @var array */
-	private $mapProperties;
+	private $mapProperties = [];
 
 	/** @var array */
 	public static $parameters = [
@@ -798,6 +798,7 @@ class CalendarResultPrinter extends ResultPrinter {
 			// headerToolbar.end = dayGridMonth,timeGridWeek,timeGridDay,listWeek
 			'default' => false,
 		],
+		// @see https://github.com/vkurko/calendar?tab=readme-ov-file#event-object
 		'start-property' => [
 			'type' => 'string',
 			'required' => false,
@@ -818,6 +819,37 @@ class CalendarResultPrinter extends ResultPrinter {
 			'required' => false,
 			'default' => 'resources',
 		],
+		'allday-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'allDay',
+		],
+		'display-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'display',
+		],
+		'backgroundcolor-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'backgroundColor',
+		],
+		'textcolor-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'textColor',
+		],
+		'classnames-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'classNames',
+		],
+		'styles-property' => [
+			'type' => 'string',
+			'required' => false,
+			'default' => 'styles',
+		],
+
 		'height' => [
 			'type' => 'string',
 			'required' => false,
@@ -866,13 +898,21 @@ class CalendarResultPrinter extends ResultPrinter {
 	 * @inheritDoc
 	 */
 	public function processResults( $results, $schema ) {
-		$this->mapProperties = [
-			$this->params['start-property'] => 'start',
-			$this->params['end-property'] => 'end',
-			$this->params['title-property'] => 'title',
-			$this->params['resources-property'] => 'resources',
-			$this->params['duration-property'] => 'duration',
-		];
+		foreach ( [
+			'start-property',
+			'end-property',
+			'title-property',
+			'resources-property',
+			'duration-property',
+			'allday-property',
+			'display-property',
+			'backgroundcolor-property',
+			'textcolor-property',
+			'classnames-property',
+			'styles-property',
+		] as $property ) {
+			$this->mapProperties[ $this->params[$property] ] = self::$parameters[$property]['default'];
+		}
 
 		$ret = [];
 		foreach ( $results as $value ) {

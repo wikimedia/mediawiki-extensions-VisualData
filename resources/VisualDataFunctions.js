@@ -1003,6 +1003,10 @@ VisualDataFunctions = ( function () {
 		return localDate.format( format );
 	}
 
+	function uniqueID() {
+		return Math.random().toString( 16 ).slice( 2 );
+	}
+
 	return {
 		createToolGroup,
 		createDisabledToolGroup,
@@ -1048,6 +1052,7 @@ VisualDataFunctions = ( function () {
 		promisesAllSettled,
 		nonEnumerableProperty,
 		dateToLocal,
-		dateToLocalPrintout
+		dateToLocalPrintout,
+		uniqueID
 	};
 }() );
