@@ -750,7 +750,7 @@ html-num-fmt
 							// or use mapPathSchema[ printout ].format
 							if (
 								meta.col in mapColumnIndexFormat &&
-								$.inArray( mapColumnIndexFormat[ meta.col ], [ 'time', 'date', 'datetime', 'datetime-local' ] )
+								VisualDataFunctions.inArray( mapColumnIndexFormat[ meta.col ], [ 'time', 'date', 'datetime', 'datetime-local' ] )
 							) {
 								var printout = Object.keys( headers )[ meta.col ];
 								var printoutOptions = printoutsOptions[ printout ];

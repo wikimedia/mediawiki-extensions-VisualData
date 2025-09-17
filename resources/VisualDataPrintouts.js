@@ -51,7 +51,7 @@ const VisualDataPrintouts = function () {
 					return;
 				}
 				var format = data.mapPathSchema[ printout ].format;
-				if ( $.inArray( format, [ 'time', 'date', 'datetime', 'datetime-local' ] ) ) {
+				if ( VisualDataFunctions.inArray( format, [ 'time', 'date', 'datetime', 'datetime-local' ] ) ) {
 					var $cell = $( this );
 					$( this ).text( VisualDataFunctions.dateToLocalPrintout( $cell.text().trim(), format, data.printoutsOptions[ printout ] ) );
 				}

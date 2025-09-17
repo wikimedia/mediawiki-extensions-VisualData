@@ -604,7 +604,7 @@ class ResultPrinter {
 				$this->getTemplateParams( $title, $path, $properties, $categories, $isFirst, $isLast ), false );
 		}
 
-		$value = $this->formatValue( $schema, $key, $value );
+		$value = (string)$value;
 
 		// @ATTENTION in tree mode $key will be an integer and $path/$properties
 		// are unrelated from categories, however doesn't seem to be a reason
@@ -624,25 +624,6 @@ class ResultPrinter {
 		$replaceAlias( self::$categoriesAliases, implode( ', ', $categories ) );
 
 		return $value;
-	}
-
-	/**
-	 * @param array $schema
-	 * @param string $key
-	 * @param mixed $value
-	 * @return string
-	 */
-	public function formatValue( $schema, $key, $value ) {
-		switch ( $schema['type'] ) {
-			case 'string':
-				switch ( $schema['format'] ) {
-					case 'datetime-local':
-						// add date-local $this->printoutsOptions
-						$this->printoutsOptions[$key]['date-local'] = true;
-						break;
-				}
-		}
-		return (string)$value;
 	}
 
 	/**
