@@ -59,10 +59,19 @@ $( function () {
 		for ( var value of json ) {
 			var event = value[ 1 ];
 			if ( 'resources' in event ) {
-				event.resourcesIds = [];
-				for ( var i in event.resources ) {
-					resources.push( { id: i, title: event.resources[ i ] } );
-					event.resourcesIds.push( i );
+				event.resourceIds = [];
+				if ( Array.isArray( event.resources ) ) {
+					for ( var resource of event.resources ) {
+						if ( !VisualDataFunctions.inArray( resource, resources ) ) {
+							resources.push( resource );
+						}
+						event.resourceIds.push( resources.indexOf( resource ) );
+					}
+				} else {
+					if ( !VisualDataFunctions.inArray( event.resources, resources ) ) {
+						resources.push( event.resources );
+					}
+					event.resourceIds.push( resources.indexOf( event.resources ) );
 				}
 			}
 			if ( !event.end ) {
@@ -109,7 +118,9 @@ $( function () {
 
 		const ec = EventCalendar.create( element, $.extend( params, {
 			events: json.map( ( x ) => x[ 1 ] ),
-			resources,
+			resources: resources.map( ( x, j ) => {
+				return { id: j, title: x };
+			} ),
 			dateClick: function ( info ) {
 				// console.log( info );
 			},

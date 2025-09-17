@@ -911,7 +911,7 @@ class CalendarResultPrinter extends ResultPrinter {
 			'classnames-property',
 			'styles-property',
 		] as $property ) {
-			$this->mapProperties[ $this->params[$property] ] = self::$parameters[$property]['default'];
+			$this->mapProperties[ self::$parameters[$property]['default'] ] = $this->params[$property];
 		}
 
 		$ret = [];
@@ -932,20 +932,11 @@ class CalendarResultPrinter extends ResultPrinter {
 	public function processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast ) {
 		// $value = parent::processParent( $title, $schema, $properties, $categories, $path, $recPaths, $isFirst, $isLast );
 
-		$required = [ 'start' ];
-		$mapValues = [];
-		foreach ( $properties as $key_ => $value_ ) {
-			if ( isset( $this->mapProperties[$key_] ) ) {
-				$mapValues[] = $this->mapProperties[$key_];
-			}
-		}
-
-		// $pathParent = substr( $path, 0, strrpos( $path, '/' ) );
-		if ( count( array_intersect( $required, $mapValues ) ) === count( $required ) ) {
+		if ( isset( $properties[ $this->mapProperties['start'] ] ) ) {
 			$properties_ = [];
-			foreach ( $properties as $key_ => $value_ ) {
-				if ( isset( $this->mapProperties[$key_] ) ) {
-					$properties_[$this->mapProperties[$key_]] = $value_;
+			foreach ( $this->mapProperties as $key_ => $value_ ) {
+				if ( isset( $properties[ $value_ ] ) ) {
+					$properties_[$key_] = $properties[ $value_ ];
 				}
 			}
 
