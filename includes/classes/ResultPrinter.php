@@ -178,7 +178,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $value
 	 * @param array $categories
 	 * @return string
@@ -189,7 +189,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $value
 	 * @param array $categories
 	 * @return string
@@ -271,7 +271,7 @@ class ResultPrinter {
 
 	/**
 	 * @see \MediaWiki\Extension\Scribunto\Engines\LuaCommon\LuaEngine
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $args
 	 * @return array
 	 */
@@ -311,7 +311,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param string $path
 	 * @param array $arr
 	 * @param array $categories
@@ -367,7 +367,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $schema
 	 * @param array $arr
 	 * @param array $categories
@@ -446,7 +446,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $schema
 	 * @param array $arr
 	 * @param array $categories
@@ -520,7 +520,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $schema
 	 * @param array $properties
 	 * @param array $categories
@@ -579,7 +579,7 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array|null $schema
 	 * @param string $key
 	 * @param array $properties

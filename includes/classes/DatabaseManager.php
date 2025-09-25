@@ -106,7 +106,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 */
 	public function invalidateTransclusionTargets( $title ) {
 		$transclusionTargets = \VisualData::getTransclusionTargets( $title );
@@ -117,7 +117,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @return bool
 	 */
 	public function handleTemplateLinks( $title ) {
@@ -143,7 +143,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param string $schema
 	 * @param array $templates
 	 * @return bool
@@ -183,7 +183,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param string $type
 	 * @param string|array $schema
 	 * @return bool
@@ -303,7 +303,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 */
 	public function removeLinks( $title ) {
 		if ( !$title ) {
@@ -659,7 +659,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 */
 	public function deletePage( $title ) {
 		$articleId = $title->getID();
@@ -762,7 +762,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $deletedSchemas
 	 * @param array &$errors
 	 */
@@ -1216,7 +1216,7 @@ class DatabaseManager {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $schema
 	 */
 	public function createSchemaIdAndPrintouts( $title, $schema ) {
@@ -1299,7 +1299,7 @@ class DatabaseManager {
 
 	/**
 	 * @param string $context
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $flattenData
 	 * @param array &$errors
 	 * @return int

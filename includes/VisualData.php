@@ -26,6 +26,7 @@ if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
 }
 
 use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+use MediaWiki\Extension\VisualData\Aliases\Linker as LinkerClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\QueryProcessor;
@@ -723,7 +724,7 @@ class VisualData {
 
 		// *** alternatively use $linkRenderer->makePreloadedLink
 		// or $GLOBALS['wgArticlePath'] and wfAppendQuery
-		$ret = Linker::link( $title_, $text, $attr, $query );
+		$ret = LinkerClass::link( $title_, $text, $attr, $query );
 
 		return [
 			$ret,

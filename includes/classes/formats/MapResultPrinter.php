@@ -24,8 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use Linker;
 use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+use MediaWiki\Extension\VisualData\Aliases\Linker as LinkerClass;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 
 class MapResultPrinter extends ResultPrinter {
@@ -626,7 +626,7 @@ class MapResultPrinter extends ResultPrinter {
 
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			// main label
-			$formatted = Linker::link( $title, $title->getFullText() );
+			$formatted = LinkerClass::link( $title, $title->getFullText() );
 			$this->json[count( $this->json ) - 1 ][''] = $formatted;
 		}
 

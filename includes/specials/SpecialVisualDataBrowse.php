@@ -23,6 +23,7 @@
  */
 
 use MediaWiki\Extension\VisualData\DatabaseManager;
+use MediaWiki\Parser\ParserOptions;
 
 /**
  * A special page that lists protected pages
@@ -147,7 +148,7 @@ class SpecialVisualDataBrowse extends SpecialPage {
 		}
 
 		if ( $pager->getNumRows() ) {
-			$out->addParserOutputContent( $pager->getFullOutput() );
+			$out->addParserOutputContent( $pager->getFullOutput(), ParserOptions::newFromContext( $this->getContext() ) );
 			// $out->addHTML(
 			// 	$pager->getBody() .
 			// 	$pager->getNavigationBar()

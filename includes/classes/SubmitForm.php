@@ -252,7 +252,7 @@ class SubmitForm {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param string $content
 	 * @param string $contentModel
 	 * @param array &$errors
@@ -331,7 +331,7 @@ class SubmitForm {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $targetTitle
+	 * @param Title|MediaWiki\Title\Title $targetTitle
 	 * @param \WikiPage $wikiPage
 	 * @param string $contentModel
 	 * @param array &$errors

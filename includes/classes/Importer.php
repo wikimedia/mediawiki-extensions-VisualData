@@ -179,7 +179,7 @@ class Importer {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array $data
 	 * @return string|null|false
 	 */

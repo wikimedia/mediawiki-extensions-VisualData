@@ -24,8 +24,8 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use Linker;
 use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
+use MediaWiki\Extension\VisualData\Aliases\Linker as LinkerClass;
 use MediaWiki\Extension\VisualData\ResultPrinter;
 use MediaWiki\Extension\VisualData\Utils\DateParser;
 
@@ -940,7 +940,7 @@ class CalendarResultPrinter extends ResultPrinter {
 				}
 			}
 
-			$formatted = Linker::link( $title, $title->getFullText() );
+			$formatted = LinkerClass::link( $title, $title->getFullText() );
 			$this->json[] = [
 				$formatted,
 				$properties_

@@ -110,7 +110,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title &$title
+	 * @param Title|MediaWiki\Title\Title &$title
 	 * @param null $unused
 	 * @param OutputPage $output
 	 * @param User $user
@@ -156,7 +156,7 @@ class VisualDataHooks {
 
 	/**
 	 * @param Content $content
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param int $revId
 	 * @param ParserOptions $options
 	 * @param bool $generateHtml
@@ -231,7 +231,7 @@ class VisualDataHooks {
 
 	/**
 	 * @param Content $content
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param ParserOutput &$parserOutput
 	 * @return void
 	 */
@@ -452,7 +452,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param ForeignTitle $foreignTitle
 	 * @param int $revCount
 	 * @param int $sRevCount
@@ -477,7 +477,7 @@ class VisualDataHooks {
 	}
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param bool $create
 	 * @param string $comment
 	 * @param int $oldPageId

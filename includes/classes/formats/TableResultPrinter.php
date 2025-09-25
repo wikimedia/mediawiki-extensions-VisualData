@@ -24,7 +24,7 @@
 
 namespace MediaWiki\Extension\VisualData\ResultPrinters;
 
-use Linker;
+use MediaWiki\Extension\VisualData\Aliases\Linker as LinkerClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ResultPrinter;
@@ -80,7 +80,7 @@ class TableResultPrinter extends ResultPrinter {
 		$this->json[] = [];
 		if ( !empty( $this->params['pagetitle'] ) ) {
 			// main label
-			$formatted = Linker::link( $title, $title->getFullText() );
+			$formatted = LinkerClass::link( $title, $title->getFullText() );
 			$this->json[count( $this->json ) - 1 ][''][] = $formatted;
 		}
 
@@ -159,7 +159,7 @@ class TableResultPrinter extends ResultPrinter {
 				continue;
 			}
 			$title_ = TitleClass::newFromText( $value, NS_CATEGORY );
-			$ret[] = Linker::link( $title_, ( $title_ ? $title_->getText() : $value ) );
+			$ret[] = LinkerClass::link( $title_, ( $title_ ? $title_->getText() : $value ) );
 		}
 		return $ret;
 	}

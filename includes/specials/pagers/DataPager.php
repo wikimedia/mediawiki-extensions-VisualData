@@ -24,7 +24,7 @@
 
 namespace MediaWiki\Extension\VisualData\Pagers;
 
-use Linker;
+use MediaWiki\Extension\VisualData\Aliases\Linker as LinkerClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Linker\LinkRenderer;
 use MWException;
@@ -115,7 +115,7 @@ class DataPager extends TablePager {
 					$formatted = '';
 				} else {
 					$title = TitleClass::newFromID( $row->page_id );
-					$formatted = Linker::link( $title, $title->getFullText() );
+					$formatted = LinkerClass::link( $title, $title->getFullText() );
 				}
 				break;
 
@@ -123,7 +123,7 @@ class DataPager extends TablePager {
 				$schemaName = $this->parentClass->databaseManager->getSchemaName( $row->schema_id );
 				$title = TitleClass::makeTitleSafe( NS_VISUALDATASCHEMA, $schemaName );
 				if ( $title ) {
-					$formatted = Linker::link( $title, $title->getText() );
+					$formatted = LinkerClass::link( $title, $title->getText() );
 				} else {
 					$formatted = $this->msg( 'visualdata-special-browse-pager-noschema' )->text();
 				}
@@ -131,7 +131,7 @@ class DataPager extends TablePager {
 
 			case 'actions':
 				// $link = '<span class="mw-ui-button mw-ui-progressive">edit</span>';
-				// $formatted = Linker::link( $title, $link, [], $query );
+				// $formatted = LinkerClass::link( $title, $link, [], $query );
 				break;
 
 			default:

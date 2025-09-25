@@ -35,7 +35,7 @@ use Wikimedia\ScopedCallback;
 class UpdateDataJob extends Job {
 
 	/**
-	 * @param Title|Mediawiki\Title\Title $title
+	 * @param Title|MediaWiki\Title\Title $title
 	 * @param array|bool $params
 	 */
 	function __construct( $title, $params = [] ) {
