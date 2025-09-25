@@ -42,7 +42,7 @@ class LuaResultPrinter extends ResultPrinter {
 			return wfMessage( 'visualdata-resultprinter-lua-module-error' )->text();
 		}
 		$title_ = TitleClass::newFromText( $this->params['module'], NS_TEMPLATE );
-		if ( !$title_ || !$title_->isKnown ) {
+		if ( !$title_ || !$title_->isKnown() ) {
 			return wfMessage( 'visualdata-resultprinter-lua-module-error' )->text();
 		}
 

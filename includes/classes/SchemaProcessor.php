@@ -28,6 +28,7 @@ use Context;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\Utils\DateParser;
 use MediaWiki\MediaWikiServices;
+use MediaWiki\Parser\ParserOptions;
 use MWException;
 use Parser;
 
@@ -1328,7 +1329,7 @@ class SchemaProcessor {
 
 		// *** credits WikiTeQ
 		// $title = RequestContext::getMain()->getTitle();
-		$poptions = $this->output->parserOptions();
+		$poptions = ParserOptions::newFromContext( $this->context );
 
 		// parsed query
 		$query = $parser->preprocess( $query, $this->context->getTitle(), $poptions );
