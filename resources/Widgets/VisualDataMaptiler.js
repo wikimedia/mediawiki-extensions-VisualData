@@ -40,7 +40,7 @@
 		// only load scripts
 		if ( !$element.parent().is( ':visible' ) ) {
 			VisualDataFunctions.loadScripts( this.scripts );
-			return Promise.reject( 'Maptiler element not visible' );
+			throw 'Maptiler element not visible';
 		}
 
 		// *** prevents ajv error "Maximum call stack size exceeded"
@@ -51,7 +51,7 @@
 		var mapId = 'visualdata-maptiler-map-' + data.path;
 
 		if ( $( '#' + jQuery.escapeSelector( mapId ) ).length ) {
-			return Promise.resolve();
+			return;
 		}
 
 		return new Promise( ( resolve, reject ) => {

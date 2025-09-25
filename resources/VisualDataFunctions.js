@@ -109,7 +109,7 @@ VisualDataFunctions = ( function () {
 
 			case 'boolean':
 				if ( typeof value === 'string' ) {
-					value = [ 'true', 't', '1', 'on', 'yes', 'y' ].indexOf( value ) !== -1;
+					value = [ 'true', 't', '1', 'on', 'yes', 'y' ].includes( value );
 				} else {
 					value = !!value;
 				}
@@ -283,7 +283,7 @@ VisualDataFunctions = ( function () {
 		console.log( '' );
 
 		// @TODO redirect to the extension page for docs on specific inputs
-		if ( inputName.indexOf( 'OO.' ) === -1 && inputName.indexOf( 'mw.' ) === -1 ) {
+		if ( !inputName.includes( 'OO.' ) && !inputName.includes( 'mw.' ) ) {
 			return null;
 		}
 		// or `https://doc.wikimedia.org/oojs-ui/master/js/${inputName}.html`
@@ -292,7 +292,7 @@ VisualDataFunctions = ( function () {
 
 	function isMultiselect( inputName ) {
 		// return inArray(inputName, ManageProperties.multiselectInputs))
-		return inputName.indexOf( 'Multiselect' ) !== -1;
+		return inputName.includes( 'Multiselect' );
 	}
 
 	function inputInstanceFromName( inputName, config ) {
@@ -504,7 +504,7 @@ VisualDataFunctions = ( function () {
 	}
 
 	function inArray( val, arr ) {
-		return arr.indexOf( val ) !== -1;
+		return arr.includes( val );
 	}
 
 	function getKeyByValue( obj, value ) {
@@ -897,7 +897,7 @@ VisualDataFunctions = ( function () {
 	function arrayIntersect( arr1, arr2 ) {
 		var ret = [];
 		for ( var x of arr1 ) {
-			if ( arr2.indexOf( x ) !== -1 ) {
+			if ( arr2.includes( x ) ) {
 				ret.push( x );
 			}
 		}

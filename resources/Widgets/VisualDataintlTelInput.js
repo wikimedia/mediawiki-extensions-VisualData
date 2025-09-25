@@ -164,7 +164,7 @@
 		];
 
 		if (
-			!Object.keys( config ).filter( ( x ) => configCountries.indexOf( x ) !== -1 )
+			!Object.keys( config ).filter( ( x ) => configCountries.includes( x ) )
 				.length
 		) {
 			return;
@@ -181,7 +181,7 @@
 			if ( i in config ) {
 				if ( i === 'initialCountry' ) {
 					config[ i ] = config[ i ].toLowerCase();
-					if ( iso2.indexOf( config[ i ] ) === -1 ) {
+					if ( !iso2.includes( config[ i ] ) ) {
 						// eslint-disable-next-line no-console
 						console.error( config[ i ] + ' is not a valid country code' );
 						delete config[ i ];
@@ -190,7 +190,7 @@
 				}
 				var values = [];
 				for ( var ii of config[ i ] ) {
-					if ( iso2.indexOf( ii ) === -1 ) {
+					if ( !iso2.includes( ii ) ) {
 						// eslint-disable-next-line no-console
 						console.error( ii + ' is not a valid country code' );
 						values.splice( ii, 1 );

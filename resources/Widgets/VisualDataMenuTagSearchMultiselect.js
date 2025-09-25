@@ -111,7 +111,7 @@
 
 					// Remove if items' data already exists
 					for ( var i in items ) {
-						if ( existingItems.indexOf( i ) !== -1 ) {
+						if ( existingItems.includes( i ) ) {
 							delete items[ i ];
 						}
 					}

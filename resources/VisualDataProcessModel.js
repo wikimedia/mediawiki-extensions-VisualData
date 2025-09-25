@@ -19,7 +19,6 @@
  * @copyright Copyright © 2023, https://wikisphere.org
  */
 
-/* eslint-disable no-tabs */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-underscore-dangle */
 
@@ -176,10 +175,10 @@ const VisualDataProcessModel = function (
 			for ( var error of validateAjv.errors ) {
 				switch ( error.keyword ) {
 					case 'uniqueItems':
-						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }/${ error.params.j }` ) === -1 ) {
+						if ( !Removed.includes( `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }/${ error.params.j }` ) ) {
 							AjvErrors.push( $.extend( VisualDataFunctions.deepCopy( error ), { instancePath: `${ error.instancePath }/${ error.params.i }` } ) );
 						}
-						if ( Removed.indexOf( `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }/${ error.params.i }` ) === -1 ) {
+						if ( !Removed.includes( `${ VisualDataFunctions.escapeJsonPointer( schemaName ) }${ error.instancePath }/${ error.params.i }` ) ) {
 							AjvErrors.push( $.extend( VisualDataFunctions.deepCopy( error ), { instancePath: `${ error.instancePath }/${ error.params.j }` } ) );
 						}
 						break;
@@ -328,7 +327,7 @@ const VisualDataProcessModel = function (
 
 				try {
 					for ( var schemaName in ModelSchemas ) {
-						if ( Form.schemas.indexOf( schemaName ) === -1 ) {
+						if ( !Form.schemas.includes( schemaName ) ) {
 							continue;
 						}
 						ret[ schemaName ] = await getValuesRec(
@@ -359,7 +358,7 @@ const VisualDataProcessModel = function (
 
 			case 'submit':
 				for ( var schemaName in ModelSchemas ) {
-					if ( Form.schemas.indexOf( schemaName ) === -1 ) {
+					if ( !Form.schemas.includes( schemaName ) ) {
 						continue;
 					}
 					ret[ schemaName ] = await getValuesRec(

@@ -54,7 +54,7 @@
 			if ( $( this ).attr( 'data-url' ) ) {
 				// $(this).attr('title', $(this).attr('data-title') )
 				$( this ).css( 'cursor', 'pointer' );
-				$( this ).click( function () {
+				$( this ).on( 'click', function () {
 					window.location = $( this ).attr( 'data-url' );
 				} );
 			}

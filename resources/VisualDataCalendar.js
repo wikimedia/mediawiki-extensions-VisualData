@@ -97,7 +97,7 @@ $( function () {
 				// eslint-disable-next-line no-underscore-dangle
 				var found_ = false;
 				for ( var i in params.headerToolbar ) {
-					if ( params.headerToolbar[ i ].indexOf( view_ ) !== -1 ) {
+					if ( params.headerToolbar[ i ].includes( view_ ) ) {
 						found_ = true;
 						break;
 					}

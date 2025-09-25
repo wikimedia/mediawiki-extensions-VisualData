@@ -61,13 +61,13 @@
 		var self = this;
 
 		if ( this.isInitialized() || this.initializing ) {
-			return Promise.resolve( true );
+			return true;
 		}
 
 		this.initializing = true;
 
 		if ( !self.$element.parent().is( ':visible' ) ) {
-			return Promise.reject( 'VEForAll element not visible' );
+			throw 'VEForAll element not visible';
 		}
 
 		return new Promise( ( resolve, reject ) => {

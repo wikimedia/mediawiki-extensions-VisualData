@@ -22,8 +22,6 @@
 /* eslint-disable no-tabs */
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-underscore-dangle */
-/* eslint-disable es-x/no-async-functions */
-/* eslint-disable compat/compat */
 
 const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowManager, initForms ) {
 	var Model = {};
@@ -59,7 +57,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 	var FormID;
 
 	function inArray( val, arr ) {
-		return arr.indexOf( val ) !== -1;
+		return arr.includes( val );
 	}
 
 	function escapeJsonPointer( str ) {
@@ -386,10 +384,10 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 						res = ( value.indexOf( refValue ) !== 0 );
 						break;
 					case 'contains':
-						res = ( value.indexOf( refValue ) !== -1 );
+						res = ( value.includes( refValue ) );
 						break;
 					case '!contains':
-						res = ( value.indexOf( refValue ) === -1 );
+						res = ( !value.includes( refValue ) );
 						break;
 					case 'ends':
 						var regExp = new RegExp( escapeRegExp( refValue ) + '$' );
@@ -529,7 +527,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 											);
 										}
 										model.input.addOptions( items );
-										model.input.setValue( values.filter( ( x ) => Object.keys( data_ ).indexOf( x ) !== -1 ) );
+										model.input.setValue( values.filter( ( x ) => Object.keys( data_ ).includes( x ) ) );
 										break;
 								}
 							} );
@@ -638,7 +636,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 
 			var subquery = [];
 			for ( var value of arr ) {
-				if ( value.indexOf( '::' ) === -1 ) {
+				if ( !value.includes( '::' ) ) {
 					var trimmed = value.trim();
 					var match_ = trimmed.match( /<([^<>]+)>/ );
 
@@ -1044,7 +1042,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			if ( value ) {
 				var valueLowerCase = value.toLowerCase();
 				values = values.filter(
-					( x ) => x.toLowerCase().indexOf( valueLowerCase ) !== -1
+					( x ) => x.toLowerCase().includes( valueLowerCase )
 				);
 			}
 
@@ -1787,7 +1785,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 
 				Form.schemas = Form.schemas.filter( ( x ) => x in Schemas );
 
-				if ( !SelectedSchema || Form.schemas.indexOf( SelectedSchema ) === -1 ) {
+				if ( !SelectedSchema || !Form.schemas.includes( SelectedSchema ) ) {
 					// @credits https://gerrit.wikimedia.org/r/c/mediawiki/extensions/VisualData/+/1034934
 					if ( 'selected-schema' in Form.options &&
 						Form.options[ 'selected-schema' ] !== '' &&

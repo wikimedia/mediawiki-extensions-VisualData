@@ -20,7 +20,6 @@
  */
 
 // @see https://doc.wikimedia.org/oojs-ui/master/js/
-// eslint-disable-next-line no-unused-vars
 
 // eslint-disable-next-line no-implicit-globals
 VisualDataWindowManager = function () {

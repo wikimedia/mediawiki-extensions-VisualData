@@ -19,8 +19,6 @@
  * @copyright Copyright ©2025, https://wikisphere.org
  */
 
-/* eslint-disable no-tabs */
-
 ( function () {
 	// eslint-disable-next-line no-implicit-globals
 	VisualDataDateTimeInputWidget = function ( config ) {
@@ -67,7 +65,7 @@
 
 		// const m = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?Z$/.exec( value );
 		// ***edited, matches both +01:00 (ISO 8601 vP) and +0100 (ISO 8601 vO)
-		// eslint-disable-next-line security/detect-unsafe-regex
+
 		const m = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(Z|[+-]\d{2}:?\d{2}|[+-]\d{4})?$/.exec( value );
 
 		if ( m ) {

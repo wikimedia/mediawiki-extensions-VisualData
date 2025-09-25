@@ -39,7 +39,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 	var HelpUrl;
 
 	function inArray( val, arr ) {
-		return arr.indexOf( val ) !== -1;
+		return arr.includes( val );
 	}
 
 	// @TODO add default for each of them
@@ -945,7 +945,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 			if ( value ) {
 				var valueLowerCase = value.toLowerCase();
 				values = values.filter(
-					( x ) => x.toLowerCase().indexOf( valueLowerCase ) !== -1
+					( x ) => x.toLowerCase().includes( valueLowerCase )
 				);
 			}
 

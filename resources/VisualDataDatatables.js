@@ -488,8 +488,7 @@ const VisualDataDatatables = function ( el, elIndex ) {
 					label: searchPanesOptions[ i ][ ii ].label,
 					value: function ( rowData, rowIdx ) {
 						return (
-							objectValues( data[ rowIdx ] )[ i ].indexOf(
-								searchPanesOptions[ i ][ ii ].value ) !== -1
+							objectValues( data[ rowIdx ] )[ i ].includes( searchPanesOptions[ i ][ ii ].value )
 						);
 					}
 				} );
@@ -1082,11 +1081,11 @@ $( function () {
 	} );
 
 	var modules = [];
-	if ( buttons.indexOf( 'pdf' ) !== -1 ) {
+	if ( buttons.includes( 'pdf' ) ) {
 		modules.push( 'ext.VisualData.Datatables.export.pdf' );
 	}
 
-	if ( buttons.indexOf( 'excel' ) !== -1 ) {
+	if ( buttons.includes( 'excel' ) ) {
 		modules.push( 'ext.VisualData.Datatables.export.excel' );
 	}
 

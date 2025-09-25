@@ -41,7 +41,7 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 	var HandleQueryOptionsInt;
 
 	function inArray( val, arr ) {
-		return arr.indexOf( val ) !== -1;
+		return arr.includes( val );
 	}
 
 	function getCurrentItem() {
@@ -83,8 +83,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 		// except multiselect
 		return ret.filter(
 			( x ) =>
-				( VisualDataFunctions.lookupInputs.indexOf( x ) === -1 &&
-					VisualDataFunctions.optionsInputs.indexOf( x ) === -1 ) ||
+				( !VisualDataFunctions.lookupInputs.includes( x ) &&
+					!VisualDataFunctions.optionsInputs.includes( x ) ) ||
 				VisualDataFunctions.isMultiselect( x )
 		);
 	}
@@ -99,8 +99,8 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 
 			} else {
 				var visibleSharedOptions =
-					Object.keys( HandleOptionsInputsInt.modelMap ).indexOf( i ) !== -1 &&
-					Object.keys( HandleQueryOptionsInt.modelMap ).indexOf( i ) !== -1 &&
+					Object.keys( HandleOptionsInputsInt.modelMap ).includes( i ) &&
+					Object.keys( HandleQueryOptionsInt.modelMap ).includes( i ) &&
 					( optionsHasVisibleItems || queryHasVisibleItems );
 
 				if ( !visibleSharedOptions ) {
@@ -1112,7 +1112,6 @@ const VisualDataFormField = function ( phpConfig, windowManager, schemas ) {
 			var thisAvailableInputsValue = availableInputsInput.getValue();
 			var thisDefaultValueInput = getDefaultValueInput();
 
-			// eslint-disable-next-line no-use-before-define
 			Model.default = defaultValueInput;
 
 			if (
