@@ -22,6 +22,7 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ReplaceText\Search;
 use MediaWiki\MediaWikiServices;
@@ -135,7 +136,7 @@ class RebuildData extends Maintenance {
 
 		$context = RequestContext::getMain();
 		foreach ( $res as $row ) {
-			$title_ = Title::makeTitleSafe( $row->page_namespace, $row->page_title );
+			$title_ = TitleClass::makeTitleSafe( $row->page_namespace, $row->page_title );
 			if ( $title_ == null ) {
 				continue;
 			}
@@ -199,7 +200,7 @@ class RebuildData extends Maintenance {
 
 		$IDs = [];
 		foreach ( $res as $row ) {
-			$title_ = Title::newFromRow( $row );
+			$title_ = TitleClass::newFromRow( $row );
 			$IDs[] = $title_->getArticleID();
 
 			// ensure schema is not empty
@@ -225,7 +226,7 @@ class RebuildData extends Maintenance {
 		} );
 
 		foreach ( $range as $i ) {
-			$title_ = Title::newFromID( $i );
+			$title_ = TitleClass::newFromID( $i );
 
 			if ( !$title_ || !$title_->isKnown() ) {
 				continue;

@@ -23,6 +23,7 @@
  */
 
 // use MediaWiki\MediaWikiServices;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Revision\SlotRecord;
 
@@ -118,7 +119,7 @@ class Uninstall extends Maintenance {
 			if ( $this->limit > 0 && $n > $this->limit ) {
 				break;
 			}
-			$title_ = Title::newFromID( $i );
+			$title_ = TitleClass::newFromID( $i );
 
 			if ( !$title_ || !$title_->isKnown() ) {
 				continue;

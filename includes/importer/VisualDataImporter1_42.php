@@ -25,6 +25,7 @@
 use MediaWiki\Cache\CacheKeyHelper;
 use MediaWiki\Content\IContentHandlerFactory;
 use MediaWiki\Deferred\DeferredUpdates;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\HookContainer\HookContainer;
 use MediaWiki\HookContainer\HookRunner;
 use MediaWiki\MainConfigNames;
@@ -33,7 +34,6 @@ use MediaWiki\Page\WikiPageFactory;
 use MediaWiki\Permissions\Authority;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Revision\SlotRoleRegistry;
-use MediaWiki\Title\Title;
 
 // @see includes/import/WikiImporter.php
 // *** all the required private vars and method are copied from WikiImporter
@@ -421,7 +421,7 @@ class VisualDataImporter1_42 extends WikiImporter {
 			}
 		}
 
-		$title = Title::newFromPageIdentity( $pageIdentity );
+		$title = TitleClass::newFromPageIdentity( $pageIdentity );
 
 		// ***
 		$this->doDeferredUpdates( $title );

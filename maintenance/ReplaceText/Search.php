@@ -6,7 +6,7 @@
 
 namespace MediaWiki\Extension\VisualData\ReplaceText;
 
-use Title;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use Wikimedia\Rdbms\IDatabase;
 use Wikimedia\Rdbms\IResultWrapper;
 
@@ -62,7 +62,7 @@ class Search {
 	 */
 	public static function categoryCondition( $category, &$tables, &$conds ) {
 		if ( strval( $category ) !== '' ) {
-			$category = Title::newFromText( $category )->getDbKey();
+			$category = TitleClass::newFromText( $category )->getDbKey();
 			$tables[] = 'categorylinks';
 			$conds[] = 'page_id = cl_from';
 			$conds['cl_to'] = $category;
@@ -79,7 +79,7 @@ class Search {
 		}
 
 		$dbr = \VisualData::getDB( DB_REPLICA );
-		$title = Title::newFromText( $prefix );
+		$title = TitleClass::newFromText( $prefix );
 		if ( $title !== null ) {
 			$prefix = $title->getDbKey();
 		}
@@ -170,6 +170,6 @@ class Search {
 	public static function getReplacedTitle( Title $title, $search, $replacement, $regex ) {
 		$oldTitleText = $title->getText();
 		$newTitleText = self::getReplacedText( $oldTitleText, $search, $replacement, $regex );
-		return Title::makeTitleSafe( $title->getNamespace(), $newTitleText );
+		return TitleClass::makeTitleSafe( $title->getNamespace(), $newTitleText );
 	}
 }

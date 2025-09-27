@@ -22,6 +22,7 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\MediaWikiServices;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -131,7 +132,7 @@ class DeleteRegex extends Maintenance {
 
 		$ret = [];
 		foreach ( $res as $row ) {
-			$title = Title::newFromRow( $row );
+			$title = TitleClass::newFromRow( $row );
 			if ( !$delete ) {
 				echo 'matching ' . $title->getFullText() . PHP_EOL;
 				continue;

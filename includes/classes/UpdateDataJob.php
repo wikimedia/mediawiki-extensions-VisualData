@@ -28,8 +28,8 @@ if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
 }
 
 use Job;
+use MediaWiki\MediaWikiServices;
 use RequestContext;
-use User;
 use Wikimedia\ScopedCallback;
 
 class UpdateDataJob extends Job {
@@ -47,7 +47,9 @@ class UpdateDataJob extends Job {
 	 */
 	function run() {
 		// T279090
-		$user = User::newFromId( $this->params['user_id'] );
+		$services = MediaWikiServices::getInstance();
+		$userFactory = $services->getUserFactory();
+		$user = $userFactory->newFromId( $this->params['user_id'] );
 
 		if ( !$user->isAllowed( 'visualdata-canmanageschemas' ) ) {
 			$this->error = 'VisualData: Permission error';

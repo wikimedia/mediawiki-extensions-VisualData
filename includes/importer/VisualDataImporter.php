@@ -24,6 +24,7 @@
 
 use MediaWiki\Cache\CacheKeyHelper;
 use MediaWiki\Content\IContentHandlerFactory;
+use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\HookContainer\HookContainer;
 use MediaWiki\HookContainer\HookRunner;
 use MediaWiki\MediaWikiServices;
@@ -420,7 +421,7 @@ class VisualDataImporter extends WikiImporter {
 			}
 		}
 
-		$title = Title::castFromPageIdentity( $pageIdentity );
+		$title = TitleClass::castFromPageIdentity( $pageIdentity );
 
 		// ***
 		$this->doDeferredUpdates( $title );
