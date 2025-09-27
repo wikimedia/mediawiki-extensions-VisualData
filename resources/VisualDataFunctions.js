@@ -983,10 +983,10 @@ VisualDataFunctions = ( function () {
 					break;
 				case 'datetime':
 				case 'datetime-local':
-					printoutOptions[ 'date-format' ] = 'MMM D, YYYY HH:mm';
+					printoutOptions[ 'date-format' ] = 'MMM D, YYYY H:mm';
 					break;
 				case 'time':
-					printoutOptions[ 'date-format' ] = 'HH:mm';
+					printoutOptions[ 'date-format' ] = 'H:mm';
 					break;
 			}
 		}
