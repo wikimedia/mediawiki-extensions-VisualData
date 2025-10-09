@@ -962,36 +962,44 @@ class QueryProcessor {
 		// retrieve all, but order according to the schema
 		// descriptor
 		if ( empty( $this->printouts ) ) {
-			$this->printouts = array_keys( $this->mapPathNoIndexTable );
-
-			$schemaStr = json_encode( $this->schema );
-			usort( $this->printouts, static function ( $a, $b ) use ( $schemaStr ) {
-				// $aPos = strpos( $schemaStr, "\"name\":\"$a\"" );
-				// $bPos = strpos( $schemaStr, "\"name\":\"$b\"" );
-				// if ( $aPos === false ) {
-				// 	$aPos = INF;
-				// }
-				// if ( $bPos === false ) {
-				// 	$bPos =INF;
-				// }
-
-				$a = preg_quote( $a, '/' );
-				$b = preg_quote( $b, '/' );
-
-				preg_match( "/\"name\"\s*:\s*\"$a\"/", $schemaStr, $matches, PREG_OFFSET_CAPTURE );
-				$aPos = ( !empty( $matches[0][1] ) ? $matches[0][1] : INF );
-
-				preg_match( "/\"name\"\s*:\s*\"$b\"/", $schemaStr, $matches, PREG_OFFSET_CAPTURE );
-				$bPos = ( !empty( $matches[0][1] ) ? $matches[0][1] : INF );
-
-				if ( $aPos === $bPos ) {
-					return 0;
-				}
-				return ( $aPos < $bPos ) ? -1 : 1;
-			} );
-
+			$this->printouts = $this->getAllOrderedPrintouts();
 			$this->printoutsOriginal = $this->printouts;
 		}
+	}
+
+	/**
+	 * @return array
+	 */
+	private function getAllOrderedPrintouts() {
+		$ret = array_keys( $this->mapPathNoIndexTable );
+
+		$schemaStr = json_encode( $this->schema );
+		usort( $ret, static function ( $a, $b ) use ( $schemaStr ) {
+			// $aPos = strpos( $schemaStr, "\"name\":\"$a\"" );
+			// $bPos = strpos( $schemaStr, "\"name\":\"$b\"" );
+			// if ( $aPos === false ) {
+			// 	$aPos = INF;
+			// }
+			// if ( $bPos === false ) {
+			// 	$bPos =INF;
+			// }
+
+			$a = preg_quote( $a, '/' );
+			$b = preg_quote( $b, '/' );
+
+			preg_match( "/\"name\"\s*:\s*\"$a\"/", $schemaStr, $matches, PREG_OFFSET_CAPTURE );
+			$aPos = ( !empty( $matches[0][1] ) ? $matches[0][1] : INF );
+
+			preg_match( "/\"name\"\s*:\s*\"$b\"/", $schemaStr, $matches, PREG_OFFSET_CAPTURE );
+			$bPos = ( !empty( $matches[0][1] ) ? $matches[0][1] : INF );
+
+			if ( $aPos === $bPos ) {
+				return 0;
+			}
+			return ( $aPos < $bPos ) ? -1 : 1;
+		} );
+
+		return $ret;
 	}
 
 	/**
@@ -1080,11 +1088,6 @@ class QueryProcessor {
 			}
 		}
 
-		if ( !count( $arr ) ) {
-			$this->errors[] = 'no valid printouts';
-			return;
-		}
-
 		$thisClass = $this;
 		$parentSchemaIsarray = static function ( $printout ) use ( $thisClass ) {
 			if ( !array_key_exists( $printout, $thisClass->mapPrintoutParentSchemas ) ) {
@@ -1106,6 +1109,21 @@ class QueryProcessor {
 				&& array_key_exists( $printout_, $this->mapPathNoIndexTable )
 			) {
 				$arr[$printout_] = false;
+			}
+		}
+
+		if ( !count( $arr ) ) {
+			if ( !$this->params['count-categories'] ) {
+				$this->errors[] = 'no valid printouts';
+				return;
+
+			} else {
+				$this->printouts = $this->getAllOrderedPrintouts();
+				if ( !count( $this->printouts ) ) {
+					$this->errors[] = 'no valid printouts';
+					return;
+				}
+				$arr[$this->printouts[0]] = false;
 			}
 		}
 
