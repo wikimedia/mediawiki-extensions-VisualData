@@ -47,7 +47,6 @@ class VisualDataHtmlContentHandler extends \TextContentHandler {
 			// Temporary changes as getHtml() is deprecated, we are working on removing usage of it.
 			if ( method_exists( $content, 'getHtml' ) ) {
 				$method = new ReflectionMethod( $content, 'getHtml' );
-				$method->setAccessible( true );
 				$html = $method->invoke( $content );
 			} else {
 				// Return an HTML representation of the content
