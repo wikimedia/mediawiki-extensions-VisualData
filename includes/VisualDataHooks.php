@@ -226,7 +226,9 @@ class VisualDataHooks {
 	 */
 	public static function onPageDeleteComplete( $page, $deleter, $reason, $pageID, $deletedRev, $logEntry, $archivedRevisionCount ) {
 		$databaseManager = new DatabaseManager();
-		$databaseManager->deletePage( $deletedRev->getPage() );
+		$page = $deletedRev->getPage();
+		$title = TitleClass::newFromDBKey( $page->getDBkey() );
+		$databaseManager->deletePage( $title );
 	}
 
 	/**
