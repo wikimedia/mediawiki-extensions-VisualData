@@ -2260,9 +2260,11 @@ class VisualData {
 			}
 
 			if ( !empty( $form['options']['edit-page'] ) ) {
-				// $editTitle = self::getTitleIfKnown( $form['options']['edit-page'] );
-				// can be unknown
 				$editTitle = TitleClass::newFromText( $form['options']['edit-page'] );
+
+				if ( ( !$editTitle || !$editTitle->isKnown() ) && is_numeric( $form['options']['edit-page'] ) ) {
+					$editTitle = TitleClass::newFromID( $form['options']['edit-page'] );
+				}
 			}
 
 			if ( $editTitle ) {
