@@ -891,7 +891,8 @@ class VisualData {
 		}
 
 		if ( !$isButton ) {
-			$schemas = preg_split( '/\s*,\s*/', $values[0], -1, PREG_SPLIT_NO_EMPTY );
+			// https://phabricator.wikimedia.org/T387008
+			$schemas = self::splitString( $values[0] );
 			foreach ( $schemas as &$value ) {
 				self::adjustSchemaName( $value );
 			}
@@ -1029,7 +1030,8 @@ class VisualData {
 			switch ( $type ) {
 				case 'array':
 					if ( !is_array( $val ) ) {
-						$val = preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY );
+						// https://phabricator.wikimedia.org/T387008
+						$val = self::splitString( $val );
 					}
 					break;
 
@@ -1047,7 +1049,7 @@ class VisualData {
 				case 'array-boolean':
 					// can be an array when called by VisualDataApiDatatables -> \VisualData::getResults()
 					$values = ( !is_array( $val )
-						? preg_split( '/\s*,\s*/', $val, -1, PREG_SPLIT_NO_EMPTY )
+						? self::splitString( $val )
 						: $val );
 
 					$val = [];
@@ -1157,7 +1159,10 @@ class VisualData {
 			if ( $pos === false ) {
 				return [];
 			}
-			$values = preg_split( '/\s*\|\+\s*/', $value, -1, PREG_SPLIT_NO_EMPTY );
+
+			// https://phabricator.wikimedia.org/T387008
+			$values = self::splitString( $value, '|+' );
+
 			array_shift( $values );
 			$ret = [];
 			foreach ( $values as $value_ ) {
@@ -2338,7 +2343,8 @@ class VisualData {
 							&& !is_array( $v )
 						) {
 							// @see https://visualdata.idea-sketch.com/wiki/Preload_data_with_nested_and_multiple_values
-							$v = preg_split( "/\s*{$form['options']['preload-data-separator']}\s*/", $v, -1, PREG_SPLIT_NO_EMPTY );
+							// https://phabricator.wikimedia.org/T387008
+							$v = self::splitString( $v, $form['options']['preload-data-separator'] );
 						}
 					};
 					$path = '';
@@ -3385,6 +3391,35 @@ class VisualData {
 			} else {
 				$ret[$key] = $value;
 			}
+		}
+
+		return $ret;
+	}
+
+	/**
+	 * @param string $str
+	 * @param string $token
+	 * @return array
+	 */
+	public static function splitString( $str, $token = ',' ) {
+		$ret = [];
+		$tokenLen = strlen( $token );
+		$start = 0;
+
+		// phpcs:ignore Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
+		while ( ( $pos = strpos( $str, $token, $start ) ) !== false ) {
+			$segment = substr( $str, $start, $pos - $start );
+			$val = trim( $segment );
+			if ( $val !== '' ) {
+				$ret[] = $val;
+			}
+			$start = $pos + $tokenLen;
+		}
+
+		$segment = substr( $str, $start );
+		$val = trim( $segment );
+		if ( $val !== '' ) {
+			$ret[] = $val;
 		}
 
 		return $ret;

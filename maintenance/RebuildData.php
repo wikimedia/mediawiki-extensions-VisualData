@@ -91,9 +91,11 @@ class RebuildData extends Maintenance {
 		// $onlySchemas = $this->getOption( 'only-schemas' ) ?? '';
 		$excludeSchemas = '';
 		$onlySchemas = '';
-		$this->excludePrefix = preg_split( '/\s*,\s*/', $excludePrefix, -1, PREG_SPLIT_NO_EMPTY );
-		$this->excludeSchemas = preg_split( '/\s*,\s*/', $excludeSchemas, -1, PREG_SPLIT_NO_EMPTY );
-		$this->onlySchemas = preg_split( '/\s*,\s*/', $onlySchemas, -1, PREG_SPLIT_NO_EMPTY );
+
+		// https://phabricator.wikimedia.org/T387008
+		$this->excludePrefix = \VisualData::splitString( $excludePrefix );
+		$this->excludeSchemas = \VisualData::splitString( $excludeSchemas );
+		$this->onlySchemas = \VisualData::splitString( $onlySchemas );
 
 		$this->services = MediaWikiServices::getInstance();
 		$this->db = \VisualData::getDB( DB_PRIMARY );

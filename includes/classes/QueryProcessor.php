@@ -1039,7 +1039,8 @@ class QueryProcessor {
 	 */
 	private function parseOrderBy() {
 		$ret = [];
-		$values = preg_split( '/\s*,\s*/', $this->params['order'], -1, PREG_SPLIT_NO_EMPTY );
+		// https://phabricator.wikimedia.org/T387008
+		$values = \VisualData::splitString( $this->params['order'] );
 		foreach ( $values as $v ) {
 			preg_match( '/^\s*(.+?)\s*(ASC|DESC)?\s*$/i', $v, $match_ );
 			$printout = $match_[1];

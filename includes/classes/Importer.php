@@ -116,8 +116,8 @@ class Importer {
 					if ( isset( $schema['properties'][$k]['type'] ) ) {
 						switch ( $schema['properties'][$k]['type'] ) {
 							case 'array':
-								$sep_ = preg_quote( $this->options['csv-array-field-separator'], '/' );
-								$value[$k] = preg_split( "/\s*$sep_\s*/", $v, -1, PREG_SPLIT_NO_EMPTY );
+								// https://phabricator.wikimedia.org/T387008
+								$value[$k] = \VisualData::splitString( $v, $this->options['csv-array-field-separator'] );
 								break;
 						}
 					}
