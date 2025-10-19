@@ -38,7 +38,7 @@ use Swaggest\JsonDiff\JsonPointer;
 
 class VisualData {
 	/** @var array */
-	protected static $cachedJsonData = [];
+	public static $cachedJsonData = [];
 
 	/** @var User */
 	public static $User;
@@ -2633,62 +2633,58 @@ class VisualData {
 	}
 
 	/**
-	 * @see https://github.com/SemanticMediaWiki/SemanticResultFormats/blob/master/formats/datatables/DataTables.php#L695
 	 * @param array $items
 	 * @param bool $unescapeJsonKeys false
 	 * @param string $token
 	 * @return array
 	 */
 	public static function plainToNested( $items, $unescapeJsonKeys = false, $token = '/' ) {
-		$ret = [];
-
-		// order
-		// [2] => a
-		// [0] => a/b
-		// to
-		// [0] => a/b
-		// [2] => a
-		// and remove parent keys
-		// this ensure that $ref[$part][''] = null
-		// does not target the parent item
-		// as string
-		uksort( $items, static function ( $a, $b ) use ( $token ) {
-			$countA = substr_count( $a, $token );
-			$countB = substr_count( $b, $token );
-			if ( $countA === $countB ) {
-				return 0;
-			}
-			return ( $countA > $countB ? -1 : 1 );
-		} );
-
 		$result = [];
-		foreach ( $items as $key => $item ) {
-			if ( !count( array_filter( $result, static function ( $parent ) use ( $key, $token ) {
-				return ( strpos( $parent, "$key$token" ) === 0 );
-			}, ARRAY_FILTER_USE_KEY ) ) ) {
-				$result[$key] = $item;
-			}
-		}
 
-		foreach ( $result as $key => $value ) {
-			$ref = &$ret;
-			$parts = explode( $token, $key );
+		foreach ( $items as $flatKey => $value ) {
+			$parts = explode( $token, $flatKey );
 
 			if ( $unescapeJsonKeys ) {
-				foreach ( $parts as $k => $v ) {
-					$parts[$k] = self::unescapeJsonKey( $v );
-				}
+				$parts = array_map( [ self::class, 'unescapeJsonKey' ], $parts );
 			}
 
-			$last = array_pop( $parts );
-			foreach ( $parts as $part ) {
-				$ref[$part][''] = null;
-				$ref = &$ref[$part];
-				unset( $ref[''] );
+			$ref = &$result;
+			foreach ( $parts as $i => $part ) {
+				if ( $i === count( $parts ) - 1 ) {
+					$ref[$part] = $value;
+
+				} else {
+					if ( !isset( $ref[$part] ) || !is_array( $ref[$part] ) ) {
+						$ref[$part] = [];
+					}
+					$ref = &$ref[$part];
+				}
 			}
-			$ref[$last] = $value;
 		}
-		return $ret;
+
+		self::reindexNumericArrays( $result );
+
+		return $result;
+	}
+
+	/**
+	 * @param array &$arr
+	 */
+	private static function reindexNumericArrays( &$arr ) {
+		$allNumeric = true;
+		foreach ( $arr as $k => &$v ) {
+			if ( is_array( $v ) ) {
+				self::reindexNumericArrays( $v );
+			}
+			if ( !ctype_digit( (string)$k ) ) {
+				$allNumeric = false;
+			}
+		}
+
+		if ( $allNumeric ) {
+			ksort( $arr, SORT_NUMERIC );
+			$arr = array_values( $arr );
+		}
 	}
 
 	/**

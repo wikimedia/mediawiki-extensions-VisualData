@@ -188,6 +188,9 @@ class Importer {
 		if ( !empty( $this->options['category-field'] ) ) {
 			if ( isset( $data[$this->options['category-field']] ) ) {
 				$categories = $data[$this->options['category-field']];
+				if ( !is_array( $categories ) ) {
+					$categories = [ $categories ];
+				}
 			}
 			unset( $data[$this->options['category-field']] );
 		}
@@ -258,6 +261,10 @@ class Importer {
 		}
 
 		$pagename = $title->getFullText();
+
+		// *** this ensures that onContentAlterParserOutput has updated data
+		$key = $pagename;
+		\VisualData::$cachedJsonData[ $key ] = $obj;
 
 		try {
 			$this->importer->doImportSelf( $pagename, $contents );
