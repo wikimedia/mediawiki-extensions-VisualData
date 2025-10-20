@@ -1189,22 +1189,28 @@ class SchemaProcessor {
 	 * @return array
 	 */
 	private function parseWikilist( $text, $allItems = true ) {
+		// avoids using preg_match( '/^\*\s*([^\*].*)$/', $value, $match )
+		// per https://phabricator.wikimedia.org/T387008
 		$ret = [];
+		$seen = [];
 		$lines = explode( "\n", $text );
 
-		$listStart = false;
-		foreach ( $lines as $value ) {
-			// get only first level of items
-			preg_match( '/^\*\s*([^\*].*)$/', $value, $match );
-			if ( $match ) {
-				$listStart = true;
-				if ( !in_array( $match[1], $ret ) ) {
-					$ret[] = $match[1];
+		foreach ( $lines as $line ) {
+			$line = ltrim( $line );
+
+			if ( isset( $line[0] ) && $line[0] === '*' && isset( $line[1] ) && $line[1] !== '*' ) {
+				$item = ltrim( substr( $line, 1 ) );
+
+				if ( $item !== '' && !isset( $seen[ $item ] ) ) {
+					$ret[] = $item;
+					$seen[ $item ] = true;
 				}
-			} elseif ( $listStart && !$allItems && empty( $value ) ) {
+
+			} elseif ( !empty( $ret ) && !$allItems && trim( $line ) === '' ) {
 				break;
 			}
 		}
+
 		return $ret;
 	}
 

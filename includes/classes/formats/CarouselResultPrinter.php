@@ -520,7 +520,8 @@ class CarouselResultPrinter extends ResultPrinter {
 		$container = [];
 		$slide = [];
 
-		preg_match( '/^(\d+)(.+)?$/', $this->params['width'], $match );
+		// avoid using '/^(\d+)(.+)?$/' per https://phabricator.wikimedia.org/T387008
+		preg_match( '/^(\d+)(.*)$/', $this->params['width'], $match );
 
 		$absoluteUnits = [ 'cm', 'mm', 'in', 'px', 'pt', 'pc' ];
 		$slidestoshow = $this->params['slick-slidesToShow'];
