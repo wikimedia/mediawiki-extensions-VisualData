@@ -624,9 +624,12 @@ class QueryProcessor {
 					return false;
 				}
 
-				switch( $match_[1] ) {
-					case '!': $operator = '!='; break;
-					default: $operator = $match_[1];
+				switch ( $match_[1] ) {
+					case '!':
+						$operator = '!=';
+						break;
+					default:
+						$operator = $match_[1];
 				}
 
 				return "$field {$operator} " . $getCastValueAndQuote( $match_[2] );
@@ -678,9 +681,12 @@ class QueryProcessor {
 
 		$value = trim( $match_[3] );
 
-		switch( $match_[2] ) {
-			case '!': $operator = '!='; break;
-			default: $operator = $match_[2];
+		switch ( $match_[2] ) {
+			case '!':
+				$operator = '!=';
+				break;
+			default:
+				$operator = $match_[2];
 		}
 
 		// prefix, value, operator
