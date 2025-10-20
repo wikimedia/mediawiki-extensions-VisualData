@@ -856,15 +856,16 @@ class VisualData {
 
 		foreach ( $unknownNamed as $key => $val ) {
 			if ( strpos( $key, 'preload-data?' ) === 0 ) {
-				// @ATTENTION !! (.+)$ may contain an = symbol
-				if ( preg_match( '/^preload-data(\?(.+?))?=(.+)$/', "$key=$val", $match ) ) {
-					[ $field_, $option_ ] = explode( '+', $match[2] ) + [ null, null ];
+				// @see https://phabricator.wikimedia.org/T387008
+				if ( preg_match( '/^preload-data(?:\?([^=]*))?=(.++)$/', "$key=$val", $match ) ) {
+					$match[2] = trim( $match[2] );
+					[ $field_, $option_ ] = explode( '+', $match[1] ?? '' ) + [ null, null ];
 					switch ( $option_ ) {
 						case 'base64':
-							$match[3] = base64_decode( $match[3] );
+							$match[2] = base64_decode( $match[2] );
 							break;
 					}
-					$preloadDataOverride[$field_] = $match[3];
+					$preloadDataOverride[$field_] = $match[2];
 				}
 			}
 		}
@@ -1202,8 +1203,9 @@ class VisualData {
 
 		foreach ( $unknownNamed as $key => $val ) {
 			if ( strpos( $key, 'template?' ) === 0 ) {
-				if ( preg_match( '/^template(\?(.+))?=(.+)/', "$key=$val", $match ) ) {
-					$templates[$match[2]] = $match[3];
+				// @see https://phabricator.wikimedia.org/T387008
+				if ( preg_match( '/^template\?([^=]+)=(.++)$/', "$key=$val", $match ) ) {
+					$templates[trim( $match[1] )] = trim( $match[2] );
 				}
 				unset( $unknownNamed[$key] );
 				continue;

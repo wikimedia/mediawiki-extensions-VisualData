@@ -92,7 +92,7 @@ class RebuildData extends Maintenance {
 		$excludeSchemas = '';
 		$onlySchemas = '';
 
-		// https://phabricator.wikimedia.org/T387008
+		// @see https://phabricator.wikimedia.org/T387008
 		$this->excludePrefix = \VisualData::splitString( $excludePrefix );
 		$this->excludeSchemas = \VisualData::splitString( $excludeSchemas );
 		$this->onlySchemas = \VisualData::splitString( $onlySchemas );

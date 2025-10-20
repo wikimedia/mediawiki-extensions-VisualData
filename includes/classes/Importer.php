@@ -116,7 +116,7 @@ class Importer {
 					if ( isset( $schema['properties'][$k]['type'] ) ) {
 						switch ( $schema['properties'][$k]['type'] ) {
 							case 'array':
-								// https://phabricator.wikimedia.org/T387008
+								// @see https://phabricator.wikimedia.org/T387008
 								$value[$k] = \VisualData::splitString( $v, $this->options['csv-array-field-separator'] );
 								break;
 						}

@@ -1190,7 +1190,7 @@ class SchemaProcessor {
 	 */
 	private function parseWikilist( $text, $allItems = true ) {
 		// avoids using preg_match( '/^\*\s*([^\*].*)$/', $value, $match )
-		// per https://phabricator.wikimedia.org/T387008
+		// @see https://phabricator.wikimedia.org/T387008
 		$ret = [];
 		$seen = [];
 		$lines = explode( "\n", $text );

@@ -604,33 +604,32 @@ class QueryProcessor {
 
 			if ( in_array( $tableName, [ 'integer', 'numeric', 'date', 'datetime', 'time' ] ) ) {
 				// https://www.semantic-mediawiki.org/wiki/Help:Search_operators#User_manual
-				$patterns = [
-					'/^(=)\s*(.+)$/' => '=',
-					'/^(>)\s*(.+)$/' => '>',
-					'/^(>=)\s*(.+)$/' => '>=',
-					'/^(<)\s*(.+)$/' => '<',
-					'/^(<=)\s*(.+)$/' => '<=',
-					'/^(!)\s*(.+)$/' => '!=',
-				];
+				// @see https://phabricator.wikimedia.org/T387008
+				$regex = '/^(=|>=|<=|>|<|!=|!)\s*+(.++)$/';
+
 			} else {
-				$patterns = [
-					'/^(!)\s*(.+)$/' => '!=',
-				];
+				$regex = '/^(!=|!)\s*+(.++)$/';
 			}
-			foreach ( $patterns as $regex => $sql ) {
-				preg_match( $regex, $exp, $match_ );
 
-				if ( !empty( $match_ ) ) {
-					if ( $callbackValue ) {
-						$match_[2] = $callbackValue( $match_[2] );
-					}
+			preg_match( $regex, $exp, $match_ );
 
-					if ( !$this->isValidData( $tableName, $match_[2] ) ) {
-						return false;
-					}
+			if ( !empty( $match_ ) ) {
+				$match_[2] = trim( $match_[2] );
 
-					return "$field {$sql} " . $getCastValueAndQuote( $match_[2] );
+				if ( $callbackValue ) {
+					$match_[2] = $callbackValue( $match_[2] );
 				}
+
+				if ( !$this->isValidData( $tableName, $match_[2] ) ) {
+					return false;
+				}
+
+				switch( $match_[1] ) {
+					case '!': $operator = '!='; break;
+					default: $operator = $match_[1];
+				}
+
+				return "$field {$operator} " . $getCastValueAndQuote( $match_[2] );
 			}
 
 			if ( !$this->isValidData( $tableName, $value ) ) {
@@ -665,26 +664,27 @@ class QueryProcessor {
 	 */
 	private function parseSpecialPrefix( $str ) {
 		// only escape the following https://www.php.net/manual/en/regexp.reference.meta.php
-		$patterns = [
-			'/^\s*(.+?)\s*=\s*(.+?)\s*$/' => '=',
-			'/^\s*(.+?)\s*>\s*(.+?)\s*$/' => '>',
-			'/^\s*(.+?)\s*>=\s*(.+?)\s*$/' => '>=',
-			'/^\s*(.+?)\s*<\s*(.+?)\s*$/' => '<',
-			'/^\s*(.+?)\s*<=\s*(.+?)\s*$/' => '<=',
-			'/^\s*(.+?)\s*!\s*(.+?)\s*$/' => '!=',
-		];
-		foreach ( $patterns as $regex => $operator ) {
-			preg_match( $regex, $str, $match_ );
-			if ( !empty( $match_ ) ) {
-				if ( !in_array( $match_[1], $this->specialPrefixes ) ) {
-					continue;
-				}
-				// prefix, value, operator
-				return [ $match_[1], $match_[2], $operator ];
-			}
+		// @see https://phabricator.wikimedia.org/T387008
+		$regex = '/^\s*+(.+?)\s*+(=|>=|<=|>|<|!=|!)\s*+(.++)$/';
+		preg_match( $regex, $str, $match_ );
+
+		if ( empty( $match_ ) ) {
+			return [ null, null, null ];
 		}
 
-		return [ null, null, null ];
+		if ( !in_array( $match_[1], $this->specialPrefixes ) ) {
+			return [ null, null, null ];
+		}
+
+		$value = trim( $match_[3] );
+
+		switch( $match_[2] ) {
+			case '!': $operator = '!='; break;
+			default: $operator = $match_[2];
+		}
+
+		// prefix, value, operator
+		return [ $match_[1], $value, $operator ];
 	}
 
 	/**
@@ -1039,10 +1039,11 @@ class QueryProcessor {
 	 */
 	private function parseOrderBy() {
 		$ret = [];
-		// https://phabricator.wikimedia.org/T387008
+		// @see https://phabricator.wikimedia.org/T387008
 		$values = \VisualData::splitString( $this->params['order'] );
 		foreach ( $values as $v ) {
-			preg_match( '/^\s*(.+?)\s*(ASC|DESC)?\s*$/i', $v, $match_ );
+			// @see https://phabricator.wikimedia.org/T387008
+			preg_match( '/^\s*+(.+?)\s*+(ASC|DESC)?\s*+$/i', $v, $match_ );
 			$printout = $match_[1];
 			$sort = $match_[2] ?? 'ASC';
 			$ret[$printout] = $sort;
