@@ -243,7 +243,7 @@ const VisualDataDatatables = function ( el, elIndex ) {
 				context.fillStyle = '#e30';
 				context.fill();
 
-				if ( favicon ) {
+				if ( favicon && favicon.parentNode ) {
 					favicon.parentNode.removeChild( favicon );
 				}
 				var newIcon = document.createElement( 'link' );
@@ -252,9 +252,11 @@ const VisualDataDatatables = function ( el, elIndex ) {
 				document.head.appendChild( newIcon );
 			};
 
-			img.addEventListener( 'load', createBadge );
-			img.src = favicon.href;
-			FaviconHref = favicon.href;
+			if ( favicon && favicon.href ) {
+				img.addEventListener( 'load', createBadge );
+				img.src = favicon.href;
+				FaviconHref = favicon.href;
+			}
 		}
 
 		var link = document.querySelector( "link[rel~='icon']" );
@@ -667,6 +669,9 @@ html-num-fmt
 		} );
 
 		for ( var key in headers ) {
+			if ( !( key in printoutsOptions ) ) {
+				printoutsOptions[ key ] = {};
+			}
 			var datatablesFormat;
 			var columnType;
 			if ( key in mapPathSchema ) {
