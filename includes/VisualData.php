@@ -2538,7 +2538,7 @@ class VisualData {
 	}
 
 	/**
-	 * @see VisualEditor/includes/Hooks.php
+	 * @see \MediaWiki\Extension\VisualEditor\Services\VisualEditorAvailabilityLookup::isEnabledForUser
 	 * @param User $user
 	 * @return bool
 	 */
