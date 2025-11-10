@@ -179,7 +179,7 @@ const VisualDataInputConfig = function ( phpConfig, windowManager ) {
 								'boolean',
 								'Exclude the current page from suggestions'
 							],
-							excludeDynamicNamespaces: [
+							creatable: [
 								'boolean',
 								'Exclude pages whose namespace is negative'
 							],
