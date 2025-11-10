@@ -503,7 +503,7 @@ class VisualDataImporter extends WikiImporter {
 	/**
 	 * @inheritDoc
 	 */
-	private function makeContent( Title $title, $revisionId, $contentInfo ) {
+	private function makeContent( TitleClass $title, $revisionId, $contentInfo ) {
 		$maxArticleSize = MediaWikiServices::getInstance()->getMainConfig()->get( 'MaxArticleSize' );
 
 		// ***edited

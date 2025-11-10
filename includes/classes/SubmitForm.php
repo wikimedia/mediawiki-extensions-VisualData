@@ -28,7 +28,7 @@ use ApiMain;
 use CommentStoreComment;
 use ContentHandler;
 use ContentModelChange;
-use DerivativeRequest;
+use MediaWiki\Extension\VisualData\Aliases\DerivativeRequest as DerivativeRequestClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Revision\SlotRecord;
@@ -223,7 +223,7 @@ class SubmitForm {
 		// if ( !$move_result->isOK() ) {
 		// }
 
-		$req = new DerivativeRequest(
+		$req = new DerivativeRequestClass(
 			$this->context->getRequest(),
 			[
 				'action' => 'move',
