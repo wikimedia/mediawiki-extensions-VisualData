@@ -270,6 +270,11 @@ class SubmitForm {
 
 		$wikiPage = \VisualData::getWikiPage( $title );
 		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
+
+		if ( empty( $content ) && $contentModel === 'json' ) {
+			$content = '{}';
+		}
+
 		$main_content = ContentHandler::makeContent( (string)$content, $title, $contentModel );
 		$pageUpdater->setContent( SlotRecord::MAIN, $main_content );
 		$comment = CommentStoreComment::newUnsavedComment( $summary );
@@ -614,7 +619,10 @@ class SubmitForm {
 					// always to an empty string in this case (it won't be
 					// empty if the freetext was edited before assigning
 					// json data and the main slot to them)
-					$this->createInitialRevision( $targetTitle, $freetext, $contentModel, $errors );
+					if ( !$this->createInitialRevision( $targetTitle, $freetext, $contentModel, $errors ) ) {
+						$errors[] = $this->context->msg( 'visualdata-special-submit-cannot-initialize-new-revision',
+							$targetTitle->getDBKey(), $contentModel )->parse();
+					}
 				}
 
 			} elseif ( empty( $editTitle )

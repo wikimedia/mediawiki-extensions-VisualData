@@ -449,6 +449,7 @@
 	"visualdata-special-submit-article-exists": "[[$1|article]] exists",
 	"visualdata-special-submit-permission-error": "article cannot be edited, you may need to login or ask for permissions",
 	"visualdata-special-submit-return-url-error": "invalid url: $1",
+	"visualdata-special-submit-cannot-initialize-new-revision": "cannot initialize new revision (article: '$1', content model: '$2')",
 
 	"visualdata-jsmodule-forms-validate": "validate",
 	"visualdata-jsmodule-forms-goback": "go back",
