@@ -22,6 +22,7 @@
  * @copyright Copyright ©2021-2023, https://wikisphere.org
  */
 
+use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Parser\ParserOptions;
 
@@ -190,7 +191,7 @@ class SpecialVisualDataBrowse extends SpecialPage {
 			$msg = $this->msg( $msgName )->parse();
 
 			if ( $name === $pageType ) {
-				$links[] = Xml::tags( 'strong', null, $msg );
+				$links[] = HtmlClass::rawElement( 'strong', [], $msg );
 			} else {
 				$links[] = $this->getLinkRenderer()->makeLink(
 					new TitleValue( NS_SPECIAL, $page ),
@@ -204,7 +205,7 @@ class SpecialVisualDataBrowse extends SpecialPage {
 			->text();
 		$linkStr = $this->msg( 'visualdatabrowsedata-topnav' )->parse() . " $linkStr";
 
-		$linkStr = Xml::tags( 'div', [ 'class' => 'mw-visualdata-browsedata-navigation' ], $linkStr );
+		$linkStr = HtmlClass::rawElement( 'div', [ 'class' => 'mw-visualdata-browsedata-navigation' ], $linkStr );
 
 		$this->getOutput()->setSubtitle( $linkStr );
 	}
