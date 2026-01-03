@@ -73,7 +73,7 @@ class QueriesPager extends TablePager {
 
 		$pout = new ParserOutput;
 		// $navigation .
-		$pout->setText( $body . $navigation );
+		$pout->setContentHolderText( $body . $navigation );
 		$pout->addModuleStyles( $this->getModuleStyles() );
 		return $pout;
 	}
