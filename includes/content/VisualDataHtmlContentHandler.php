@@ -59,7 +59,7 @@ class VisualDataHtmlContentHandler extends \TextContentHandler {
 		}
 
 		$output->clearWrapperDivClass();
-		$output->setText( $html );
+		$output->setContentHolderText( $html );
 	}
 
 }
