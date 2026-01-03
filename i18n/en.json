@@ -57,9 +57,9 @@
 	"apihelp-visualdata-save-schema-param-dialog-action": "",
 	"apihelp-visualdata-save-schema-param-confirm-job-execution": "",
 
-	"right-visualdata-caneditvisualdata": "can edit visualdata",
-	"right-visualdata-caneditdata": "can edit data",
-	"right-visualdata-canmanageschemas": "can manage schemas",
+	"right-visualdata-caneditvisualdata": "Edit visualdata",
+	"right-visualdata-caneditdata": "Edit data",
+	"right-visualdata-canmanageschemas": "Manage schemas",
 
 	"group-visualdata-admin": "VisualData admin",
 	"group-visualdata-editor": "VisualData editor",
