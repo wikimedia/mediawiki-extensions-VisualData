@@ -59,7 +59,12 @@ class VisualDataHtmlContentHandler extends \TextContentHandler {
 		}
 
 		$output->clearWrapperDivClass();
-		$output->setContentHolderText( $html );
+		if ( method_exists( $output, 'setContentHolderText' ) ) {
+			// MW 1.42+
+			$output->setContentHolderText( $html );
+		} else {
+			$output->setText( $html );
+		}
 	}
 
 }
