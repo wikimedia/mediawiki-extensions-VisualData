@@ -31,10 +31,7 @@ class SpecialManageSchemas extends SpecialPage {
 
 	/** @inheritDoc */
 	public function __construct() {
-		$listed = true;
-
-		// https://www.mediawiki.org/wiki/Manual:Special_pages
-		parent::__construct( 'ManageSchemas', '', $listed );
+		parent::__construct( 'ManageSchemas' );
 	}
 
 	/** @inheritDoc */

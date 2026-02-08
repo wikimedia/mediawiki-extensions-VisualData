@@ -38,8 +38,7 @@ class BrowseQueries extends SpecialPage {
 	 * @inheritDoc
 	 */
 	public function __construct() {
-		$listed = true;
-		parent::__construct( 'VisualDataBrowseQueries', '', $listed );
+		parent::__construct( 'VisualDataBrowseQueries' );
 	}
 
 	/**

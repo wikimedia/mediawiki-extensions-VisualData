@@ -38,8 +38,7 @@ class BrowseForms extends SpecialPage {
 	 * @inheritDoc
 	 */
 	public function __construct() {
-		$listed = true;
-		parent::__construct( 'VisualDataBrowseForms', '', $listed );
+		parent::__construct( 'VisualDataBrowseForms' );
 	}
 
 	/**

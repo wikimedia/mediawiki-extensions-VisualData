@@ -31,7 +31,7 @@ use MediaWiki\Parser\ParserOptions;
  *
  * @ingroup SpecialPage
  */
-class SpecialVisualDataBrowse extends SpecialPage {
+class SpecialVisualDataBrowse extends UnlistedSpecialPage {
 
 	/** @var user */
 	public $user;
@@ -49,8 +49,7 @@ class SpecialVisualDataBrowse extends SpecialPage {
 	 * @inheritDoc
 	 */
 	public function __construct() {
-		$listed = false;
-		parent::__construct( 'VisualDataBrowse', '', $listed );
+		parent::__construct( 'VisualDataBrowse' );
 	}
 
 	/**

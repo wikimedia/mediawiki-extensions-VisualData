@@ -38,8 +38,7 @@ class BrowseSchemas extends SpecialPage {
 	 * @inheritDoc
 	 */
 	public function __construct() {
-		$listed = true;
-		parent::__construct( 'VisualDataBrowseSchemas', '', $listed );
+		parent::__construct( 'VisualDataBrowseSchemas' );
 	}
 
 	/**

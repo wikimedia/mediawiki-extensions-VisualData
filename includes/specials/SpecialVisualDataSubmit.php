@@ -24,7 +24,7 @@
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\SubmitForm;
 
-class SpecialVisualDataSubmit extends SpecialPage {
+class SpecialVisualDataSubmit extends UnlistedSpecialPage {
 
 	/** @var user */
 	protected $user;
@@ -34,10 +34,7 @@ class SpecialVisualDataSubmit extends SpecialPage {
 
 	/** @inheritDoc */
 	public function __construct() {
-		$listed = false;
-
-		// https://www.mediawiki.org/wiki/Manual:Special_pages
-		parent::__construct( 'VisualDataSubmit', '', $listed );
+		parent::__construct( 'VisualDataSubmit' );
 	}
 
 	/** @inheritDoc */
