@@ -24,10 +24,6 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
-	include_once __DIR__ . '/../../vendor/autoload.php';
-}
-
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use Swaggest\JsonDiff\JsonDiff;
 use Swaggest\JsonDiff\JsonPointer;

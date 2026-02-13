@@ -23,10 +23,6 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-if ( is_readable( __DIR__ . '/../../vendor/autoload.php' ) ) {
-	include_once __DIR__ . '/../../vendor/autoload.php';
-}
-
 use Job;
 use MediaWiki\MediaWikiServices;
 use RequestContext;

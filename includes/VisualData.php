@@ -21,10 +21,6 @@
  * @copyright Copyright ©2021-2025, https://wikisphere.org
  */
 
-if ( is_readable( __DIR__ . '/../vendor/autoload.php' ) ) {
-	include_once __DIR__ . '/../vendor/autoload.php';
-}
-
 use MediaWiki\Extension\VisualData\Aliases\Html as HtmlClass;
 use MediaWiki\Extension\VisualData\Aliases\Linker as LinkerClass;
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
