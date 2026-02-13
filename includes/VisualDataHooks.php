@@ -624,14 +624,15 @@ class VisualDataHooks {
 		if ( empty( $GLOBALS['wgVisualDataDisableSlotsNavigation'] ) ) {
 			$slots = \VisualData::getSlots( $title );
 			if ( $slots ) {
-				$namespaces = $links['namespaces'];
-				$links['namespaces'] = [];
+				$nsKey = $skinTemplate->supportsMenu( 'namespaces' ) ? 'namespaces' : 'associated-pages';
+				$namespaces = $links[$nsKey] ?? [];
+				$links[$nsKey] = [];
 				$selectedSlot = ( !empty( $_GET['slot'] ) ? $_GET['slot'] : null );
 
 				foreach ( $slots as $role => $slot ) {
 					$selected = ( ( !$selectedSlot && $role === SlotRecord::MAIN ) || $role === $selectedSlot );
 
-					$links['namespaces'][] = [
+					$links[$nsKey][] = [
 						'text' => ( $role === 'main' ? $namespaces[ array_key_first( $namespaces ) ]['text'] : wfMessage( 'visualdata-slot-label-' . $role )->text() ),
 						'class' => ( $selected ? 'selected' : '' ),
 						'context' => 'subject',
@@ -645,7 +646,7 @@ class VisualDataHooks {
 
 				foreach ( $namespaces as $value ) {
 					if ( $value['context'] !== 'subject' ) {
-						$links['namespaces'][] = $value;
+						$links[$nsKey][] = $value;
 					}
 				}
 			}
