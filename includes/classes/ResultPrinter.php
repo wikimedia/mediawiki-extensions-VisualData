@@ -227,34 +227,76 @@ class ResultPrinter {
 	}
 
 	/**
-	 * @param string $titleStr
-	 * @param array $params
-	 * @return string
+	 * @credits Filburt
+	 * Processes a template call with parameters for VisualData extension.
+	 *
+	 * This method extracts template parameters from a string, merges them with existing parameters,
+	 * and expands the template using either Scribunto's Lua engine or the fallback method.
+	 *
+	 * @param string $titleStr The template name and additional parameters in the format
+	 * "|template=My Template{{!}}param1=value1{{!}}param2=value2" for named parameters or
+	 * "|template=My Template{{!}}value1{{!}}value2" for unnamed parameters.
+	 * @param array $params Associative array of parameters from the VisualData query.
+	 * @return string The expanded template content or a link to the template if it doesn't exist.
+	 *
+	 * @details
+	 * - Supports both named parameters (param=value) and unnamed parameters (value).
+	 * - Named parameters are passed as-is, unnamed parameters are assigned numeric keys starting from 1.
+	 * - If the template doesn't exist, a simple wiki link is returned.
+	 * - Uses Scribunto's Lua engine if available, otherwise falls back to expandTemplate.
+	 * - All parameter keys are cast to strings to ensure consistency.
 	 */
 	protected function processTemplate( $titleStr, $params ) {
-		$titleTemplate = TitleClass::makeTitle( NS_TEMPLATE,
-			TitleClass::capitalize( $titleStr, NS_TEMPLATE ) );
+		$templateParts = explode( '|', $titleStr, 2 );
+		$templateName = trim( $templateParts[0] );
+		$additionalParamsString = $templateParts[1] ?? '';
+
+		$additionalParams = [];
+		if ( !empty( $additionalParamsString ) ) {
+			$paramPairs = explode( '|', $additionalParamsString );
+			foreach ( $paramPairs as $index => $pair ) {
+				// Named parameters
+				if ( strpos( $pair, '=' ) !== false ) {
+					$kv = explode( '=', $pair, 2 );
+					$additionalParams[trim( $kv[0] )] = trim( $kv[1] );
+
+				// Unnamed parameters
+				} else {
+					$additionalParams[ (string)( $index + 1 ) ] = trim( $pair );
+				}
+			}
+		}
+
+		$mergedParams = [];
+		foreach ( $params as $key => $value ) {
+			$mergedParams[(string)$key] = $value;
+		}
+
+		foreach ( $additionalParams as $key => $value ) {
+			$mergedParams[(string)$key] = $value;
+		}
+
+		$titleTemplate = TitleClass::newFromText( $templateName, NS_TEMPLATE );
 
 		if ( !$titleTemplate || !$titleTemplate->isKnown() ) {
-			return "[[$titleTemplate]]";
+			return "[[$templateName]]";
 		}
+
+		$args = $mergedParams;
+		$titleText = $titleTemplate->getText();
 
 		// @see \MediaWiki\Extension\Scribunto\Engines\LuaCommon\LuaEngine::expandTemplate
 		if ( class_exists( 'MediaWiki\Extension\Scribunto\Engines\LuaStandalone\LuaStandaloneEngine' ) ) {
-			$args = $params;
-			$titleText = $titleStr;
 			$luaStandaloneEngine = new LuaStandaloneEngine( [
 				'parser' => $this->parser,
 				'title' => $this->parser->getTitle()
 			] );
 			$frameId = 'empty';
 			$text = $luaStandaloneEngine->expandTemplate( $frameId, $titleText, $args );
-			return $text[0];
+			return $text[0] ?? '';
+		} else {
+			return $this->expandTemplate( $titleTemplate, $args );
 		}
-
-		// @see \MediaWiki\Extension\Scribunto\Engines\LuaCommon\LuaEngine
-		$args = $params;
-		return $this->expandTemplate( $titleTemplate, $args );
 
 		// *** this does not seem to work in all cases, specifically
 		// https://wikisphere.org/w/index.php?title=Country_page&pageid=710

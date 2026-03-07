@@ -34,8 +34,10 @@ use MediaWiki\Permissions\PermissionManager;
 use MediaWiki\Revision\SlotRecord;
 use MediaWiki\Revision\SlotRoleRegistry;
 
-// @see includes/import/WikiImporter.php
-// *** all the required private vars and method are copied from WikiImporter
+/**
+ * @see includes/import/WikiImporter.php
+ *  all the required private vars and method are copied from WikiImporter
+ */
 class VisualDataImporter extends WikiImporter {
 	/** @var title_text */
 	public $title_text;

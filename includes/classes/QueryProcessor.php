@@ -19,7 +19,7 @@
  * @file
  * @ingroup extensions
  * @author thomas-topway-it <support@topway.it>
- * @copyright Copyright ©2024-2025, https://wikisphere.org
+ * @copyright Copyright ©2024-2026, https://wikisphere.org
  */
 
 namespace MediaWiki\Extension\VisualData;
@@ -780,6 +780,8 @@ class QueryProcessor {
 	 * @param array &$having
 	 */
 	private function getConditions( $firstKey, $mapConds, &$conds, &$tables, &$joins, &$fields, &$having ) {
+		$isNewSchema = version_compare( MW_VERSION, '1.45', '>=' );
+
 		foreach ( $this->AndConditions as $i => $value ) {
 			// @ATTENTION !! with treeFormat the match in a
 			// given set of OR conditions, must be performed after GROUP_CONCAT,
@@ -820,6 +822,64 @@ class QueryProcessor {
 			}
 
 			if ( count( $categories ) ) {
+				$catAlias = "categorylinks_$i";
+				$linkAlias = "linktarget_$i";
+
+				$categoryConds = [];
+				foreach ( $categories as $title_ ) {
+					$categoryField = $isNewSchema
+						? $this->fieldCaseInsensitive( "$linkAlias.lt_title" )
+						: $this->fieldCaseInsensitive( "$catAlias.cl_to" );
+
+					$categoryConds[] = $this->parseCondition(
+						$title_->getDbKey(),
+						$categoryField
+					);
+				}
+
+				$tables[$catAlias] = 'categorylinks';
+				if ( $isNewSchema ) {
+					$tables[$linkAlias] = 'linktarget';
+				}
+
+				$joins[$catAlias] = [
+					'LEFT JOIN',
+					"$catAlias.cl_from = t0.page_id"
+				];
+
+				if ( $isNewSchema ) {
+					$joins[$linkAlias] = [
+						'LEFT JOIN',
+						"$linkAlias.lt_id = $catAlias.cl_target_id"
+					];
+
+					if ( $useHaving ) {
+						$havingConds[] = $this->dbr->makeList( $categoryConds, LIST_OR );
+					} else {
+						$orConds[] = $this->dbr->makeList( $categoryConds, LIST_OR );
+					}
+
+				} else {
+					$joins[$catAlias] = [
+						'LEFT JOIN',
+						$this->dbr->makeList( [
+							"$catAlias.cl_from = t0.page_id",
+							$this->dbr->makeList( $categoryConds, LIST_OR )
+						], LIST_AND )
+					];
+				}
+
+				if ( $useHaving && !$isNewSchema ) {
+					$havingConds[] = "t$firstKey.page_id = $catAlias.cl_from";
+					$fields[]      = "$catAlias.cl_from";
+
+				} elseif ( !$useHaving && !$isNewSchema ) {
+					$orConds[] = "t$firstKey.page_id = $catAlias.cl_from";
+				}
+			}
+
+/*
+			if ( count( $categories ) ) {
 				$categoryConds = [];
 				foreach ( $categories as $title_ ) {
 					// or use the initial string $v passed to processTitle
@@ -842,13 +902,59 @@ class QueryProcessor {
 					$orConds[] = "t$firstKey.page_id = categorylinks_$i.cl_from";
 				}
 			}
-
+*/
 			if ( count( $orConds ) ) {
 				$conds[] = $this->dbr->makeList( $orConds, LIST_OR );
 			}
 
 			if ( count( $havingConds ) ) {
 				$having[] = $this->dbr->makeList( $havingConds, LIST_OR );
+			}
+		}
+
+/*
+		if ( $this->params['categories'] && !$this->params['count-printout'] ) {
+			if ( !$this->params['count-categories'] ) {
+				$fields['categories'] = "GROUP_CONCAT(categorylinks_t$firstKey.cl_to SEPARATOR 0x1E)";
+
+			// used with searchPanes
+			} else {
+				$fields['categories'] = "categorylinks_t$firstKey.cl_to";
+			}
+			$tables['categorylinks_t0'] = 'categorylinks';
+			$joins['categorylinks_t0'] = [ 'LEFT JOIN', [ "t$firstKey.page_id = categorylinks_t$firstKey.cl_from" ] ];
+		}
+*/
+		if ( $this->params['categories'] && !$this->params['count-printout'] ) {
+			$catAlias = "categorylinks_t$firstKey";
+			$linkAlias = "linktarget_t$firstKey";
+
+			// Use GROUP_CONCAT for aggregates, single column for searchPanes
+			if ( !$this->params['count-categories'] ) {
+				$fields['categories'] = $isNewSchema
+					? "GROUP_CONCAT($linkAlias.lt_title SEPARATOR 0x1E)"
+					: "GROUP_CONCAT($catAlias.cl_to SEPARATOR 0x1E)";
+			} else {
+				$fields['categories'] = $isNewSchema
+					? "$linkAlias.lt_title"
+					: "$catAlias.cl_to";
+			}
+
+			$tables[$catAlias] = 'categorylinks';
+			if ( $isNewSchema ) {
+				$tables[$linkAlias] = 'linktarget';
+			}
+
+			$joins[$catAlias] = [
+				'LEFT JOIN',
+				[ "t$firstKey.page_id = $catAlias.cl_from" ]
+			];
+
+			if ( $isNewSchema ) {
+				$joins[$linkAlias] = [
+					'LEFT JOIN',
+					"$linkAlias.lt_id = $catAlias.cl_target_id"
+				];
 			}
 		}
 	}
@@ -1457,6 +1563,7 @@ only if conditionsUseHaving is false
 			$joins['page_alias'] = [ 'JOIN', [ "page_alias.page_id = t$firstKey.page_id" ] ];
 		// }
 
+/*
 		if ( $this->params['categories'] && !$this->params['count-printout'] ) {
 			if ( !$this->params['count-categories'] ) {
 				$fields['categories'] = "GROUP_CONCAT(categorylinks_t$firstKey.cl_to SEPARATOR 0x1E)";
@@ -1468,7 +1575,7 @@ only if conditionsUseHaving is false
 			$tables['categorylinks_t0'] = 'categorylinks';
 			$joins['categorylinks_t0'] = [ 'LEFT JOIN', [ "t$firstKey.page_id = categorylinks_t$firstKey.cl_from" ] ];
 		}
-
+*/
 		// used by datatables searchPanes
 		$printoutKey = null;
 		if ( $this->params['count-printout'] ) {

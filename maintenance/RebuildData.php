@@ -22,6 +22,8 @@
  * @copyright Copyright ©2024, https://wikisphere.org
  */
 
+require_once __DIR__ . '/ReplaceText/Search.php';
+
 use MediaWiki\Extension\VisualData\Aliases\Title as TitleClass;
 use MediaWiki\Extension\VisualData\DatabaseManager;
 use MediaWiki\Extension\VisualData\ReplaceText\Search;

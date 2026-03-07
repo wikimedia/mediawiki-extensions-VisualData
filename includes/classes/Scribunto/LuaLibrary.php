@@ -32,7 +32,7 @@ if ( class_exists( 'MediaWiki\Extension\Scribunto\Engines\LuaCommon\LibraryBase'
 
 use LuaLibraryBaseClass;
 
-// @credits https://github.com/Open-CSP/WSSlots/tree/master/src/Scribunto
+/** @credits https://github.com/Open-CSP/WSSlots/tree/master/src/Scribunto */
 class LuaLibrary extends LuaLibraryBaseClass {
 
 	/**
