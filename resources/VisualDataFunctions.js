@@ -379,6 +379,7 @@ VisualDataFunctions = ( function () {
 			case 'OO.ui.SelectFileWidget':
 				// prevents error "Failed to set the 'value' property on 'HTMLInputElement':
 				// This input element accepts a filename, which may only be programmatically
+				constructor = OO.ui.SelectFileInputWidget;
 				// set to the empty string"
 				delete config.value;
 				// *** we handle the filename with a custom
