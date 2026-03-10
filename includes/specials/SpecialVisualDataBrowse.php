@@ -148,7 +148,11 @@ class SpecialVisualDataBrowse extends UnlistedSpecialPage {
 		}
 
 		if ( $pager->getNumRows() ) {
-			$out->addParserOutputContent( $pager->getFullOutput(), ParserOptions::newFromContext( $this->getContext() ) );
+			if ( version_compare( MW_VERSION, '1.44', '>=' ) ) {
+				$out->addParserOutputContent( $pager->getFullOutput(), ParserOptions::newFromContext( $this->getContext() ) );
+			} else {
+				$out->addParserOutputContent( $pager->getFullOutput() );
+			}
 			// $out->addHTML(
 			// 	$pager->getBody() .
 			// 	$pager->getNavigationBar()
