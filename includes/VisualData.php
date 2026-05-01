@@ -1672,7 +1672,7 @@ class VisualData {
 			return false;
 		}
 
-		$contents = $content->getNativeData();
+		$contents = $content->getText();
 
 		$ret = json_decode( $contents, true );
 
@@ -2072,7 +2072,7 @@ class VisualData {
 			return;
 		}
 
-		$contents = $content->getNativeData();
+		$contents = $content->getText();
 		$data = json_decode( $contents, true );
 
 		return self::rebuildArticleData( $user, $title, $data, $errors );
@@ -2173,7 +2173,7 @@ class VisualData {
 			$modelId = $content->getContentHandler()->getModelID();
 
 			if ( $modelId === 'wikitext' ) {
-				$contents = $content->getNativeData();
+				$contents = $content->getText();
 				// @see maintenance/rebuildData
 				if ( preg_match( '/#v(isual)?data(form|print|query)/', $contents ) ) {
 					// or ParserOptions::newFromAnon()
@@ -3260,7 +3260,7 @@ class VisualData {
 		if ( !$content ) {
 			return null;
 		}
-		return $content->getNativeData();
+		return $content->getText();
 	}
 
 	/**

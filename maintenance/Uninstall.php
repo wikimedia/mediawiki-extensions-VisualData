@@ -170,7 +170,7 @@ class Uninstall extends Maintenance {
 				echo 'convert html content model to text for article ' . $title->getFullText() . PHP_EOL;
 				$pageUpdater = $wikiPage->newPageUpdater( $this->user );
 				$modelId = 'text';
-				$contents = $content->getNativeData();
+				$contents = $content->getText();
 				$slotContent = ContentHandler::makeContent( $contents, $title, $modelId );
 				$pageUpdater->setContent( $role, $slotContent );
 				$summary = 'VisualData uninstall convert html content model to text';
@@ -269,7 +269,7 @@ class Uninstall extends Maintenance {
 			return null;
 		}
 
-		$contents = $content->getNativeData();
+		$contents = $content->getText();
 		return ( !empty( $contents ) ? json_decode( $contents, true ) : null );
 	}
 

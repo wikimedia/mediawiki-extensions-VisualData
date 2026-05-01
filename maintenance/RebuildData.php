@@ -260,7 +260,7 @@ class RebuildData extends Maintenance {
 				continue;
 			}
 
-			$data = json_decode( $content->getNativeData(), true );
+			$data = json_decode( $content->getText(), true );
 
 			if ( empty( $data ) ) {
 				continue;
@@ -349,7 +349,7 @@ class RebuildData extends Maintenance {
 		echo 'replacing slot pageproperties' . PHP_EOL;
 
 		$slotContent = $slots['pageproperties']->getContent();
-		$contents = $slotContent->getNativeData();
+		$contents = $slotContent->getText();
 
 		$pageUpdater = $wikiPage->newPageUpdater( $this->user );
 		$pageUpdater->removeSlot( 'pageproperties' );

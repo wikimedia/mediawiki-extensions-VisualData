@@ -406,7 +406,7 @@ class VisualDataHooks implements
 			$content = $revisionRecord->getContent( MediaWiki\Revision\SlotRecord::MAIN );
 			$contentHandler = $content->getContentHandler();
 			$modelId = $contentHandler->getModelID();
-			$text = $content->getNativeData();
+			$text = $content->getText();
 			$data = json_decode( $text, true );
 			if ( $data ) {
 				$context = RequestContext::getMain();
@@ -453,7 +453,7 @@ class VisualDataHooks implements
 			$content = $revisionRecord->getContent( MediaWiki\Revision\SlotRecord::MAIN );
 			$contentHandler = $content->getContentHandler();
 			$modelId = $contentHandler->getModelID();
-			$text = $content->getNativeData();
+			$text = $content->getText();
 			$data = json_decode( $text, true );
 			if ( $data ) {
 				$databaseManager = new DatabaseManager();
@@ -478,7 +478,7 @@ class VisualDataHooks implements
 			$content = $revisionRecord->getContent( MediaWiki\Revision\SlotRecord::MAIN );
 			$contentHandler = $content->getContentHandler();
 			$modelId = $contentHandler->getModelID();
-			$text = $content->getNativeData();
+			$text = $content->getText();
 			$data = json_decode( $text, true );
 			if ( $data ) {
 				$databaseManager = new DatabaseManager();
