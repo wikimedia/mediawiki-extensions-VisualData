@@ -574,9 +574,8 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			};
 
 			return new Promise( ( resolve, reject ) => {
-				new mw.Api()
-					.postWithToken( 'csrf', payload )
-					.done( function ( thisRes ) {
+				VisualData.postWithTokenRetry( payload )
+					.then( function ( thisRes ) {
 						if ( payload.action in thisRes ) {
 							var thisData = thisRes[ payload.action ];
 							if ( 'result' in thisData ) {
@@ -589,7 +588,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 							}
 						}
 					} )
-					.fail( function ( thisRes ) {
+					.catch( function ( thisRes ) {
 						// eslint-disable-next-line no-console
 						console.error( 'visualdata-queryoptions', thisRes );
 						reject( thisRes );
@@ -3096,9 +3095,8 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 							};
 
 							return new Promise( ( resolve, reject ) => {
-								new mw.Api()
-									.postWithToken( 'csrf', payload )
-									.done( function ( thisRes ) {
+								VisualData.postWithTokenRetry( payload )
+									.then( function ( thisRes ) {
 										resolve();
 										if ( payload.action in thisRes ) {
 											var data = JSON.parse( thisRes[ payload.action ].result );
@@ -3121,7 +3119,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 											}
 										}
 									} )
-									.fail( function ( thisRes ) {
+									.catch( function ( thisRes ) {
 										// eslint-disable-next-line no-console
 										console.error( 'visualdata-submit-form', thisRes );
 										reject( thisRes );
