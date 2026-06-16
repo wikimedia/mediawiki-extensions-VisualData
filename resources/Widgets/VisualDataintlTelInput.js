@@ -63,9 +63,9 @@
 			)
 			.append( input );
 
-		self.fixConfigCountries( config );
+		this.fixConfigCountries( config );
 
-		self.iti = window.intlTelInput(
+		this.iti = window.intlTelInput(
 			input.get( 0 ),
 			$.extend(
 				{
@@ -88,6 +88,11 @@
 				config
 			)
 		);
+
+		if ( config.value ) {
+			// @see https://intl-tel-input.com/docs/methods
+			this.iti.setNumber(config.value);
+		}
 	};
 
 	OO.inheritClass( VisualDataIntlTelInput, OO.ui.Widget );
