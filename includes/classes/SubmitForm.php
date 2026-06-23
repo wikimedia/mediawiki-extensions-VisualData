@@ -139,12 +139,36 @@ class SubmitForm {
 	private	function parseWikitext( $value ) {
 		// return $this->parser->recursiveTagParseFully( $str );
 		if ( !is_array( $value ) ) {
-			return Parser::stripOuterParagraph( $this->output->parseAsContent( $value ) );
+			return $this->stripParsoidEditSectionMarkers(
+				Parser::stripOuterParagraph( $this->output->parseAsContent( $value ) )
+			);
 		}
 		$self = $this;
 		return array_map( static function ( $v ) use ( $self ) {
-			return Parser::stripOuterParagraph( $self->output->parseAsContent( $v ) );
+			return $self->stripParsoidEditSectionMarkers(
+				Parser::stripOuterParagraph( $self->output->parseAsContent( $v ) )
+			);
 		}, $value );
+	}
+
+	/**
+	 * Prevent parser-only edit section markers from being persisted in VisualData values.
+	 *
+	 * @param string $html
+	 * @return string
+	 */
+	private function stripParsoidEditSectionMarkers( $html ) {
+		$html = preg_replace(
+			'#<mw:editsection\b[^>]*>.*?</mw:editsection>#is',
+			'',
+			$html
+		);
+		$html = preg_replace(
+			'#<mw:editsection\b[^>]*/\s*>#is',
+			'',
+			$html
+		);
+		return $html;
 	}
 
 	/**

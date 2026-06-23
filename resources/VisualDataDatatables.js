@@ -305,6 +305,16 @@ const VisualDataDatatables = function ( el, elIndex ) {
 		} );
 	}
 
+	var stripEditSectionMarkers = function ( value ) {
+		if ( typeof value !== 'string' || value.indexOf( '<mw:editsection' ) === -1 ) {
+			return value;
+		}
+
+		return value
+			.replace( /<mw:editsection\b[^>]*>[\s\S]*?<\/mw:editsection>/gi, '' )
+			.replace( /<mw:editsection\b[^>]*\/\s*>/gi, '' );
+	};
+
 	var initColumnSort = function ( order, headers ) {
 		var ret = [];
 		// eg. new_property asc, new_property_2 desc
@@ -751,6 +761,10 @@ html-num-fmt
 						// },
 
 						render: function ( thisData, type, row, meta ) {
+							thisData = thisData.map( function ( value ) {
+								return stripEditSectionMarkers( value );
+							} );
+
 							// or use mapPathSchema[ printout ].format
 							if (
 								meta.col in mapColumnIndexFormat &&

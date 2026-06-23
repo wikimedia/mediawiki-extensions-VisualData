@@ -157,6 +157,52 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 		);
 	}
 
+	function isBadTokenError( res ) {
+		if ( !res ) {
+			return false;
+		}
+
+		if ( typeof res === 'string' ) {
+			return res.toLowerCase().indexOf( 'badtoken' ) !== -1;
+		}
+
+		if ( res.error && res.error.code === 'badtoken' ) {
+			return true;
+		}
+
+		if ( res.xhr && res.xhr.responseJSON &&
+			res.xhr.responseJSON.error &&
+			res.xhr.responseJSON.error.code === 'badtoken'
+		) {
+			return true;
+		}
+
+		return false;
+	}
+
+	function postWithTokenRetry( payload ) {
+		return new Promise( function ( resolve, reject ) {
+			var api = new mw.Api();
+
+			api.postWithToken( 'csrf', payload )
+				.done( resolve )
+				.fail( function ( err ) {
+					if ( !isBadTokenError( err ) ) {
+						reject( err );
+						return;
+					}
+
+					api.getToken( 'csrf' )
+						.done( function ( token ) {
+							api.post( $.extend( {}, payload, { token: token } ) )
+								.done( resolve )
+								.fail( reject );
+						} )
+						.fail( reject );
+				} );
+		} );
+	}
+
 	function callbackShowError( schemaName, errorMessage, errors, hiddenErrors ) {
 
 		// remove previous error messages
@@ -1228,6 +1274,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					this.setDisabled( false );
 					this.setActive( false );
 
+					// eslint-disable-next-line mediawiki/msg-doc
 					VisualDataFunctions.OOUIAlert( new OO.ui.HtmlSnippet( mw.msg( error ) ), {
 						size: 'medium'
 					} );
@@ -1338,6 +1385,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					$( ToolbarMain.$bar ).find( '.wrapper' ).css( 'pointer-events', 'auto' );
 					this.setActive( false );
 
+					// eslint-disable-next-line mediawiki/msg-doc
 					VisualDataFunctions.OOUIAlert( new OO.ui.HtmlSnippet( mw.msg( error ) ), {
 						size: 'medium'
 					} );
@@ -1441,6 +1489,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			classes.push( 'sortable' );
 		}
 
+		// eslint-disable-next-line mediawiki/class-doc
 		var layout = new OO.ui.PanelLayout( {
 			expanded: false,
 			padded: showBorder,
@@ -3096,9 +3145,8 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 							};
 
 							return new Promise( ( resolve, reject ) => {
-								new mw.Api()
-									.postWithToken( 'csrf', payload )
-									.done( function ( thisRes ) {
+								postWithTokenRetry( payload )
+									.then( function ( thisRes ) {
 										resolve();
 										if ( payload.action in thisRes ) {
 											var data = JSON.parse( thisRes[ payload.action ].result );
@@ -3121,7 +3169,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 											}
 										}
 									} )
-									.fail( function ( thisRes ) {
+									.catch( function ( thisRes ) {
 										// eslint-disable-next-line no-console
 										console.error( 'visualdata-submit-form', thisRes );
 										reject( thisRes );
@@ -3344,6 +3392,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 						thisClasses.push( Form.options[ 'css-class' ] );
 					}
 
+					// eslint-disable-next-line mediawiki/class-doc
 					var processDialog = new ProcessDialog( {
 						size:
 							!( 'popup-size' in Form.options ) || Form.options[ 'popup-size' ] === '' ?
@@ -3405,6 +3454,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 					thisClasses.push( Form.options[ 'css-class' ] );
 				}
 
+				// eslint-disable-next-line mediawiki/class-doc
 				var processDialog = new ProcessDialog( {
 					size:
 						!( 'popup-size' in Form.options ) || Form.options[ 'popup-size' ] === '' ?
@@ -3527,6 +3577,7 @@ const VisualDataForms = function ( El, Config, Form, FormIndex, Schemas, WindowM
 			classes.push( Form.options[ 'css-class' ] );
 		}
 
+		// eslint-disable-next-line mediawiki/class-doc
 		var form = new OO.ui.FormLayout( {
 			action: Config.actionUrl,
 			method: 'post',
