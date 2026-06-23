@@ -603,11 +603,9 @@ class ResultPrinter {
 		}
 
 		if ( $this->isHtml() && $isRoot ) {
-			$html = Parser::stripOuterParagraph(
+			return Parser::stripOuterParagraph(
 				$this->parser->recursiveTagParseFully( $ret )
 			);
-
-			return $this->stripParsoidEditSectionMarkers( $html );
 		}
 
 		return $ret;
@@ -666,32 +664,6 @@ class ResultPrinter {
 
 		$replaceAlias( self::$titleAliases, $title->getFullText() );
 		$replaceAlias( self::$categoriesAliases, implode( ', ', $categories ) );
-
-		return $this->stripParsoidEditSectionMarkers( $value );
-	}
-
-	/**
-	 * @credits freephile
-	 * Remove parser-only edit section markers from rendered HTML fragments.
-	 *
-	 * @param string $value
-	 * @return string
-	 */
-	protected function stripParsoidEditSectionMarkers( $value ) {
-		if ( strpos( $value, '<mw:editsection' ) === false ) {
-			return $value;
-		}
-
-		$value = preg_replace(
-			'#<mw:editsection\b[^>]*>.*?</mw:editsection>#is',
-			'',
-			$value
-		);
-		$value = preg_replace(
-			'#<mw:editsection\b[^>]*/\s*>#is',
-			'',
-			$value
-		);
 
 		return $value;
 	}

@@ -167,63 +167,12 @@ VisualData = ( function () {
 		return Schemas;
 	}
 
-	// @credits freephile
-	function isBadTokenError( res ) {
-		if ( !res ) {
-			return false;
-		}
-
-		if ( typeof res === 'string' ) {
-			return res.toLowerCase().includes( 'badtoken' );
-		}
-
-		if ( res.error && res.error.code === 'badtoken' ) {
-			return true;
-		}
-
-		if (
-			res.xhr &&
-			res.xhr.responseJSON &&
-			res.xhr.responseJSON.error &&
-			res.xhr.responseJSON.error.code === 'badtoken'
-		) {
-			return true;
-		}
-
-		return false;
-	}
-
-	// @credits freephile
-	function postWithTokenRetry( payload ) {
-		return new Promise( function ( resolve, reject ) {
-			var api = new mw.Api();
-
-			api.postWithToken( 'csrf', payload )
-				.done( resolve )
-				.fail( function ( err ) {
-					if ( !isBadTokenError( err ) ) {
-						reject( err );
-						return;
-					}
-
-					api.getToken( 'csrf' )
-						.done( function ( token ) {
-							api.post( $.extend( {}, payload, { token: token } ) )
-								.done( resolve )
-								.fail( reject );
-						} )
-						.fail( reject );
-				} );
-		} );
-	}
-
 	return {
 		loadData,
 		loadSchemas,
 		setVars,
 		updateSchemas,
 		matchLoadedData,
-		setForms,
-		postWithTokenRetry
+		setForms
 	};
 }() );
