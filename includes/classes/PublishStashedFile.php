@@ -24,7 +24,6 @@
 
 namespace MediaWiki\Extension\VisualData;
 
-use ApiMain;
 use Job;
 use RequestContext;
 use Status;
@@ -113,12 +112,6 @@ class PublishStashedFile extends Job {
 
 				return false;
 			}
-
-			// Build the image info array while we have the local reference handy
-			// dummy object (XXX)
-			$apiMain = new ApiMain();
-			$imageInfo = $upload->getImageInfo( $apiMain->getResult() );
-
 			// Cleanup any temporary local file
 			$upload->cleanupTempFile();
 
@@ -130,7 +123,6 @@ class PublishStashedFile extends Job {
 					'result' => 'Success',
 					'stage' => 'publish',
 					'filename' => $upload->getLocalFile()->getName(),
-					'imageinfo' => $imageInfo,
 					'status' => Status::newGood()
 				]
 			);
